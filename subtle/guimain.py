@@ -59,6 +59,10 @@ class GuiMain(QMainWindow):
         self.fileTree = GuiFileTree(self)
         self.mediaView = GuiMediaView(self)
 
+        # Signals
+        # =======
+        self.fileTree.newFileSelection.connect(self.mediaView.setCurrentFile)
+
         # Layout
         # ======
 

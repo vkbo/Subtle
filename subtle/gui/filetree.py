@@ -22,6 +22,9 @@ from __future__ import annotations
 
 import logging
 
+from pathlib import Path
+
+from PyQt6.QtCore import QModelIndex, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QFileSystemModel
 from PyQt6.QtWidgets import QTreeView, QWidget
 
@@ -30,8 +33,12 @@ logger = logging.getLogger(__name__)
 
 class GuiFileTree(QTreeView):
 
+    newFileSelection = pyqtSignal(Path)
+
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
+
+        self._current = None
 
         self._model = QFileSystemModel(self)
         self._model.setRootPath("/")
@@ -39,4 +46,19 @@ class GuiFileTree(QTreeView):
 
         self.setModel(self._model)
 
+        self.clicked.connect(self._itemClicked)
+
+        return
+
+    ##
+    #  Private Slots
+    ##
+
+    @pyqtSlot(QModelIndex)
+    def _itemClicked(self, index: QModelIndex) -> None:
+        """Process item selection in the file tree."""
+        if (path := Path(self._model.filePath(index))).is_file():
+            if path != self._current:
+                self.newFileSelection.emit(path)
+                self._current = path
         return
