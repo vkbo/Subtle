@@ -20,26 +20,164 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 from __future__ import annotations
 
+import json
 import logging
+import sys
 
+from copy import deepcopy
+from pathlib import Path
+
+from PyQt6.QtCore import (
+    PYQT_VERSION, PYQT_VERSION_STR, QT_VERSION, QT_VERSION_STR, QSize,
+    QStandardPaths, QSysInfo
+)
 from PyQt6.QtWidgets import QApplication
+from subtle.common import jsonEncode
 
 logger = logging.getLogger(__name__)
+
+
+DEFAULTS: dict = {
+    "Sizes": {
+        "mainWindow": [800, 600],
+        "mainSplit": [300, 500],
+    }
+}
 
 
 class Config:
 
     def __init__(self) -> None:
 
-        self.appName = "Subtle"
+        self._data: dict[str, dict] = deepcopy(DEFAULTS)
+
+        self.appName   = "Subtle"
+        self.appHandle = "subtle"
+
+        # Set Paths
+        confRoot = Path(QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.ConfigLocation)
+        )
+        self._confPath = confRoot.absolute() / self.appHandle  # The user config location
+        self._homePath = Path.home().absolute()  # The user's home directory
+
+        self._appPath = Path(__file__).parent.absolute()
+        self._appRoot = self._appPath.parent
+
+        self._confFile = self._confPath / "subtle.json"
+
+        # Check Qt6 Versions
+        self.verQtString   = QT_VERSION_STR
+        self.verQtValue    = QT_VERSION
+        self.verPyQtString = PYQT_VERSION_STR
+        self.verPyQtValue  = PYQT_VERSION
+
+        # Check Python Version
+        self.verPyString = sys.version.split()[0]
+
+        # Check OS Type
+        self.osType    = sys.platform
+        self.osLinux   = False
+        self.osWindows = False
+        self.osDarwin  = False
+        self.osUnknown = False
+        if self.osType.startswith("linux"):
+            self.osLinux = True
+        elif self.osType.startswith("darwin"):
+            self.osDarwin = True
+        elif self.osType.startswith(("win32", "cygwin")):
+            self.osWindows = True
+        else:
+            self.osUnknown = True
+
+        # Other System Info
+        self.hostName  = QSysInfo.machineHostName()
+        self.kernelVer = QSysInfo.kernelVersion()
 
         return
 
+    ##
+    #  Getters
+    ##
+
+    def getSize(self, key: str) -> QSize:
+        """Get a size from config."""
+        try:
+            size = QSize(*self._data["Sizes"][key])
+        except Exception:
+            size = QSize()
+        return size
+
+    def getSizes(self, key: str) -> list[int]:
+        """Get a list of sizes from config."""
+        try:
+            size = list(self._data["Sizes"][key])
+        except Exception:
+            size = []
+        return size
+
+    ##
+    #  Setters
+    ##
+
+    def setSize(self, key: str, value: QSize) -> None:
+        """Set a size in config."""
+        if isinstance(value, QSize):
+            self._data["Sizes"][key] = [value.width(), value.height()]
+        return
+
+    def setSizes(self, key: str, value: list[int]) -> None:
+        """Set a size in config."""
+        if isinstance(value, list):
+            try:
+                self._data["Sizes"][key] = [int(x) for x in value]
+            except Exception as e:
+                logger.error("Problem when saving sizes list", exc_info=e)
+        return
+
+    ##
+    #  Methods
+    ##
+
     def initialise(self) -> None:
+        """Initialise the config."""
+        self._confPath.mkdir(exist_ok=True)
         return
 
     def localisation(self, app: QApplication) -> None:
         return
 
     def load(self) -> None:
+        """Load the app config."""
+        if self._confFile.is_file():
+            try:
+                logger.debug("Loading config")
+                with open(self._confFile, mode="r", encoding="utf-8") as fo:
+                    data = json.load(fo)
+                self._storeConfigGroup(data, "Sizes")
+            except Exception as e:
+                logger.error("Could not load config", exc_info=e)
+        return
+
+    def save(self) -> None:
+        """Save the app config."""
+        try:
+            logger.debug("Saving config")
+            with open(self._confFile, mode="w+", encoding="utf-8") as fo:
+                fo.write(jsonEncode(self._data, nmax=2))
+        except Exception:
+            logger.error("Could not save config")
+        return
+
+    ##
+    #  Internal Functions
+    ##
+
+    def _storeConfigGroup(self, data: dict, group: str) -> None:
+        """Process a group from config and save the data."""
+        if isinstance(data, dict) and group in self._data:
+            loaded = data.get(group, {})
+            default = DEFAULTS.get(group, {})
+            values = {k: v for k, v in loaded.items() if k in default}
+            self._data[group].update(values)
         return

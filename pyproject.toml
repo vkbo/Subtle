@@ -52,7 +52,7 @@ wrap_length = 79
 multi_line_output = 5
 force_grid_wrap = 0
 lines_between_types = 1
-forced_separate = ["tests.*"]
+forced_separate = ["tests.*", "PyQt6.*"]
 
 [tool.flake8]
 max-line-length = 99

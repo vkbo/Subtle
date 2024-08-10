@@ -21,8 +21,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 from __future__ import annotations
 
 import logging
+import sys
 
-from PyQt6.QtWidgets import QMainWindow
+from PyQt6.QtGui import QCloseEvent
+from PyQt6.QtWidgets import QMainWindow, QSplitter
+from subtle import CONFIG
+from subtle.gui.filetree import GuiFileTree
+from subtle.gui.mediaview import GuiMediaView
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +40,52 @@ class GuiMain(QMainWindow):
         logger.debug("Create: GUI")
         self.setObjectName("GuiMain")
 
+        # System Info
+        # ===========
+
+        logger.info("OS: %s", CONFIG.osType)
+        logger.info("Kernel: %s", CONFIG.kernelVer)
+        logger.info("Host: %s", CONFIG.hostName)
+        logger.info("Qt5: %s (0x%06x)", CONFIG.verQtString, CONFIG.verQtValue)
+        logger.info("PyQt5: %s (0x%06x)", CONFIG.verPyQtString, CONFIG.verPyQtValue)
+        logger.info("Python: %s (0x%08x)", CONFIG.verPyString, sys.hexversion)
+
         logger.debug("Ready: GUI")
         logger.info("Subtle is ready ...")
 
+        # Gui Elements
+        # ============
+
+        self.fileTree = GuiFileTree(self)
+        self.mediaView = GuiMediaView(self)
+
+        # Layout
+        # ======
+
+        self.splitContent = QSplitter(self)
+        self.splitContent.addWidget(self.mediaView)
+
+        self.splitMain = QSplitter(self)
+        self.splitMain.addWidget(self.fileTree)
+        self.splitMain.addWidget(self.splitContent)
+        self.splitMain.setSizes(CONFIG.getSizes("mainSplit"))
+
+        self.setCentralWidget(self.splitMain)
+        self.resize(CONFIG.getSize("mainWindow"))
+
+        return
+
+    ##
+    #  Events
+    ##
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Capture the closing event of the GUI and call the close
+        function to handle all the close process steps.
+        """
+        logger.info("Exiting Subtle")
+        CONFIG.setSize("mainWindow", self.size())
+        CONFIG.setSizes("mainSplit", self.splitMain.sizes())
+        CONFIG.save()
+        event.accept()
         return
