@@ -27,6 +27,7 @@ from pathlib import Path
 from PyQt6.QtCore import QModelIndex, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QFileSystemModel
 from PyQt6.QtWidgets import QTreeView, QWidget
+from subtle import CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +47,24 @@ class GuiFileTree(QTreeView):
 
         self.setModel(self._model)
 
+        columns = self._model.columnCount()
+        for i, w in enumerate(CONFIG.getSizes("fileTreeColumns")):
+            if i < columns:
+                self.setColumnWidth(i, w)
+
         self.clicked.connect(self._itemClicked)
 
+        return
+
+    ##
+    #  Methods
+    ##
+
+    def saveSettings(self) -> None:
+        """Save widget settings."""
+        CONFIG.setSizes("fileTreeColumns", [
+            self.columnWidth(i) for i in range(self._model.columnCount())
+        ])
         return
 
     ##

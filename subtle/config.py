@@ -39,8 +39,10 @@ logger = logging.getLogger(__name__)
 
 DEFAULTS: dict = {
     "Sizes": {
-        "mainWindow": [800, 600],
         "mainSplit": [300, 500],
+        "mainWindow": [800, 600],
+        "fileTreeColumns": [],
+        "mediaViewColumns": [],
     }
 }
 

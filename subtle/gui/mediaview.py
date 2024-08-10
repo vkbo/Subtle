@@ -26,6 +26,7 @@ from pathlib import Path
 
 from PyQt6.QtCore import pyqtSlot
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+from subtle import CONFIG
 from subtle.core.mkvfile import MKVFile
 
 logger = logging.getLogger(__name__)
@@ -57,12 +58,28 @@ class GuiMediaView(QWidget):
             self.tr("Enabled"), self.tr("Default"), self.tr("Forced"),
         ])
 
+        columns = self._tracks.columnCount()
+        for i, w in enumerate(CONFIG.getSizes("mediaViewColumns")):
+            if i < columns:
+                self._tracks.setColumnWidth(i, w)
+
         # Assemble
         self.outerBox = QVBoxLayout()
         self.outerBox.addWidget(self._tracks)
 
         self.setLayout(self.outerBox)
 
+        return
+
+    ##
+    #  Methods
+    ##
+
+    def saveSettings(self) -> None:
+        """Save widget settings."""
+        CONFIG.setSizes("mediaViewColumns", [
+            self._tracks.columnWidth(i) for i in range(self._tracks.columnCount())
+        ])
         return
 
     ##
@@ -108,5 +125,4 @@ class GuiMediaView(QWidget):
                 item.setText(self.C_FORCED, tForced)
 
                 self._tracks.addTopLevelItem(item)
-                print(track)
         return

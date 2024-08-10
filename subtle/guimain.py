@@ -88,6 +88,8 @@ class GuiMain(QMainWindow):
         function to handle all the close process steps.
         """
         logger.info("Exiting Subtle")
+        self.fileTree.saveSettings()
+        self.mediaView.saveSettings()
         CONFIG.setSize("mainWindow", self.size())
         CONFIG.setSizes("mainSplit", self.splitMain.sizes())
         CONFIG.save()
