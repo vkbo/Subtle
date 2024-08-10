@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "subtle"
+authors = [
+    {name = "Veronica Berglyd Olsen", email = "code@vkbo.net"},
+]
+description = "A simple subtitle editor and converter"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {text = "GNU General Public License v3"}
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Development Status :: 3 - Alpha",
+    "Operating System :: OS Independent",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: English",
+    "Topic :: Multimedia",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "pyqt6>=6.4",
+    "pyenchant>=3.0.0",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/vkbo/subtle"
+Repository = "https://github.com/vkbo/subtle"
+Issues = "https://github.com/vkbo/subtle/issues"
+
+[project.gui-scripts]
+subtle = "subtle:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "subtle.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["subtle*"]
+
+[tool.isort]
+py_version="310"
+line_length = 99
+wrap_length = 79
+multi_line_output = 5
+force_grid_wrap = 0
+lines_between_types = 1
+forced_separate = ["tests.*"]
+
+[tool.flake8]
+max-line-length = 99
+ignore = ["E133", "E221", "E226", "E228", "E241", "W503", "ANN101", "ANN102", "ANN401"]
+per-file-ignores = ["tests/*:ANN"]
+exclude = ["docs/*"]
+
+[tool.autopep8]
+max_line_length = 99
+ignore = ["E133", "E221", "E226", "E228", "E241", "W503"]

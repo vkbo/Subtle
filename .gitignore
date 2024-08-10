@@ -1,0 +1,5 @@
+# Code
+*.pyc
+
+# Tests
+.pytest_cache
