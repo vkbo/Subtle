@@ -23,30 +23,54 @@ from __future__ import annotations
 import json
 import logging
 import subprocess
+import uuid
 
 from collections.abc import Iterable
 from pathlib import Path
 
+from subtle import CONFIG
+
 logger = logging.getLogger(__name__)
 
 
-class MKVFile:
+class MkvFile:
 
     def __init__(self, file: Path) -> None:
+        self._uuid = str(uuid.uuid4())
         self._file = file
         self._info = {}
         return
 
-    def loadFile(self) -> None:
+    @property
+    def filePath(self) -> Path:
+        """The path to the MKV file."""
+        return self._file
+
+    def getInfo(self) -> None:
         """Load info about the media file."""
         try:
-            p = subprocess.Popen(["mkvmerge", "-J", str(self._file)], stdout=subprocess.PIPE)
+            p = subprocess.Popen(
+                ["mkvmerge", "-J", str(self._file)],
+                stdout=subprocess.PIPE,
+            )
             out, _ = p.communicate()
             self._info = json.loads(out.decode("utf-8"))
         except Exception as e:
             logger.error("Failed to load media file info", exc_info=e)
+            self._info = {}
         return
 
-    def tracks(self) -> Iterable[dict]:
+    def getTrackInfo(self, track: str | int) -> dict:
         """"""
+        for entry in self._info.get("tracks", []):
+            if isinstance(entry, dict) and str(entry.get("id", "")) == str(track):
+                return entry
+        return {}
+
+    def iterTracks(self) -> Iterable[dict]:
+        """List all tracks in the MKV file."""
         yield from self._info.get("tracks", [])
+
+    def dumpFile(self, track: int | str) -> Path:
+        """Generate a file name for a track dump."""
+        return CONFIG.dumpPath / f"{self._uuid}.{track}.tmp"

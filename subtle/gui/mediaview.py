@@ -24,10 +24,15 @@ import logging
 
 from pathlib import Path
 
-from PyQt6.QtCore import pyqtSlot
-from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+from PyQt5.QtCore import pyqtSignal
+from PyQt6.QtCore import QModelIndex, pyqtSlot
+from PyQt6.QtWidgets import (
+    QLabel, QProgressBar, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+)
 from subtle import CONFIG
-from subtle.core.mkvfile import MKVFile
+from subtle.common import formatInt
+from subtle.core.mkvextract import MkvExtract
+from subtle.core.mkvfile import MkvFile
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +48,16 @@ class GuiMediaView(QWidget):
     C_DEFAULT = 6
     C_FORCED  = 7
 
+    newTrackAvailable = pyqtSignal(Path, dict)
+
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
-        self._current: MKVFile | None = None
+        self._current: MkvFile | None = None
+        self._extract = MkvExtract(self)
+
+        self._trackInfo: dict | None = None
+        self._trackFile: Path | None = None
 
         self._trUnknown = self.tr("Unknown")
         self._trYes = self.tr("Yes")
@@ -57,17 +68,28 @@ class GuiMediaView(QWidget):
             "#", self.tr("Type"), self.tr("Codec"), self.tr("Lang"), self.tr("Label"),
             self.tr("Enabled"), self.tr("Default"), self.tr("Forced"),
         ])
+        self._tracks.doubleClicked.connect(self._itemDoubleClicked)
 
         columns = self._tracks.columnCount()
         for i, w in enumerate(CONFIG.getSizes("mediaViewColumns")):
             if i < columns:
                 self._tracks.setColumnWidth(i, w)
 
+        # Progress
+        self._progressText = QLabel(self)
+        self._progressBar = QProgressBar(self)
+
         # Assemble
         self.outerBox = QVBoxLayout()
         self.outerBox.addWidget(self._tracks)
+        self.outerBox.addWidget(self._progressText)
+        self.outerBox.addWidget(self._progressBar)
 
         self.setLayout(self.outerBox)
+
+        # Connect Signals
+        self._extract.processProgress.connect(self._extractProgress)
+        self._extract.processDone.connect(self._extractFinished)
 
         return
 
@@ -89,9 +111,48 @@ class GuiMediaView(QWidget):
     @pyqtSlot(Path)
     def setCurrentFile(self, file: Path) -> None:
         """Set the current file."""
-        self._current = MKVFile(file)
-        self._current.loadFile()
+        self._current = MkvFile(file)
+        self._current.getInfo()
         self._listTracks()
+        return
+
+    ##
+    #  Private Slots
+    ##
+
+    @pyqtSlot(QModelIndex)
+    def _itemDoubleClicked(self, index: QModelIndex) -> None:
+        """Process track double click in the media view."""
+        if self._current:
+            item = self._tracks.itemFromIndex(index)
+            track = item.text(self.C_TRACK)
+            mkvFile = self._current.filePath
+            outFile = self._current.dumpFile(track)
+
+            self._progressText.setText("Extracting ...")
+            self._progressBar.setValue(0)
+
+            self._trackInfo = self._current.getTrackInfo(track)
+            self._trackFile = outFile
+            self._extract.extract(mkvFile, track, outFile)
+
+        return
+
+    @pyqtSlot(int)
+    def _extractProgress(self, value: int) -> None:
+        """"""
+        if (info := self._trackInfo) and (file := self._trackFile):
+            tID    = str(info.get("id", "-"))
+            tType  = info.get("type", self._trUnknown).title()
+            tCodec = info.get("codec", self._trUnknown)
+            tSize  = formatInt(file.stat().st_size)
+            self._progressText.setText(f"Extracting Track {tID}: {tType} ({tCodec}) - {tSize}B")
+            self._progressBar.setValue(value)
+        return
+
+    @pyqtSlot()
+    def _extractFinished(self) -> None:
+        """"""
         return
 
     ##
@@ -101,8 +162,8 @@ class GuiMediaView(QWidget):
     def _listTracks(self) -> None:
         """"""
         self._tracks.clear()
-        if isinstance(self._current, MKVFile):
-            for track in self._current.tracks():
+        if isinstance(self._current, MkvFile):
+            for track in self._current.iterTracks():
                 props = track.get("properties", {})
 
                 tID      = str(track.get("id", "-"))

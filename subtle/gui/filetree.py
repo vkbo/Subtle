@@ -52,7 +52,7 @@ class GuiFileTree(QTreeView):
             if i < columns:
                 self.setColumnWidth(i, w)
 
-        self.clicked.connect(self._itemClicked)
+        self.doubleClicked.connect(self._itemDoubleClicked)
 
         return
 
@@ -72,8 +72,8 @@ class GuiFileTree(QTreeView):
     ##
 
     @pyqtSlot(QModelIndex)
-    def _itemClicked(self, index: QModelIndex) -> None:
-        """Process item selection in the file tree."""
+    def _itemDoubleClicked(self, index: QModelIndex) -> None:
+        """Process item double click in the file tree."""
         if (path := Path(self._model.filePath(index))).is_file():
             if path != self._current:
                 self.newFileSelection.emit(path)

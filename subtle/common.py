@@ -23,12 +23,38 @@ from __future__ import annotations
 import json
 import logging
 
+from typing import Any
+
 logger = logging.getLogger(__name__)
 
 
-##
-#  Encoder Functions
-##
+def checkInt(value: Any, default: int) -> int:
+    """Check if a variable is an integer."""
+    try:
+        return int(value)
+    except Exception:
+        return default
+
+
+def formatInt(value: int) -> str:
+    """Formats an integer with k, M, G etc."""
+    if not isinstance(value, int):
+        return "ERR"
+
+    fVal = float(value)
+    if fVal > 1000.0:
+        for pF in ["k", "M", "G", "T", "P", "E"]:
+            fVal /= 1000.0
+            if fVal < 1000.0:
+                if fVal < 10.0:
+                    return f"{fVal:4.2f}\u202f{pF}"
+                elif fVal < 100.0:
+                    return f"{fVal:4.1f}\u202f{pF}"
+                else:
+                    return f"{fVal:3.0f}\u202f{pF}"
+
+    return str(value) + "\u202f"
+
 
 def jsonEncode(data: dict | list | tuple, n: int = 0, nmax: int = 0) -> str:
     """Encode a dictionary, list or tuple as a json object or array, and

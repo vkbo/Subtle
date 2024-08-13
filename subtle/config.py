@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import logging
+import shutil
 import sys
 
 from copy import deepcopy
@@ -39,8 +40,9 @@ logger = logging.getLogger(__name__)
 
 DEFAULTS: dict = {
     "Sizes": {
-        "mainSplit": [300, 500],
         "mainWindow": [800, 600],
+        "mainSplit": [300, 500],
+        "contentSplit": [300, 300],
         "fileTreeColumns": [],
         "mediaViewColumns": [],
     }
@@ -60,7 +62,11 @@ class Config:
         confRoot = Path(QStandardPaths.writableLocation(
             QStandardPaths.StandardLocation.ConfigLocation)
         )
+        cacheRoot = Path(QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.CacheLocation)
+        )
         self._confPath = confRoot.absolute() / self.appHandle  # The user config location
+        self._cachePath = cacheRoot.absolute() / self.appHandle  # The user cache location
         self._homePath = Path.home().absolute()  # The user's home directory
 
         self._appPath = Path(__file__).parent.absolute()
@@ -97,6 +103,17 @@ class Config:
         self.kernelVer = QSysInfo.kernelVersion()
 
         return
+
+    ##
+    #  Properties
+    ##
+
+    @property
+    def dumpPath(self) -> Path:
+        """Return a location for dumping files during a session."""
+        path = self._cachePath / "dump"
+        path.mkdir(exist_ok=True)
+        return path
 
     ##
     #  Getters
@@ -144,6 +161,15 @@ class Config:
     def initialise(self) -> None:
         """Initialise the config."""
         self._confPath.mkdir(exist_ok=True)
+        self._cachePath.mkdir(exist_ok=True)
+        return
+
+    def cleanup(self) -> None:
+        """Called before exit to clean up cache."""
+        path = self._cachePath / "dump"
+        if path.exists():
+            logger.debug("Clearing session cache")
+            shutil.rmtree(path)
         return
 
     def localisation(self, app: QApplication) -> None:
