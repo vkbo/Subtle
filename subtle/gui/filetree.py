@@ -44,6 +44,7 @@ class GuiFileTree(QTreeView):
         self._model = QFileSystemModel(self)
         self._model.setRootPath("/")
         self._model.setReadOnly(True)
+        self._model.directoryLoaded.connect(self._directoryLoaded)
 
         self.setModel(self._model)
 
@@ -78,4 +79,11 @@ class GuiFileTree(QTreeView):
             if path != self._current:
                 self.newFileSelection.emit(path)
                 self._current = path
+        return
+
+    @pyqtSlot(str)
+    def _directoryLoaded(self, path: str) -> None:
+        """Process model finished loading directory."""
+        if path == "/":
+            self.expand(self._model.index(path))
         return

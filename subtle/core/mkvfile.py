@@ -23,9 +23,9 @@ from __future__ import annotations
 import json
 import logging
 import subprocess
-import uuid
 
 from collections.abc import Iterable
+from hashlib import sha1
 from pathlib import Path
 
 from subtle import CONFIG
@@ -36,8 +36,8 @@ logger = logging.getLogger(__name__)
 class MkvFile:
 
     def __init__(self, file: Path) -> None:
-        self._uuid = str(uuid.uuid4())
         self._file = file
+        self._id = sha1(bytes(file), usedforsecurity=False).hexdigest()
         self._info = {}
         return
 
@@ -73,4 +73,4 @@ class MkvFile:
 
     def dumpFile(self, track: int | str) -> Path:
         """Generate a file name for a track dump."""
-        return CONFIG.dumpPath / f"{self._uuid}.{track}.tmp"
+        return CONFIG.dumpPath / f"{self._id}.{track}.tmp"

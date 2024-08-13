@@ -45,6 +45,7 @@ DEFAULTS: dict = {
         "contentSplit": [300, 300],
         "fileTreeColumns": [],
         "mediaViewColumns": [],
+        "subsViewColumns": [],
     }
 }
 

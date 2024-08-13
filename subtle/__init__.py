@@ -108,7 +108,7 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
             logLevel = logging.INFO
         elif inOpt == "--debug":
             logLevel = logging.DEBUG
-            logFormat  = "[{asctime:}]  {filename:>18}:{lineno:<4d}  {levelname:8}  {message:}"
+            logFormat  = "[{asctime:}]  {filename:>13}:{lineno:<4d}  {levelname:8}  {message:}"
 
     # Setup Logging
     pkgLogger = logging.getLogger(__package__)

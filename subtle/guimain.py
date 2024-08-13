@@ -25,10 +25,11 @@ import sys
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCloseEvent
-from PyQt6.QtWidgets import QMainWindow, QSplitter, QWidget
+from PyQt6.QtWidgets import QMainWindow, QSplitter
 from subtle import CONFIG
 from subtle.gui.filetree import GuiFileTree
 from subtle.gui.mediaview import GuiMediaView
+from subtle.gui.subsview import GuiSubtitleView
 
 logger = logging.getLogger(__name__)
 
@@ -59,17 +60,19 @@ class GuiMain(QMainWindow):
 
         self.fileTree = GuiFileTree(self)
         self.mediaView = GuiMediaView(self)
+        self.subsView = GuiSubtitleView(self)
 
         # Signals
         # =======
         self.fileTree.newFileSelection.connect(self.mediaView.setCurrentFile)
+        self.mediaView.newTrackAvailable.connect(self.subsView.loadTrack)
 
         # Layout
         # ======
 
         self.splitContent = QSplitter(Qt.Orientation.Vertical, self)
         self.splitContent.addWidget(self.mediaView)
-        self.splitContent.addWidget(QWidget(self))
+        self.splitContent.addWidget(self.subsView)
         self.splitContent.setSizes(CONFIG.getSizes("contentSplit"))
 
         self.splitMain = QSplitter(Qt.Orientation.Horizontal, self)
@@ -93,6 +96,7 @@ class GuiMain(QMainWindow):
         logger.info("Exiting Subtle")
         self.fileTree.saveSettings()
         self.mediaView.saveSettings()
+        self.subsView.saveSettings()
         CONFIG.setSize("mainWindow", self.size())
         CONFIG.setSizes("mainSplit", self.splitMain.sizes())
         CONFIG.setSizes("contentSplit", self.splitContent.sizes())

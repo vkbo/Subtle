@@ -24,8 +24,7 @@ import logging
 
 from pathlib import Path
 
-from PyQt5.QtCore import pyqtSignal
-from PyQt6.QtCore import QModelIndex, pyqtSlot
+from PyQt6.QtCore import QModelIndex, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import (
     QLabel, QProgressBar, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 )
@@ -141,7 +140,7 @@ class GuiMediaView(QWidget):
     @pyqtSlot(int)
     def _extractProgress(self, value: int) -> None:
         """"""
-        if (info := self._trackInfo) and (file := self._trackFile):
+        if (file := self._trackFile) and (info := self._trackInfo):
             tID    = str(info.get("id", "-"))
             tType  = info.get("type", self._trUnknown).title()
             tCodec = info.get("codec", self._trUnknown)
@@ -153,6 +152,8 @@ class GuiMediaView(QWidget):
     @pyqtSlot()
     def _extractFinished(self) -> None:
         """"""
+        if (file := self._trackFile) and (info := self._trackInfo):
+            self.newTrackAvailable.emit(file, info)
         return
 
     ##
