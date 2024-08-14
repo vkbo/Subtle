@@ -23,13 +23,14 @@ from __future__ import annotations
 import logging
 import sys
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QCloseEvent
-from PyQt6.QtWidgets import QMainWindow, QSplitter
 from subtle import CONFIG
 from subtle.gui.filetree import GuiFileTree
 from subtle.gui.mediaview import GuiMediaView
 from subtle.gui.subsview import GuiSubtitleView
+
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QCloseEvent
+from PyQt6.QtWidgets import QMainWindow, QSplitter
 
 logger = logging.getLogger(__name__)
 

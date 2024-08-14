@@ -24,8 +24,9 @@ import logging
 
 from pathlib import Path
 
-from PyQt6.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
 from subtle.common import checkInt
+
+from PyQt6.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
 
 logger = logging.getLogger(__name__)
 

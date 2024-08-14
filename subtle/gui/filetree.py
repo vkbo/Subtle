@@ -24,10 +24,11 @@ import logging
 
 from pathlib import Path
 
+from subtle import CONFIG
+
 from PyQt6.QtCore import QModelIndex, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QFileSystemModel
 from PyQt6.QtWidgets import QTreeView, QWidget
-from subtle import CONFIG
 
 logger = logging.getLogger(__name__)
 

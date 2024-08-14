@@ -24,14 +24,15 @@ import logging
 
 from pathlib import Path
 
-from PyQt6.QtCore import QModelIndex, pyqtSignal, pyqtSlot
-from PyQt6.QtWidgets import (
-    QLabel, QProgressBar, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
-)
 from subtle import CONFIG
 from subtle.common import formatInt
 from subtle.core.mkvextract import MkvExtract
 from subtle.core.mkvfile import MkvFile
+
+from PyQt6.QtCore import QModelIndex, pyqtSignal, pyqtSlot
+from PyQt6.QtWidgets import (
+    QLabel, QProgressBar, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+)
 
 logger = logging.getLogger(__name__)
 

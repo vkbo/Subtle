@@ -24,9 +24,11 @@ import logging
 
 from pathlib import Path
 
-from PyQt6.QtCore import pyqtSlot
-from PyQt6.QtWidgets import QTreeWidget, QVBoxLayout, QWidget
 from subtle import CONFIG
+from subtle.core.pgsreader import PGSReader
+
+from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,8 @@ class GuiSubtitleView(QWidget):
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
+
+        self._reader = None
 
         self._frames = QTreeWidget(self)
         self._frames.setHeaderLabels([
@@ -80,5 +84,15 @@ class GuiSubtitleView(QWidget):
         match info.get("codec", ""):
             case "HDMV PGS":
                 logger.info("Processing PGS subtitle file")
-                print(path)
+                self._reader = PGSReader(path)
+                self._frames.clear()
+                for entry in self._reader.listEntries():
+                    tss = entry.get("start", 0.0)
+                    tse = entry.get("end", 0.0)
+                    if not entry.get("clear", False):
+                        item = QTreeWidgetItem()
+                        item.setText(self.C_TIME, f"{tss:.3f}")
+                        item.setText(self.C_LENGTH, f"{tse - tss:.3f}")
+                        self._frames.addTopLevelItem(item)
+                    print(entry)
         return
