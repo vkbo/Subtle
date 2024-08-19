@@ -82,7 +82,9 @@ class PGSReader:
         """Debug function."""
         print("Ping!")
         print(len(self._data))
-        self._data[0]._pds[0].palette()
+        for ds in self._data[:20]:
+            print(ds, list(ds.pcs.compObjects()), ds._wds[0])
+        # self._data[0]._pds[0].palette()
         return
 
     ##
@@ -115,11 +117,11 @@ class PGSReader:
                     case 0x16:  # Presentation Composition Segment
                         ds = DisplaySet(PresentationSegment(ts, dd))
                     case 0x17 if ds is not None:  # Window Definition Segment
-                        ds.addWDS(WindowSegment(ts, dd))
+                        ds.addWDS(WindowSegment(ts, dd), pos)
                     case 0x14 if ds is not None:  # Palette Definition Segment
-                        ds.addPDS(PaletteSegment(ts, dd))
+                        ds.addPDS(PaletteSegment(ts, dd), pos)
                     case 0x15 if ds is not None:  # Object Definition Segment
-                        ds.addODS(ObjectSegment(ts, dd))
+                        ds.addODS(ObjectSegment(ts, dd), pos)
                     case 0x80 if ds and ds.isValid():  # End of Display Set Segment
                         data.append(ds)
                         ds = None
@@ -151,47 +153,52 @@ class DisplaySet:
 
     def __init__(self, pcs: PresentationSegment) -> None:
         self._pcs: PresentationSegment = pcs
-        self._wds: list[WindowSegment] = []
-        self._pds: list[PaletteSegment] = []
-        self._ods: list[ObjectSegment] = []
+        self._wds: dict[int, QRect] = {}
+        self._pds: dict[int, PaletteSegment] = {}
+        self._ods: dict[int, ObjectSegment] = {}
         return
 
     def __repr__(self) -> str:
-        bits = []
-        if self._pcs:
-            bits.append("PCS")
-        bits.extend(["WDS"] * len(self._wds))
-        bits.extend(["PDS"] * len(self._pds))
-        bits.extend(["ODS"] * len(self._ods))
-        segments = ":".join(bits)
-        return f"<{self.__class__.__name__} segments={segments}>"
+        return (
+            f"<{self.__class__.__name__} composition={self._pcs.compNumber} "
+            f"windows={len(self._wds)} palettes={len(self._pds)} objects={len(self._ods)}>"
+        )
 
     @property
     def pcs(self) -> PresentationSegment:
         return self._pcs
 
     @property
-    def wds(self) -> list[WindowSegment]:
-        return self._wds
-
-    @property
     def timestamp(self) -> float:
         return self._pcs.timestamp
 
-    def addWDS(self, wds: WindowSegment) -> None:
-        self._wds.append(wds)
+    def addWDS(self, wds: WindowSegment, pos: int) -> None:
+        """Save all windows defined in the segment."""
+        if wds.valid:
+            for idx, rect in wds.windows():
+                self._wds[idx] = rect
+        else:
+            logger.warning("Skipping invalid WindowSegment at pos %d", pos)
         return
 
-    def addPDS(self, pds: PaletteSegment) -> None:
-        self._pds.append(pds)
+    def addPDS(self, pds: PaletteSegment, pos: int) -> None:
+        """Save the segment mapped to its id."""
+        if pds.valid:
+            self._pds[pds.id] = pds
+        else:
+            logger.warning("Skipping invalid PaletteSegment at pos %d", pos)
         return
 
-    def addODS(self, ods: ObjectSegment) -> None:
-        self._ods.append(ods)
+    def addODS(self, ods: ObjectSegment, pos: int) -> None:
+        """Save the segment mapped to its id."""
+        if ods.valid:
+            self._ods[ods.id] = ods
+        else:
+            logger.warning("Skipping invalid ObjectSegment at pos %d", pos)
         return
 
     def isValid(self) -> bool:
-        return self._pcs is not None and len(self._wds) > 0
+        return self._pcs is not None and self._pcs.valid and len(self._wds) > 0
 
     def isClearFrame(self) -> bool:
         return self._pcs.compState == COMP_NORMAL and self._pcs.compObjectCount == 0
@@ -215,6 +222,10 @@ class BaseSegment(ABC):
         )
 
     @property
+    def valid(self) -> bool:
+        return self._valid
+
+    @property
     def timestamp(self) -> float:
         return self._ts / 90000.0
 
@@ -231,9 +242,9 @@ class PresentationSegment(BaseSegment):
     """
 
     def validate(self) -> None:
-        """Length is 11 + n*16"""
+        """Length is 11 + n*8"""
         size = len(self._data)
-        self._valid = (size >= 11 and size % 16 == 11)
+        self._valid = (size >= 11 and size % 8 == 3)
         return
 
     @property
@@ -288,10 +299,17 @@ class PresentationSegment(BaseSegment):
 
         These also contain cropping information, which we don't care
         about, and skip. We only return the Object ID and Window ID of
-        each entry.
+        each entry. They also contain the x and y offset of each window
+        and object, but we already have that information elsewhere, so
+        we skip bytes 5 to 8.
         """
-        for pos in range(11, len(self._data), 16):
-            o, w = tuple(self._data[pos:pos+2])
+        pos = 11
+        size = len(self._data)
+        while pos < size:
+            o = int.from_bytes(self._data[pos:pos+2])    # Object ID
+            w = int.from_bytes(self._data[pos+2:pos+3])  # Window ID
+            f = int.from_bytes(self._data[pos+3:pos+4])  # Crop flag, only used for offset
+            pos += (16 if f == 0x40 else 8)
             yield o, w
         return
 
@@ -316,15 +334,16 @@ class WindowSegment(BaseSegment):
     def count(self) -> int:
         return int.from_bytes(self._data[0:1])
 
-    def getWindow(self, index: int) -> QRect:
-        """The rectangle and position defining a window."""
-        pos = 1 + index*9
-        return QRect(
-            int.from_bytes(self._data[pos+1:pos+3]),
-            int.from_bytes(self._data[pos+3:pos+5]),
-            int.from_bytes(self._data[pos+5:pos+7]),
-            int.from_bytes(self._data[pos+7:pos+9]),
-        )
+    def windows(self) -> Iterable[tuple[int, QRect]]:
+        """Iterate over windows defined in the segment."""
+        for pos in range(1, len(self._data), 9):
+            yield int.from_bytes(self._data[pos:pos+1]), QRect(
+                int.from_bytes(self._data[pos+1:pos+3]),
+                int.from_bytes(self._data[pos+3:pos+5]),
+                int.from_bytes(self._data[pos+5:pos+7]),
+                int.from_bytes(self._data[pos+7:pos+9]),
+            )
+        return
 
 
 class PaletteSegment(BaseSegment):
