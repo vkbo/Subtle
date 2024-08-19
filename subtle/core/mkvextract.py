@@ -43,7 +43,7 @@ class MkvExtract(QObject):
         return
 
     def extract(self, file: Path, track: str | int, output: Path) -> None:
-        """"""
+        """Start a subprocess running mkvextract."""
         if self._process is None:
             self._process = QProcess(self)
             self._process.readyReadStandardOutput.connect(self._processStdOut)
@@ -61,19 +61,19 @@ class MkvExtract(QObject):
 
     @pyqtSlot()
     def _processStdOut(self) -> None:
-        """"""
+        """Send update GUI signal when process prints output."""
         if self._process:
             text = self._process.readAllStandardOutput().data().decode("utf-8").strip()
             if text.startswith("#GUI#progress"):
-                self.processProgress.emit(checkInt(text[14:].rstrip("%"), 0))
+                self.processProgress.emit(checkInt(text[13:].strip().removesuffix("%"), 0))
         return
 
     @pyqtSlot()
     def _processFinished(self) -> None:
-        """"""
+        """Send finish signal when process exits."""
         if self._process:
             code = self._process.exitCode()
-            logger.debug("Ending process %d with return code %d", self._pid, code)
+            logger.debug("Process %d exited with return code %d", self._pid, code)
             self.processDone.emit(code)
             self._process = None
         return

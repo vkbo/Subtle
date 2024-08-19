@@ -1,0 +1,2 @@
+pyqt6>=6.4
+pyenchant>=3.0

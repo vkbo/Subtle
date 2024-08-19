@@ -94,5 +94,5 @@ class GuiSubtitleView(QWidget):
                         item.setText(self.C_TIME, f"{tss:.3f}")
                         item.setText(self.C_LENGTH, f"{tse - tss:.3f}")
                         self._frames.addTopLevelItem(item)
-                    print(entry)
+                    # print(entry)
         return

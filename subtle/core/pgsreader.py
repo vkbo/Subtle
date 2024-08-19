@@ -23,9 +23,11 @@ from __future__ import annotations
 import logging
 
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from pathlib import Path
 
 from PyQt6.QtCore import QRect, QSize
+from PyQt6.QtGui import QColor
 
 logger = logging.getLogger(__name__)
 
@@ -53,15 +55,18 @@ class PGSReader:
             logger.error("Failed to read file data", exc_info=e)
             self._data = []
 
+        self.debug()
+
         return
 
     def listEntries(self) -> list[dict]:
-        """"""
+        """Generate a list of all subtitle entries in the file."""
         data = []
         prev = None
-        for ds in self._data:
+        for i, ds in enumerate(self._data):
             ts = ds.pcs.timestamp
             curr = {
+                "index": i,
                 "start": ts,
                 "end": 0.0,
                 "epoch": ds.pcs.compState == COMP_EPOCH,
@@ -72,6 +77,13 @@ class PGSReader:
                 prev["end"] = ts
             prev = curr
         return data
+
+    def debug(self) -> None:
+        """Debug function."""
+        print("Ping!")
+        print(len(self._data))
+        self._data[0]._pds[0].palette()
+        return
 
     ##
     #  Internal Functions
@@ -148,8 +160,7 @@ class DisplaySet:
         bits = []
         if self._pcs:
             bits.append("PCS")
-        if self._wds:
-            bits.append("WDS")
+        bits.extend(["WDS"] * len(self._wds))
         bits.extend(["PDS"] * len(self._pds))
         bits.extend(["ODS"] * len(self._ods))
         segments = ":".join(bits)
@@ -183,7 +194,7 @@ class DisplaySet:
         return self._pcs is not None and len(self._wds) > 0
 
     def isClearFrame(self) -> bool:
-        return self._pcs.compState == COMP_NORMAL and self._pcs.compObjects == 0
+        return self._pcs.compState == COMP_NORMAL and self._pcs.compObjectCount == 0
 
 
 class BaseSegment(ABC):
@@ -213,14 +224,21 @@ class BaseSegment(ABC):
 
 
 class PresentationSegment(BaseSegment):
+    """Presentation Composition Segment
+
+    The Presentation Composition Segment is used for composing a sub
+    picture.
+    """
 
     def validate(self) -> None:
-        """"""
-        self._valid = len(self._data) >= 11
+        """Length is 11 + n*16"""
+        size = len(self._data)
+        self._valid = (size >= 11 and size % 16 == 11)
         return
 
     @property
     def size(self) -> QSize:
+        """Size of the video."""
         return QSize(
             int.from_bytes(self._data[0:2]),
             int.from_bytes(self._data[2:4]),
@@ -228,18 +246,65 @@ class PresentationSegment(BaseSegment):
 
     @property
     def compNumber(self) -> int:
+        """Number of this specific composition. It is incremented by one
+        every time a graphics update occurs.
+        """
         return int.from_bytes(self._data[5:7])
 
     @property
     def compState(self) -> int:
+        """Type of this composition. Allowed values are:
+        0x00: Normal
+        0x40: Acquisition Point
+        0x80: Epoch Start
+        """
         return int.from_bytes(self._data[7:8])
 
     @property
-    def compObjects(self) -> int:
+    def paletteUpdate(self) -> bool:
+        """Indicates if this PCS describes a Palette only Display
+        Update. Allowed values are:
+        0x00: False
+        0x80: True
+        """
+        return int.from_bytes(self._data[8:9]) == 0x80
+
+    @property
+    def paletteID(self) -> int:
+        """ID of the palette to be used in the Palette only Display
+        Update.
+        """
+        return int.from_bytes(self._data[9:10])
+
+    @property
+    def compObjectCount(self) -> int:
+        """Number of composition objects defined in this segment."""
         return int.from_bytes(self._data[10:11])
+
+    def compObjects(self) -> Iterable[tuple[int, int]]:
+        """The composition objects, also known as window information
+        objects, define the position on the screen of every image that
+        will be shown.
+
+        These also contain cropping information, which we don't care
+        about, and skip. We only return the Object ID and Window ID of
+        each entry.
+        """
+        for pos in range(11, len(self._data), 16):
+            o, w = tuple(self._data[pos:pos+2])
+            yield o, w
+        return
 
 
 class WindowSegment(BaseSegment):
+    """Window Definition Segment
+
+    This segment is used to define the rectangular area on the screen
+    where the sub picture will be shown. This rectangular area is called
+    a Window. This segment can define several windows, and all the
+    fields from Window ID up to Window Height will repeat each other in
+    the segment defining each window.
+    """
 
     def validate(self) -> None:
         """Length is 1 + n*9"""
@@ -252,6 +317,7 @@ class WindowSegment(BaseSegment):
         return int.from_bytes(self._data[0:1])
 
     def getWindow(self, index: int) -> QRect:
+        """The rectangle and position defining a window."""
         pos = 1 + index*9
         return QRect(
             int.from_bytes(self._data[pos+1:pos+3]),
@@ -262,16 +328,97 @@ class WindowSegment(BaseSegment):
 
 
 class PaletteSegment(BaseSegment):
+    """Palette Definition Segment
+
+    This segment is used to define a palette for color conversion.
+    """
+    __slots__ = ("_col")
 
     def validate(self) -> None:
-        """"""
-        self._valid = len(self._data) >= 7
+        """Length is 2 + n*5"""
+        size = len(self._data)
+        self._valid = (size >= 7 and size % 5 == 2)
+        self._col: dict[int, QColor] = {}
         return
+
+    @property
+    def id(self) -> int:
+        """ID of the palette."""
+        return int.from_bytes(self._data[0:1])
+
+    @property
+    def version(self) -> int:
+        """Version of this palette within the Epoch."""
+        return int.from_bytes(self._data[1:2])
+
+    def palette(self) -> list[QColor]:
+        """Generate a 256 colour palette from the object.
+
+        YUV conversion assuming Y range 16-235 and Cb/Cr range 16-240.
+        """
+        palette = [QColor(0, 0, 0, 0)] * 256
+        for pos in range(2, len(self._data), 5):
+            i, y, cr, cb, a = tuple(self._data[pos:pos+5])
+            y -= 16
+            cb -= 128
+            cr -= 128
+            r = 1.164*y + 1.793*cr
+            g = 1.164*y - 0.213*cb - 0.533*cr
+            b = 1.164*y + 2.112*cb
+            palette[i] = QColor(int(r), int(g), int(b), a)
+        return palette
 
 
 class ObjectSegment(BaseSegment):
+    """Object Definition Segment
+
+    This segment defines the graphics object. These are images with
+    rendered text on a transparent background.
+    """
 
     def validate(self) -> None:
-        """"""
+        """The header is 11 bytes, followed by the raw image data."""
         self._valid = len(self._data) >= 11
         return
+
+    @property
+    def id(self) -> int:
+        """ID of this object."""
+        return int.from_bytes(self._data[0:2])
+
+    @property
+    def version(self) -> int:
+        """Version of this object."""
+        return int.from_bytes(self._data[2:3])
+
+    @property
+    def sequence(self) -> int:
+        """If the image is split into a series of consecutive fragments,
+        the last fragment has this flag set. Possible values:
+        0x40: Last in sequence
+        0x80: First in sequence
+        0xC0: First and last in sequence (0x40 | 0x80)
+        """
+        return int.from_bytes(self._data[3:4])
+
+    @property
+    def length(self) -> int:
+        """The length of the Run-length Encoding (RLE) data buffer with
+        the compressed image data.
+        """
+        return int.from_bytes(self._data[4:7])
+
+    @property
+    def size(self) -> QSize:
+        """Size of the image."""
+        return QSize(
+            int.from_bytes(self._data[7:9]),
+            int.from_bytes(self._data[9:11]),
+        )
+
+    @property
+    def data(self) -> bytes:
+        """This is the image data compressed using Run-length Encoding (RLE).
+        The size of the data is defined in the Object Data Length field.
+        """
+        return self._data[11:]
