@@ -83,7 +83,7 @@ class PGSReader:
         print("Ping!")
         print(len(self._data))
         for ds in self._data[:20]:
-            print(ds, list(ds.pcs.compObjects()), ds._wds[0])
+            print(ds, list(ds.pcs.compObjects()), ds._wds[0], ds._ods)
         # self._data[0]._pds[0].palette()
         return
 
@@ -155,7 +155,7 @@ class DisplaySet:
         self._pcs: PresentationSegment = pcs
         self._wds: dict[int, QRect] = {}
         self._pds: dict[int, PaletteSegment] = {}
-        self._ods: dict[int, ObjectSegment] = {}
+        self._ods: dict[int, list[ObjectSegment]] = {}
         return
 
     def __repr__(self) -> str:
@@ -192,7 +192,10 @@ class DisplaySet:
     def addODS(self, ods: ObjectSegment, pos: int) -> None:
         """Save the segment mapped to its id."""
         if ods.valid:
-            self._ods[ods.id] = ods
+            if (oid := ods.id) not in self._ods:
+                self._ods[oid] = [ods]
+            else:
+                self._ods[oid].append(ods)
         else:
             logger.warning("Skipping invalid ObjectSegment at pos %d", pos)
         return
