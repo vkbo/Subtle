@@ -28,7 +28,7 @@ from pathlib import Path
 from time import time
 
 from PyQt6.QtCore import QRect, QSize
-from PyQt6.QtGui import QColor, QImage, qRgba
+from PyQt6.QtGui import QColor, QImage, QPainter, qRgba
 
 logger = logging.getLogger(__name__)
 
@@ -211,11 +211,17 @@ class DisplaySet:
         return self._pcs.compState == COMP_NORMAL and self._pcs.compObjectCount == 0
 
     def render(self) -> QImage:
-        """Render the content of the display set on a QImage."""
+        """Render the content of the display set on a QImage.
+
+        This performs the RLE decoding according to specifications in:
+        https://patents.google.com/patent/US7912305
+        """
         start = time()
         comp = self._pcs.compNumber
+
         image = QImage(self._pcs.size, QImage.Format.Format_ARGB32)
         image.fill(IMAGE_FILL)
+        painter = QPainter(image)
 
         if pds := self._pds.get(self._pcs.paletteID):
             palette = pds.palette()
@@ -240,41 +246,31 @@ class DisplaySet:
                     break
 
                 p = 0
-                x = wx = window.x()
-                y = window.y()
+                raw = bytearray()
                 data += b"\x00\x00\x00"  # In case data is truncated or malformed
                 while p < length:
                     if (b1 := data[p]) > 0x00:
-                        c = b1
-                        n = 1
+                        raw += palette[b1]
                         p += 1
                     elif (b2 := data[p+1]) <= 0x3f:
-                        c = 0
-                        n = b2
+                        raw += palette[0] * b2
                         p += 2
                     elif b2 <= 0x7f:
-                        c = 0
-                        n = (b2 & 0x3f)*256 + data[p+2]
+                        raw += palette[0] * ((b2 & 0x3f)*256 + data[p+2])
                         p += 3
                     elif b2 <= 0xbf:
-                        c = data[p+2]
-                        n = b2 & 0x3f
+                        raw += palette[data[p+2]] * (b2 & 0x3f)
                         p += 3
                     else:
-                        c = data[p+3]
-                        n = (b2 & 0x3f)*256 + data[p+2]
+                        raw += palette[data[p+3]] * ((b2 & 0x3f)*256 + data[p+2])
                         p += 4
 
-                    color = palette[c]
-                    for i in range(x, x + n):
-                        image.setPixel(i, y, color)
+                painter.drawImage(window.topLeft(), QImage(
+                    raw, size.width(), size.height(), QImage.Format.Format_ARGB32
+                ))
 
-                    x += n
-                    if c == 0 and n == 0:  # End of line
-                        x = wx
-                        y += 1
-
-        logger.info("Image rendered in %.3f ms", (time()-start)*1000)
+        painter.end()
+        logger.debug("Image rendered in %.3f ms", (time()-start)*1000)
 
         return image
 
@@ -445,22 +441,21 @@ class PaletteSegment(BaseSegment):
         """Version of this palette within the Epoch."""
         return int.from_bytes(self._data[1:2])
 
-    def palette(self) -> list[int]:
+    def palette(self) -> list[bytes]:
         """Generate a 256 colour palette from the object.
 
         YUV conversion assuming Y range 16-235 and Cb/Cr range 16-240.
         """
-        palette = [IMAGE_FILL] * 256
+        palette = [IMAGE_FILL.to_bytes(4, "little")] * 256
         for pos in range(2, len(self._data), 5):
-            i, y, cr, cb, a = tuple(self._data[pos:pos+5])
-            y -= 16
-            cb -= 128
-            cr -= 128
-            r = 1.164*y + 1.793*cr
-            g = 1.164*y - 0.213*cb - 0.533*cr
-            b = 1.164*y + 2.112*cb
-            palette[i] = qRgba(int(r), int(g), int(b), a)
-        # print([f"{p:08x}" for p in palette])
+            if a := self._data[pos+4]:  # We ignore transparent colours
+                y = self._data[pos+1] - 16
+                cr = self._data[pos+2] - 128
+                cb = self._data[pos+3] - 128
+                r = round(1.164*y + 1.793*cr)
+                g = round(1.164*y - 0.213*cb - 0.533*cr)
+                b = round(1.164*y + 2.112*cb)
+                palette[self._data[pos]] = qRgba(r, g, b, a).to_bytes(4, "little")
         return palette
 
 
