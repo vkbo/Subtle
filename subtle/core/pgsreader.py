@@ -27,7 +27,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from PyQt6.QtCore import QRect, QSize
-from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QColor, QImage, qRgba
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +84,7 @@ class PGSReader:
         print(len(self._data))
         for ds in self._data[:20]:
             print(ds, list(ds.pcs.compObjects()), ds._wds[0], ds._ods)
+            ds.render().save(f"image_{ds.pcs.compNumber}.png")
         # self._data[0]._pds[0].palette()
         return
 
@@ -205,6 +206,76 @@ class DisplaySet:
 
     def isClearFrame(self) -> bool:
         return self._pcs.compState == COMP_NORMAL and self._pcs.compObjectCount == 0
+
+    def render(self) -> QImage:
+        """Render the content of the display set on an image."""
+        comp = self._pcs.compNumber
+        image = QImage(self._pcs.size, QImage.Format.Format_ARGB32)
+
+        if pds := self._pds.get(self._pcs.paletteID):
+            palette = pds.palette() if pds else []
+        else:
+            logger.error("Unknown palette %d in composition %d", self._pcs.paletteID, comp)
+            return image
+
+        for oid, wid in self._pcs.compObjects():
+            data = b""
+            size = None
+            length = 0
+            for ods in self._ods.get(oid, []):
+                data += ods.rle
+                if ods.sequence & 0x80 == 0x80:
+                    size = ods.size
+                    length = ods.length
+
+            if length != len(data):
+                logger.warning("Inconsistent image data length in composition %d", comp)
+                length = len(data)
+            if size is None:
+                logger.error("Size not defined for composition %d", comp)
+                break
+            if (window := self._wds.get(wid)) is None:
+                logger.error("Unknown window %d in composition %d", wid, comp)
+                break
+
+            wx = window.x()
+            wy = window.y()
+            x = wx
+            y = wy
+            for c, n in iterRleData(data):
+                for i in range(x, x + n):
+                    image.setPixel(i, y, palette[c])
+                x += n
+                if c == 0 and n == 0:
+                    y += 1
+                    x = wx
+
+        return image
+
+
+def iterRleData(data: bytes) -> Iterable[tuple[int, int]]:
+    """Parse RLE data in chunks."""
+    pos = 0
+    size = len(data)
+    data += b"\x00\x00\x00"
+    while pos < size:
+        a, b, c, d = tuple(data[pos:pos+4])
+        if a > 0x00:
+            pos += 1
+            yield a, 1
+        elif b <= 0x3f:
+            pos += 2
+            yield 0, b
+        elif b <= 0x7f:
+            pos += 3
+            yield 0, (b & 0x3f)*256 + c
+        elif b <= 0xbf:
+            pos += 3
+            yield c, b & 0x3f
+        else:
+            pos += 4
+            yield d, (b & 0x3f)*256 + c
+    return
 
 
 class BaseSegment(ABC):
@@ -373,12 +444,12 @@ class PaletteSegment(BaseSegment):
         """Version of this palette within the Epoch."""
         return int.from_bytes(self._data[1:2])
 
-    def palette(self) -> list[QColor]:
+    def palette(self) -> list[int]:
         """Generate a 256 colour palette from the object.
 
         YUV conversion assuming Y range 16-235 and Cb/Cr range 16-240.
         """
-        palette = [QColor(0, 0, 0, 0)] * 256
+        palette = [0xff999999] * 256
         for pos in range(2, len(self._data), 5):
             i, y, cr, cb, a = tuple(self._data[pos:pos+5])
             y -= 16
@@ -387,7 +458,8 @@ class PaletteSegment(BaseSegment):
             r = 1.164*y + 1.793*cr
             g = 1.164*y - 0.213*cb - 0.533*cr
             b = 1.164*y + 2.112*cb
-            palette[i] = QColor(int(r), int(g), int(b), a)
+            palette[i] = qRgba(int(r), int(g), int(b), a)
+        # print([f"{p:08x}" for p in palette])
         return palette
 
 
@@ -426,9 +498,11 @@ class ObjectSegment(BaseSegment):
     @property
     def length(self) -> int:
         """The length of the Run-length Encoding (RLE) data buffer with
-        the compressed image data.
+        the compressed image data. The stored value also includes the
+        image size, which is the first 4 bytes of the first sequence.
+        We subtract this value here.
         """
-        return int.from_bytes(self._data[4:7])
+        return int.from_bytes(self._data[4:7]) - 4
 
     @property
     def size(self) -> QSize:
@@ -439,8 +513,9 @@ class ObjectSegment(BaseSegment):
         )
 
     @property
-    def data(self) -> bytes:
+    def rle(self) -> bytes:
         """This is the image data compressed using Run-length Encoding (RLE).
         The size of the data is defined in the Object Data Length field.
         """
-        return self._data[11:]
+        pos = 4 if self.sequence == 0x40 else 11
+        return self._data[pos:]
