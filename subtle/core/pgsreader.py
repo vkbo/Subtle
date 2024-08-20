@@ -25,6 +25,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from pathlib import Path
+from time import time
 
 from PyQt6.QtCore import QRect, QSize
 from PyQt6.QtGui import QColor, QImage, qRgba
@@ -34,6 +35,8 @@ logger = logging.getLogger(__name__)
 COMP_NORMAL = 0x00
 COMP_ACQ    = 0x40
 COMP_EPOCH  = 0x80
+
+IMAGE_FILL = 0xff999999
 
 
 class PGSReader:
@@ -83,9 +86,9 @@ class PGSReader:
         print("Ping!")
         print(len(self._data))
         for ds in self._data[:20]:
-            print(ds, list(ds.pcs.compObjects()), ds._wds[0], ds._ods)
-            ds.render().save(f"image_{ds.pcs.compNumber}.png")
-        # self._data[0]._pds[0].palette()
+            # print(ds, list(ds.pcs.compObjects()), ds._wds[0], ds._ods)
+            if not ds.isClearFrame():
+                ds.render().save(f"image_{ds.pcs.compNumber}.png")
         return
 
     ##
@@ -208,74 +211,72 @@ class DisplaySet:
         return self._pcs.compState == COMP_NORMAL and self._pcs.compObjectCount == 0
 
     def render(self) -> QImage:
-        """Render the content of the display set on an image."""
+        """Render the content of the display set on a QImage."""
+        start = time()
         comp = self._pcs.compNumber
         image = QImage(self._pcs.size, QImage.Format.Format_ARGB32)
+        image.fill(IMAGE_FILL)
 
         if pds := self._pds.get(self._pcs.paletteID):
-            palette = pds.palette() if pds else []
-        else:
-            logger.error("Unknown palette %d in composition %d", self._pcs.paletteID, comp)
-            return image
+            palette = pds.palette()
+            for oid, wid in self._pcs.compObjects():
+                data = b""
+                size = None
+                length = 0
+                for ods in self._ods.get(oid, []):
+                    data += ods.rle
+                    if ods.sequence & 0x80 == 0x80:
+                        size = ods.size
+                        length = ods.length
 
-        for oid, wid in self._pcs.compObjects():
-            data = b""
-            size = None
-            length = 0
-            for ods in self._ods.get(oid, []):
-                data += ods.rle
-                if ods.sequence & 0x80 == 0x80:
-                    size = ods.size
-                    length = ods.length
+                if length != len(data):
+                    logger.warning("Inconsistent image data length in composition %d", comp)
+                    length = len(data)  # Try to render what we have
+                if size is None:
+                    logger.error("Size not defined for composition %d", comp)
+                    break
+                if (window := self._wds.get(wid)) is None:
+                    logger.error("Unknown window %d in composition %d", wid, comp)
+                    break
 
-            if length != len(data):
-                logger.warning("Inconsistent image data length in composition %d", comp)
-                length = len(data)
-            if size is None:
-                logger.error("Size not defined for composition %d", comp)
-                break
-            if (window := self._wds.get(wid)) is None:
-                logger.error("Unknown window %d in composition %d", wid, comp)
-                break
+                p = 0
+                x = wx = window.x()
+                y = window.y()
+                data += b"\x00\x00\x00"  # In case data is truncated or malformed
+                while p < length:
+                    if (b1 := data[p]) > 0x00:
+                        c = b1
+                        n = 1
+                        p += 1
+                    elif (b2 := data[p+1]) <= 0x3f:
+                        c = 0
+                        n = b2
+                        p += 2
+                    elif b2 <= 0x7f:
+                        c = 0
+                        n = (b2 & 0x3f)*256 + data[p+2]
+                        p += 3
+                    elif b2 <= 0xbf:
+                        c = data[p+2]
+                        n = b2 & 0x3f
+                        p += 3
+                    else:
+                        c = data[p+3]
+                        n = (b2 & 0x3f)*256 + data[p+2]
+                        p += 4
 
-            wx = window.x()
-            wy = window.y()
-            x = wx
-            y = wy
-            for c, n in iterRleData(data):
-                for i in range(x, x + n):
-                    image.setPixel(i, y, palette[c])
-                x += n
-                if c == 0 and n == 0:
-                    y += 1
-                    x = wx
+                    color = palette[c]
+                    for i in range(x, x + n):
+                        image.setPixel(i, y, color)
+
+                    x += n
+                    if c == 0 and n == 0:  # End of line
+                        x = wx
+                        y += 1
+
+        logger.info("Image rendered in %.3f ms", (time()-start)*1000)
 
         return image
-
-
-def iterRleData(data: bytes) -> Iterable[tuple[int, int]]:
-    """Parse RLE data in chunks."""
-    pos = 0
-    size = len(data)
-    data += b"\x00\x00\x00"
-    while pos < size:
-        a, b, c, d = tuple(data[pos:pos+4])
-        if a > 0x00:
-            pos += 1
-            yield a, 1
-        elif b <= 0x3f:
-            pos += 2
-            yield 0, b
-        elif b <= 0x7f:
-            pos += 3
-            yield 0, (b & 0x3f)*256 + c
-        elif b <= 0xbf:
-            pos += 3
-            yield c, b & 0x3f
-        else:
-            pos += 4
-            yield d, (b & 0x3f)*256 + c
-    return
 
 
 class BaseSegment(ABC):
@@ -449,7 +450,7 @@ class PaletteSegment(BaseSegment):
 
         YUV conversion assuming Y range 16-235 and Cb/Cr range 16-240.
         """
-        palette = [0xff999999] * 256
+        palette = [IMAGE_FILL] * 256
         for pos in range(2, len(self._data), 5):
             i, y, cr, cb, a = tuple(self._data[pos:pos+5])
             y -= 16
