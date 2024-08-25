@@ -25,9 +25,9 @@ import logging
 from pathlib import Path
 
 from subtle import CONFIG
-from subtle.core.pgsreader import PGSReader
+from subtle.core.pgsreader import DisplaySet, PGSReader
 
-from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
@@ -35,10 +35,15 @@ logger = logging.getLogger(__name__)
 
 class GuiSubtitleView(QWidget):
 
+    C_DATA   = 0
     C_ID     = 0
     C_TIME   = 1
     C_LENGTH = 2
     C_TEXT   = 3
+
+    D_INDEX  = Qt.ItemDataRole.UserRole
+
+    displaySetSelected = pyqtSignal(DisplaySet)
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
@@ -46,9 +51,11 @@ class GuiSubtitleView(QWidget):
         self._reader = None
 
         self._frames = QTreeWidget(self)
+        self._frames.setIndentation(0)
         self._frames.setHeaderLabels([
             "#", self.tr("TimeStamp"), self.tr("Length"), self.tr("Text")
         ])
+        self._frames.clicked.connect(self._itemClicked)
 
         columns = self._frames.columnCount()
         for i, w in enumerate(CONFIG.getSizes("subsViewColumns")):
@@ -91,8 +98,22 @@ class GuiSubtitleView(QWidget):
                     tse = entry.get("end", 0.0)
                     if not entry.get("clear", False):
                         item = QTreeWidgetItem()
+                        item.setText(self.C_ID, str(self._frames.topLevelItemCount()))
                         item.setText(self.C_TIME, f"{tss:.3f}")
                         item.setText(self.C_LENGTH, f"{tse - tss:.3f}")
+                        item.setData(self.C_DATA, self.D_INDEX, entry.get("index", -1))
                         self._frames.addTopLevelItem(item)
                     # print(entry)
+        return
+
+    ##
+    #  Private Slots
+    ##
+
+    @pyqtSlot(QModelIndex)
+    def _itemClicked(self, index: QModelIndex) -> None:
+        """Process track double click in the media view."""
+        if self._reader and (item := self._frames.itemFromIndex(index)):
+            if ds := self._reader.displaySet(item.data(self.C_DATA, self.D_INDEX)):
+                self.displaySetSelected.emit(ds)
         return

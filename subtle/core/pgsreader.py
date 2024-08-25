@@ -36,7 +36,7 @@ COMP_NORMAL = 0x00
 COMP_ACQ    = 0x40
 COMP_EPOCH  = 0x80
 
-IMAGE_FILL = 0xff999999
+IMAGE_FILL = 0xff666666
 
 
 class PGSReader:
@@ -62,6 +62,12 @@ class PGSReader:
 
         return
 
+    def displaySet(self, index: int) -> DisplaySet | None:
+        """Return a display set by its index."""
+        if 0 <= index < len(self._data):
+            return self._data[index]
+        return None
+
     def listEntries(self) -> list[dict]:
         """Generate a list of all subtitle entries in the file."""
         data = []
@@ -83,12 +89,12 @@ class PGSReader:
 
     def debug(self) -> None:
         """Debug function."""
-        print("Ping!")
-        print(len(self._data))
-        for ds in self._data[:20]:
-            # print(ds, list(ds.pcs.compObjects()), ds._wds[0], ds._ods)
-            if not ds.isClearFrame():
-                ds.render().save(f"image_{ds.pcs.compNumber}.png")
+        # print("Ping!")
+        # print(len(self._data))
+        # for ds in self._data[:20]:
+        #     # print(ds, list(ds.pcs.compObjects()), ds._wds[0], ds._ods)
+        #     if not ds.isClearFrame():
+        #         ds.render().save(f"image_{ds.pcs.compNumber}.png")
         return
 
     ##
@@ -153,13 +159,14 @@ class PGSReader:
 
 class DisplaySet:
 
-    __slots__ = ("_pcs", "_wds", "_pds", "_ods")
+    __slots__ = ("_pcs", "_wds", "_pds", "_ods", "_image")
 
     def __init__(self, pcs: PresentationSegment) -> None:
         self._pcs: PresentationSegment = pcs
         self._wds: dict[int, QRect] = {}
         self._pds: dict[int, PaletteSegment] = {}
         self._ods: dict[int, list[ObjectSegment]] = {}
+        self._image: QImage | None = None
         return
 
     def __repr__(self) -> str:
@@ -216,17 +223,20 @@ class DisplaySet:
         This performs the RLE decoding according to specifications in:
         https://patents.google.com/patent/US7912305
         """
+        if isinstance(self._image, QImage):
+            return self._image
+
         start = time()
         comp = self._pcs.compNumber
 
-        image = QImage(self._pcs.size, QImage.Format.Format_ARGB32)
-        image.fill(IMAGE_FILL)
-        painter = QPainter(image)
+        self._image = QImage(self._pcs.size, QImage.Format.Format_ARGB32)
+        self._image.fill(IMAGE_FILL)
+        painter = QPainter(self._image)
 
         if pds := self._pds.get(self._pcs.paletteID):
             palette = pds.palette()
             for oid, wid in self._pcs.compObjects():
-                data = b""
+                data = bytearray()
                 size = None
                 length = 0
                 for ods in self._ods.get(oid, []):
@@ -272,7 +282,7 @@ class DisplaySet:
         painter.end()
         logger.debug("Image rendered in %.3f ms", (time()-start)*1000)
 
-        return image
+        return self._image
 
 
 class BaseSegment(ABC):

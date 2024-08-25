@@ -24,11 +24,15 @@ import logging
 import sys
 
 from subtle import CONFIG
+from subtle.core.pgsreader import DisplaySet
 from subtle.gui.filetree import GuiFileTree
+from subtle.gui.imageviewer import GuiImageViewer
+from subtle.gui.mediaplayer import GuiMediaPlayer
 from subtle.gui.mediaview import GuiMediaView
 from subtle.gui.subsview import GuiSubtitleView
+from subtle.gui.texteditor import GuiTextEditor
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSlot
 from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import QMainWindow, QSplitter
 
@@ -62,11 +66,15 @@ class GuiMain(QMainWindow):
         self.fileTree = GuiFileTree(self)
         self.mediaView = GuiMediaView(self)
         self.subsView = GuiSubtitleView(self)
+        self.mediaPlayer = GuiMediaPlayer(self)
+        self.imageViewer = GuiImageViewer(self)
+        self.textEditor = GuiTextEditor(self)
 
         # Signals
         # =======
         self.fileTree.newFileSelection.connect(self.mediaView.setCurrentFile)
         self.mediaView.newTrackAvailable.connect(self.subsView.loadTrack)
+        self.subsView.displaySetSelected.connect(self._displaySetSelected)
 
         # Layout
         # ======
@@ -76,9 +84,16 @@ class GuiMain(QMainWindow):
         self.splitContent.addWidget(self.subsView)
         self.splitContent.setSizes(CONFIG.getSizes("contentSplit"))
 
+        self.splitView = QSplitter(Qt.Orientation.Vertical, self)
+        self.splitView.addWidget(self.mediaPlayer)
+        self.splitView.addWidget(self.imageViewer)
+        self.splitView.addWidget(self.textEditor)
+        self.splitView.setSizes(CONFIG.getSizes("viewSplit"))
+
         self.splitMain = QSplitter(Qt.Orientation.Horizontal, self)
         self.splitMain.addWidget(self.fileTree)
         self.splitMain.addWidget(self.splitContent)
+        self.splitMain.addWidget(self.splitView)
         self.splitMain.setSizes(CONFIG.getSizes("mainSplit"))
 
         self.setCentralWidget(self.splitMain)
@@ -101,7 +116,20 @@ class GuiMain(QMainWindow):
         CONFIG.setSize("mainWindow", self.size())
         CONFIG.setSizes("mainSplit", self.splitMain.sizes())
         CONFIG.setSizes("contentSplit", self.splitContent.sizes())
+        CONFIG.setSizes("viewSplit", self.splitView.sizes())
         CONFIG.save()
         CONFIG.cleanup()
         event.accept()
+        return
+
+    ##
+    #  Private Slots
+    ##
+
+    @pyqtSlot(DisplaySet)
+    def _displaySetSelected(self, ds: DisplaySet) -> None:
+        """"""
+        logger.info("Selected display set with composition number %d", ds.pcs.compNumber)
+        image = ds.render()
+        self.imageViewer.setImage(image)
         return
