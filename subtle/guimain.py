@@ -97,6 +97,7 @@ class GuiMain(QMainWindow):
 
         # Signals
         # =======
+
         self.fileTree.newFileSelection.connect(self._newFileSelected)
         self.fileTree.newFileSelection.connect(self.mediaView.setCurrentFile)
         self.fileTree.newFileSelection.connect(self.subsView.newFileSelected)

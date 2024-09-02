@@ -204,7 +204,7 @@ class DisplaySet:
     def isClearFrame(self) -> bool:
         return self._pcs.compState == COMP_NORMAL and self._pcs.compObjectCount == 0
 
-    def render(self) -> QImage:
+    def render(self, crop: bool = True) -> QImage:
         """Render the content of the display set on a QImage.
 
         This performs the RLE decoding according to specifications in:
@@ -215,27 +215,33 @@ class DisplaySet:
 
         start = time()
         comp = self._pcs.compNumber
+        size = self._pcs.size
 
-        self._image = QImage(self._pcs.size, QImage.Format.Format_ARGB32)
-        self._image.fill(IMAGE_FILL)
-        painter = QPainter(self._image)
+        x = size.width()
+        y = size.height()
+        w = 0
+        h = 0
+
+        image = QImage(size, QImage.Format.Format_ARGB32)
+        image.fill(IMAGE_FILL)
+        painter = QPainter(image)
 
         if pds := self._pds.get(self._pcs.paletteID):
             palette = pds.palette()
             for oid, wid in self._pcs.compObjects():
                 data = bytearray()
-                size = None
+                box = None
                 length = 0
                 for ods in self._ods.get(oid, []):
                     data += ods.rle
                     if ods.sequence & 0x80 == 0x80:
-                        size = ods.size
+                        box = ods.size
                         length = ods.length
 
                 if length != len(data):
                     logger.warning("Inconsistent image data length in composition %d", comp)
                     length = len(data)  # Try to render what we have
-                if size is None:
+                if box is None:
                     logger.error("Size not defined for composition %d", comp)
                     break
                 if (window := self._wds.get(wid)) is None:
@@ -262,9 +268,24 @@ class DisplaySet:
                         raw += palette[data[p+3]] * ((b2 & 0x3f)*256 + data[p+2])
                         p += 4
 
-                painter.drawImage(window.topLeft(), QImage(
-                    raw, size.width(), size.height(), QImage.Format.Format_ARGB32
-                ))
+                bx = window.topLeft().x()
+                by = window.topLeft().y()
+                bw = box.width()
+                bh = box.height()
+
+                x = min(bx, x)
+                y = min(by, y)
+                w = max(bw, w)
+                h = max(bh, h)
+
+                painter.drawImage(bx, by, QImage(raw, bw, bh, QImage.Format.Format_ARGB32))
+
+        x = max(0, x-10)
+        y = max(0, y-10)
+        w = min(size.width(), w+20)
+        h = min(size.height(), h+20)
+
+        self._image = image.copy(x, y, w, h) if crop else image
 
         painter.end()
         logger.debug("Image rendered in %.3f ms", (time()-start)*1000)

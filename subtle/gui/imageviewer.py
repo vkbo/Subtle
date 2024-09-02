@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 
-from PyQt6.QtCore import QRectF, Qt
+from PyQt6.QtCore import QRect, QRectF, Qt
 from PyQt6.QtGui import QImage, QPixmap, QResizeEvent
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView, QHBoxLayout, QWidget
 
@@ -34,13 +34,10 @@ class GuiImageViewer(QWidget):
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
-        self._imageSize = QRectF(0.0, 0.0, 0.0, 0.0)
+        self._imageSize = QRect(0, 0, 0, 0)
 
         # Image Widget
-        self.imageScene = QGraphicsScene(self)
-
         self.imageView = QGraphicsView(self)
-        self.imageView.setScene(self.imageScene)
         self.imageView.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.imageView.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
@@ -54,9 +51,11 @@ class GuiImageViewer(QWidget):
 
     def setImage(self, image: QImage) -> None:
         """Display an image of subtitles."""
-        self._imageSize = QRectF(image.rect())
-        self.imageScene.addPixmap(QPixmap.fromImage(image))
-        self.imageScene.setSceneRect(self._imageSize)
+        self._imageSize = image.rect()
+        scene = QGraphicsScene(self)
+        scene.addPixmap(QPixmap.fromImage(image))
+        scene.setSceneRect(QRectF(self._imageSize))
+        self.imageView.setScene(scene)
         self._updateSizes()
         return
 
@@ -65,7 +64,7 @@ class GuiImageViewer(QWidget):
     ##
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        """"""
+        """Capture resize to update image scaling."""
         super().resizeEvent(event)
         self._updateSizes()
         return
@@ -75,6 +74,7 @@ class GuiImageViewer(QWidget):
     ##
 
     def _updateSizes(self) -> None:
-        """"""
-        self.imageView.fitInView(self._imageSize, Qt.AspectRatioMode.KeepAspectRatio)
+        """Scale down the image if it does not fit."""
+        if not self.imageView.rect().contains(self._imageSize):
+            self.imageView.fitInView(QRectF(self._imageSize), Qt.AspectRatioMode.KeepAspectRatio)
         return
