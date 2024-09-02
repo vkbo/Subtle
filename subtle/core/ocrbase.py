@@ -1,6 +1,6 @@
 """
-Subtle – GUI Text Editor
-========================
+Subtle – OCR Base Class
+=======================
 
 This file is a part of Subtle
 Copyright 2024, Veronica Berglyd Olsen
@@ -22,31 +22,19 @@ from __future__ import annotations
 
 import logging
 
-from PyQt6.QtWidgets import QPlainTextEdit, QVBoxLayout, QWidget
+from abc import ABC, abstractmethod
+
+from PyQt6.QtGui import QImage
 
 logger = logging.getLogger(__name__)
 
 
-class GuiTextEditor(QWidget):
+class OCRBase(ABC):
 
-    def __init__(self, parent: QWidget) -> None:
-        super().__init__(parent)
-
-        self.textEdit = QPlainTextEdit(self)
-
-        font = self.textEdit.font()
-        font.setPointSizeF(font.pointSizeF() * 3)
-        self.textEdit.setFont(font)
-
-        # Assemble
-        self.outerBox = QVBoxLayout()
-        self.outerBox.addWidget(self.textEdit)
-
-        self.setLayout(self.outerBox)
-
+    def __init__(self) -> None:
+        self._cache: dict[int, list[str]] = {}
         return
 
-    def setText(self, text: list[str]) -> None:
-        """"""
-        self.textEdit.setPlainText("\n".join(text))
-        return
+    @abstractmethod
+    def processImage(self, index: int, image: QImage, lang: list[str]) -> list[str]:
+        raise NotImplementedError

@@ -23,8 +23,12 @@ from __future__ import annotations
 import logging
 import sys
 
+from pathlib import Path
+
 from subtle import CONFIG
+from subtle.core.ocrbase import OCRBase
 from subtle.core.pgsreader import DisplaySet
+from subtle.core.tesseract import TesseractOCR
 from subtle.gui.filetree import GuiFileTree
 from subtle.gui.imageviewer import GuiImageViewer
 from subtle.gui.mediaplayer import GuiMediaPlayer
@@ -70,8 +74,14 @@ class GuiMain(QMainWindow):
         self.imageViewer = GuiImageViewer(self)
         self.textEditor = GuiTextEditor(self)
 
+        # Processing
+        # ==========
+
+        self.ocrTool: OCRBase | None = None
+
         # Signals
         # =======
+        self.fileTree.newFileSelection.connect(self._newFileSelected)
         self.fileTree.newFileSelection.connect(self.mediaView.setCurrentFile)
         self.mediaView.newTrackAvailable.connect(self.subsView.loadTrack)
         self.subsView.displaySetSelected.connect(self._displaySetSelected)
@@ -126,10 +136,20 @@ class GuiMain(QMainWindow):
     #  Private Slots
     ##
 
-    @pyqtSlot(DisplaySet)
-    def _displaySetSelected(self, ds: DisplaySet) -> None:
+    @pyqtSlot(Path)
+    def _newFileSelected(self, path: Path) -> None:
+        """"""
+        self.ocrTool = TesseractOCR()
+        return
+
+    @pyqtSlot(int, DisplaySet)
+    def _displaySetSelected(self, index: int, ds: DisplaySet) -> None:
         """"""
         logger.info("Selected display set with composition number %d", ds.pcs.compNumber)
         image = ds.render()
         self.imageViewer.setImage(image)
+        if self.ocrTool:
+            text = self.ocrTool.processImage(index, image, ["eng"])
+            self.subsView.setText(ds, text)
+            self.textEditor.setText(text)
         return

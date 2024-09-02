@@ -76,6 +76,7 @@ class PGSReader:
             ts = ds.pcs.timestamp
             curr = {
                 "index": i,
+                "num": ds.pcs.compNumber,
                 "start": ts,
                 "end": 0.0,
                 "epoch": ds.pcs.compState == COMP_EPOCH,

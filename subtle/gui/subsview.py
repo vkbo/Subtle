@@ -41,14 +41,18 @@ class GuiSubtitleView(QWidget):
     C_LENGTH = 2
     C_TEXT   = 3
 
-    D_INDEX  = Qt.ItemDataRole.UserRole
+    D_INDEX = Qt.ItemDataRole.UserRole
+    D_START = Qt.ItemDataRole.UserRole + 1
+    D_END   = Qt.ItemDataRole.UserRole + 2
+    D_TEXT  = Qt.ItemDataRole.UserRole + 3
 
-    displaySetSelected = pyqtSignal(DisplaySet)
+    displaySetSelected = pyqtSignal(int, DisplaySet)
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
         self._reader = None
+        self._map: dict[int, QTreeWidgetItem] = {}
 
         self._frames = QTreeWidget(self)
         self._frames.setIndentation(0)
@@ -81,6 +85,13 @@ class GuiSubtitleView(QWidget):
         ])
         return
 
+    def setText(self, ds: DisplaySet, text: list[str]) -> None:
+        """"""
+        if item := self._map.get(ds.pcs.compNumber):
+            item.setText(self.C_TEXT, "\u21b2".join(text))
+            item.setData(self.C_DATA, self.D_TEXT, text)
+        return
+
     ##
     #  Public Slots
     ##
@@ -93,16 +104,21 @@ class GuiSubtitleView(QWidget):
                 logger.info("Processing PGS subtitle file")
                 self._reader = PGSReader(path)
                 self._frames.clear()
+                self._map.clear()
                 for entry in self._reader.listEntries():
                     tss = entry.get("start", 0.0)
                     tse = entry.get("end", 0.0)
+                    num = entry.get("num", -1)
                     if not entry.get("clear", False):
                         item = QTreeWidgetItem()
                         item.setText(self.C_ID, str(self._frames.topLevelItemCount()))
                         item.setText(self.C_TIME, f"{tss:.3f}")
                         item.setText(self.C_LENGTH, f"{tse - tss:.3f}")
                         item.setData(self.C_DATA, self.D_INDEX, entry.get("index", -1))
+                        item.setData(self.C_DATA, self.D_START, tss)
+                        item.setData(self.C_DATA, self.D_END, tse)
                         self._frames.addTopLevelItem(item)
+                        self._map[num] = item
                     # print(entry)
         return
 
@@ -115,5 +131,5 @@ class GuiSubtitleView(QWidget):
         """Process track double click in the media view."""
         if self._reader and (item := self._frames.itemFromIndex(index)):
             if ds := self._reader.displaySet(item.data(self.C_DATA, self.D_INDEX)):
-                self.displaySetSelected.emit(ds)
+                self.displaySetSelected.emit(index.row(), ds)
         return
