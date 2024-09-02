@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import sys
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from subtle import CONFIG
@@ -41,6 +42,14 @@ from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import QMainWindow, QSplitter
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class CurrentObject:
+
+    mediaFile: Path
+    trackFile: Path | None = None
+    trackInfo: dict | None = None
 
 
 class GuiMain(QMainWindow):
@@ -64,6 +73,13 @@ class GuiMain(QMainWindow):
         logger.debug("Ready: GUI")
         logger.info("Subtle is ready ...")
 
+        # Cached Data
+        # ===========
+
+        self._mediaFile: Path | None = None
+        self._trackFile: Path | None = None
+        self._trackInfo: dict = {}
+
         # Gui Elements
         # ============
 
@@ -83,6 +99,8 @@ class GuiMain(QMainWindow):
         # =======
         self.fileTree.newFileSelection.connect(self._newFileSelected)
         self.fileTree.newFileSelection.connect(self.mediaView.setCurrentFile)
+        self.fileTree.newFileSelection.connect(self.subsView.newFileSelected)
+        self.mediaView.newTrackAvailable.connect(self._newTrackSelected)
         self.mediaView.newTrackAvailable.connect(self.subsView.loadTrack)
         self.subsView.displaySetSelected.connect(self._displaySetSelected)
 
@@ -136,9 +154,17 @@ class GuiMain(QMainWindow):
     #  Private Slots
     ##
 
+    @pyqtSlot(Path, dict)
+    def _newTrackSelected(self, path: Path, info: dict) -> None:
+        """A new track has been selected."""
+        self._trackFile = path
+        self._trackInfo = info
+        return
+
     @pyqtSlot(Path)
     def _newFileSelected(self, path: Path) -> None:
         """"""
+        self._mediaFile = path
         self.ocrTool = TesseractOCR()
         return
 
@@ -148,8 +174,9 @@ class GuiMain(QMainWindow):
         logger.info("Selected display set with composition number %d", ds.pcs.compNumber)
         image = ds.render()
         self.imageViewer.setImage(image)
-        if self.ocrTool:
-            text = self.ocrTool.processImage(index, image, ["eng"])
+        if self.ocrTool and (info := self._trackInfo):
+            lang = info.get("properties", {}).get("language", "und")
+            text = self.ocrTool.processImage(index, image, [lang])
             self.subsView.setText(ds, text)
             self.textEditor.setText(text)
         return

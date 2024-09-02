@@ -43,10 +43,11 @@ class GuiMediaView(QWidget):
     C_TYPE    = 1
     C_CODEC   = 2
     C_LANG    = 3
-    C_LABEL   = 4
-    C_ENABLED = 5
-    C_DEFAULT = 6
-    C_FORCED  = 7
+    C_LENGTH  = 4
+    C_LABEL   = 5
+    C_ENABLED = 6
+    C_DEFAULT = 7
+    C_FORCED  = 8
 
     newTrackAvailable = pyqtSignal(Path, dict)
 
@@ -65,8 +66,8 @@ class GuiMediaView(QWidget):
         self._tracks = QTreeWidget(self)
         self._tracks.setIndentation(0)
         self._tracks.setHeaderLabels([
-            "#", self.tr("Type"), self.tr("Codec"), self.tr("Lang"), self.tr("Label"),
-            self.tr("Enabled"), self.tr("Default"), self.tr("Forced"),
+            "#", self.tr("Type"), self.tr("Codec"), self.tr("Lang"), self.tr("Length"),
+            self.tr("Label"), self.tr("Enabled"), self.tr("Default"), self.tr("Forced"),
         ])
         self._tracks.doubleClicked.connect(self._itemDoubleClicked)
 
@@ -123,8 +124,7 @@ class GuiMediaView(QWidget):
     @pyqtSlot(QModelIndex)
     def _itemDoubleClicked(self, index: QModelIndex) -> None:
         """Process track double click in the media view."""
-        if self._current:
-            item = self._tracks.itemFromIndex(index)
+        if self._current and (item := self._tracks.itemFromIndex(index)):
             track = item.text(self.C_TRACK)
             mkvFile = self._current.filePath
             outFile = self._current.dumpFile(track)
@@ -140,7 +140,7 @@ class GuiMediaView(QWidget):
 
     @pyqtSlot(int)
     def _extractProgress(self, value: int) -> None:
-        """"""
+        """Process track extraction progress count."""
         if (file := self._trackFile) and (info := self._trackInfo):
             tID    = str(info.get("id", "-"))
             tType  = info.get("type", self._trUnknown).title()
@@ -152,7 +152,7 @@ class GuiMediaView(QWidget):
 
     @pyqtSlot()
     def _extractFinished(self) -> None:
-        """"""
+        """Process track extraction finished."""
         if (file := self._trackFile) and (info := self._trackInfo):
             self.newTrackAvailable.emit(file, info)
         return
@@ -172,6 +172,7 @@ class GuiMediaView(QWidget):
                 tType    = track.get("type", self._trUnknown).title()
                 tCodec   = track.get("codec", self._trUnknown)
                 tLang    = props.get("language", "und")
+                tLength  = props.get("tag_duration", "Unknown")[:8]
                 tLabel   = props.get("track_name", "")
                 tEnabled = self._trYes if props.get("enabled_track", False) else ""
                 tDefault = self._trYes if props.get("default_track", False) else ""
@@ -182,6 +183,7 @@ class GuiMediaView(QWidget):
                 item.setText(self.C_TYPE, tType)
                 item.setText(self.C_CODEC, tCodec)
                 item.setText(self.C_LANG, tLang)
+                item.setText(self.C_LENGTH, tLength)
                 item.setText(self.C_LABEL, tLabel)
                 item.setText(self.C_ENABLED, tEnabled)
                 item.setText(self.C_DEFAULT, tDefault)
