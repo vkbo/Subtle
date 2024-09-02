@@ -50,15 +50,12 @@ class PGSReader:
 
         self._path = path
         self._data: list[DisplaySet] = []
-        self._epochs: list[int] = []
 
         try:
             self._readData()
         except Exception as e:
             logger.error("Failed to read file data", exc_info=e)
             self._data = []
-
-        self.debug()
 
         return
 
@@ -87,16 +84,6 @@ class PGSReader:
                 prev["end"] = ts
             prev = curr
         return data
-
-    def debug(self) -> None:
-        """Debug function."""
-        # print("Ping!")
-        # print(len(self._data))
-        # for ds in self._data[:20]:
-        #     # print(ds, list(ds.pcs.compObjects()), ds._wds[0], ds._ods)
-        #     if not ds.isClearFrame():
-        #         ds.render().save(f"image_{ds.pcs.compNumber}.png")
-        return
 
     ##
     #  Internal Functions
@@ -142,18 +129,7 @@ class PGSReader:
             if ds is not None:
                 logger.warning("Data past last END segment, PGS data may be truncated")
 
-        # Compute frames
-        epochs: list[int] = []
-        for i, ds in enumerate(data):
-            if ds.pcs.compState == COMP_EPOCH:
-                epochs.append(i)
-
-        epochs.append(len(data))
-
         self._data = data
-        self._epochs = epochs
-
-        # print("\n".join(str(x) for x in self._data))
 
         return
 

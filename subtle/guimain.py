@@ -114,9 +114,9 @@ class GuiMain(QMainWindow):
         self.splitContent.setSizes(CONFIG.getSizes("contentSplit"))
 
         self.splitView = QSplitter(Qt.Orientation.Vertical, self)
-        self.splitView.addWidget(self.mediaPlayer)
         self.splitView.addWidget(self.imageViewer)
         self.splitView.addWidget(self.textEditor)
+        self.splitView.addWidget(self.mediaPlayer)
         self.splitView.setSizes(CONFIG.getSizes("viewSplit"))
 
         self.splitMain = QSplitter(Qt.Orientation.Horizontal, self)
@@ -181,5 +181,5 @@ class GuiMain(QMainWindow):
                 text = self.ocrTool.processImage(index, image, [lang])
                 ds.setText(text)
             self.subsView.updateText(ds)
-            self.textEditor.setText(ds, index)
+            self.textEditor.setText(ds)
         return

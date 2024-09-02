@@ -24,8 +24,8 @@ import logging
 
 from subtle.core.pgsreader import DisplaySet
 
-from PyQt6.QtCore import pyqtSignal, pyqtSlot
-from PyQt6.QtWidgets import QHBoxLayout, QPlainTextEdit, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
+from PyQt6.QtWidgets import QTextEdit, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
 
@@ -39,37 +39,36 @@ class GuiTextEditor(QWidget):
         super().__init__(parent)
 
         self._ds: DisplaySet | None = None
-        self._index = -1
+        self._block = False
 
         # Editor
-        self.textEdit = QPlainTextEdit(self)
+        self.textEdit = QTextEdit(self)
+        self.textEdit.textChanged.connect(self._textChanged)
+
+        if document := self.textEdit.document():
+            options = document.defaultTextOption()
+            options.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            document.setDefaultTextOption(options)
+            document.setDocumentMargin(20.0)
 
         font = self.textEdit.font()
         font.setPointSizeF(font.pointSizeF() * 3)
         self.textEdit.setFont(font)
 
-        # Controls
-        self.updateButton = QPushButton(self.tr("Update"), self)
-        self.updateButton.clicked.connect(self._updateButtonClicked)
-
-        self.controlBox = QHBoxLayout()
-        self.controlBox.addStretch(1)
-        self.controlBox.addWidget(self.updateButton)
-
         # Assemble
         self.outerBox = QVBoxLayout()
         self.outerBox.addWidget(self.textEdit)
-        self.outerBox.addLayout(self.controlBox)
 
         self.setLayout(self.outerBox)
 
         return
 
-    def setText(self, ds: DisplaySet, index: int) -> None:
+    def setText(self, ds: DisplaySet) -> None:
         """Set the editor text."""
         self._ds = ds
-        self._index = index
+        self._block = True
         self.textEdit.setPlainText("\n".join(ds.text))
+        self._block = False
         return
 
     ##
@@ -77,10 +76,9 @@ class GuiTextEditor(QWidget):
     ##
 
     @pyqtSlot()
-    def _updateButtonClicked(self) -> None:
-        """The text has been updated."""
-        if self._ds:
-            logger.debug("Updating text for display set %d", self._ds.pcs.compNumber)
+    def _textChanged(self) -> None:
+        """Update display set text when editor changes."""
+        if self._ds and not self._block:
             self._ds.setText(self.textEdit.toPlainText().strip().split("\n"))
             self.newTextForDisplaySet.emit(self._ds)
         return
