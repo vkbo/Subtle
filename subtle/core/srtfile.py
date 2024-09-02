@@ -22,8 +22,9 @@ from __future__ import annotations
 
 import logging
 
-from math import modf
 from pathlib import Path
+
+from subtle.common import formatTS
 
 logger = logging.getLogger(__name__)
 
@@ -84,21 +85,15 @@ class SRTWriter:
                 prev = -1.0
                 for i, (start, end, text) in enumerate(self._data, 1):
                     if start > prev and text:
-                        fo.write(f"{i}\n{_formatTS(start)} --> {_formatTS(end)}\n")
+                        fo.write(f"{i}\n{formatTS(start)} --> {formatTS(end)}\n")
                         fo.write("\n".join(text))
                         fo.write("\n\n")
                         prev = start
                     elif start <= prev:
-                        logger.warning("Out of order text at t=%s", _formatTS(start))
+                        logger.warning("Out of order text at t=%s", formatTS(start))
                     else:
-                        logger.warning("Skipping entry with no text at t=%s", _formatTS(start))
+                        logger.warning("Skipping entry with no text at t=%s", formatTS(start))
         except Exception as exc:
             logger.error("Could not write SRT file: %s", self._path, exc_info=exc)
             return False
         return True
-
-
-def _formatTS(value: float) -> str:
-    """Format float as HH:MM:SS,uuu timestamp."""
-    i, f = int(value), round(modf(value)[0]*1000)
-    return f"{i//3600:02d}:{i%3600//60:02d}:{i%60:02d},{f:03d}"

@@ -25,6 +25,7 @@ import logging
 from pathlib import Path
 
 from subtle import CONFIG
+from subtle.common import formatTS
 from subtle.core.pgsreader import DisplaySet, PGSReader
 from subtle.core.srtfile import SRTWriter
 
@@ -65,7 +66,7 @@ class GuiSubtitleView(QWidget):
         self.subEntries = QTreeWidget(self)
         self.subEntries.setIndentation(0)
         self.subEntries.setHeaderLabels([
-            "#", self.tr("TimeStamp"), self.tr("Length"), self.tr("Text")
+            "#", self.tr("Time Stamp"), self.tr("Length"), self.tr("Text")
         ])
         self.subEntries.clicked.connect(self._itemClicked)
 
@@ -110,13 +111,6 @@ class GuiSubtitleView(QWidget):
         ])
         return
 
-    def setText(self, ds: DisplaySet, text: list[str]) -> None:
-        """"""
-        if item := self._map.get(ds.pcs.compNumber):
-            item.setText(self.C_TEXT, "\u21b2".join(text))
-            item.setData(self.C_DATA, self.D_TEXT, text)
-        return
-
     ##
     #  Public Slots
     ##
@@ -145,13 +139,20 @@ class GuiSubtitleView(QWidget):
                     if not entry.get("clear", False):
                         item = QTreeWidgetItem()
                         item.setText(self.C_ID, str(self.subEntries.topLevelItemCount()))
-                        item.setText(self.C_TIME, f"{tss:.3f}")
+                        item.setText(self.C_TIME, formatTS(tss))
                         item.setText(self.C_LENGTH, f"{tse - tss:.3f}")
                         item.setData(self.C_DATA, self.D_INDEX, entry.get("index", -1))
                         item.setData(self.C_DATA, self.D_START, tss)
                         item.setData(self.C_DATA, self.D_END, tse)
                         self.subEntries.addTopLevelItem(item)
                         self._map[num] = item
+        return
+
+    @pyqtSlot(DisplaySet)
+    def updateText(self, ds: DisplaySet) -> None:
+        """Update text for a specific display set."""
+        if item := self._map.get(ds.pcs.compNumber):
+            self._updateItemText(item, ds.text)
         return
 
     ##
@@ -201,4 +202,10 @@ class GuiSubtitleView(QWidget):
             flags = ".forced" if forced else ""
             self.savePath.setText(str(media.parent / f"{media.stem}.{lang}{flags}.srt"))
             self.saveForced.setChecked(forced)
+        return
+
+    def _updateItemText(self, item: QTreeWidgetItem, text: list[str]) -> None:
+        """Update the subtitle text for a given item."""
+        item.setText(self.C_TEXT, "\u21b2".join(text))
+        item.setData(self.C_DATA, self.D_TEXT, text)
         return

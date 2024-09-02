@@ -160,7 +160,7 @@ class PGSReader:
 
 class DisplaySet:
 
-    __slots__ = ("_pcs", "_wds", "_pds", "_ods", "_image")
+    __slots__ = ("_pcs", "_wds", "_pds", "_ods", "_image", "_text")
 
     def __init__(self, pcs: PresentationSegment) -> None:
         self._pcs: PresentationSegment = pcs
@@ -168,6 +168,7 @@ class DisplaySet:
         self._pds: dict[int, PaletteSegment] = {}
         self._ods: dict[int, list[ObjectSegment]] = {}
         self._image: QImage | None = None
+        self._text: list[str] = []
         return
 
     def __repr__(self) -> str:
@@ -183,6 +184,10 @@ class DisplaySet:
     @property
     def timestamp(self) -> float:
         return self._pcs.timestamp
+
+    @property
+    def text(self) -> list[str]:
+        return self._text
 
     def addWDS(self, wds: WindowSegment, pos: int) -> None:
         """Save all windows defined in the segment."""
@@ -210,6 +215,11 @@ class DisplaySet:
                 self._ods[oid].append(ods)
         else:
             logger.warning("Skipping invalid ObjectSegment at pos %d", pos)
+        return
+
+    def setText(self, text: list[str]) -> None:
+        """Set the display set's text."""
+        self._text = text
         return
 
     def isValid(self) -> bool:

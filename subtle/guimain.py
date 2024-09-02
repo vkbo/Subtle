@@ -103,6 +103,7 @@ class GuiMain(QMainWindow):
         self.mediaView.newTrackAvailable.connect(self._newTrackSelected)
         self.mediaView.newTrackAvailable.connect(self.subsView.loadTrack)
         self.subsView.displaySetSelected.connect(self._displaySetSelected)
+        self.textEditor.newTextForDisplaySet.connect(self.subsView.updateText)
 
         # Layout
         # ======
@@ -163,7 +164,7 @@ class GuiMain(QMainWindow):
 
     @pyqtSlot(Path)
     def _newFileSelected(self, path: Path) -> None:
-        """"""
+        """A new file has been selected."""
         self._mediaFile = path
         self.ocrTool = TesseractOCR()
         return
@@ -176,7 +177,9 @@ class GuiMain(QMainWindow):
         self.imageViewer.setImage(image)
         if self.ocrTool and (info := self._trackInfo):
             lang = info.get("properties", {}).get("language", "und")
-            text = self.ocrTool.processImage(index, image, [lang])
-            self.subsView.setText(ds, text)
-            self.textEditor.setText(text)
+            if not (text := ds.text):
+                text = self.ocrTool.processImage(index, image, [lang])
+                ds.setText(text)
+            self.subsView.updateText(ds)
+            self.textEditor.setText(ds, index)
         return

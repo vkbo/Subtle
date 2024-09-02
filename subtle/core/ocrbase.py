@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
 class OCRBase(ABC):
 
     def __init__(self) -> None:
-        self._cache: dict[int, list[str]] = {}
         return
 
     @abstractmethod

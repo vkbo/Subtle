@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import logging
 
+from math import modf
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -101,3 +102,9 @@ def jsonEncode(data: dict | list | tuple, n: int = 0, nmax: int = 0) -> str:
             buffer.append(chunk)
 
     return "".join(buffer)
+
+
+def formatTS(value: float) -> str:
+    """Format float as HH:MM:SS,uuu timestamp."""
+    i, f = int(value), round(modf(value)[0]*1000)
+    return f"{i//3600:02d}:{i%3600//60:02d}:{i%60:02d},{f:03d}"

@@ -41,15 +41,11 @@ class TesseractOCR(OCRBase):
         return
 
     def processImage(self, index: int, image: QImage, lang: list[str]) -> list[str]:
-        """"""
-        if index in self._cache:
-            return self._cache[index]
-
+        """Perform OCR on a QImage."""
         tmpFile = CONFIG.dumpPath / f"{str(uuid.uuid4())}.png"
         image.save(str(tmpFile), quality=100)
         result = self._processText(self._callTesseract(tmpFile, lang))
         tmpFile.unlink(missing_ok=True)
-        self._cache[index] = result
         return result
 
     ##
@@ -57,7 +53,7 @@ class TesseractOCR(OCRBase):
     ##
 
     def _callTesseract(self, file: Path, lang: list[str]) -> str:
-        """"""
+        """Call tesseract on an image file."""
         try:
             p = subprocess.Popen(
                 ["tesseract", str(file), "-", "-l", "+".join(lang)],
@@ -70,5 +66,5 @@ class TesseractOCR(OCRBase):
         return ""
 
     def _processText(self, text: str) -> list[str]:
-        """"""
+        """Post-process text returned from tesseract."""
         return text.strip().replace("|", "I").split("\n")
