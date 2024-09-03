@@ -48,6 +48,9 @@ DEFAULTS: dict = {
         "fileTreeColumns": [],
         "mediaViewColumns": [],
         "subsViewColumns": [],
+    },
+    "Settings": {
+        "tessData": "",
     }
 }
 
@@ -138,6 +141,10 @@ class Config:
             size = []
         return size
 
+    def getSetting(self, key: str) -> str:
+        """Get a generic string setting."""
+        return str(self._data["Settings"].get(key, ""))
+
     ##
     #  Setters
     ##
@@ -186,6 +193,7 @@ class Config:
                 with open(self._confFile, mode="r", encoding="utf-8") as fo:
                     data = json.load(fo)
                 self._storeConfigGroup(data, "Sizes")
+                self._storeConfigGroup(data, "Settings")
             except Exception as e:
                 logger.error("Could not load config", exc_info=e)
         return

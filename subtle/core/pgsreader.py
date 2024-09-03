@@ -27,7 +27,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from time import time
 
-from PyQt6.QtCore import QRect, QSize
+from PyQt6.QtCore import QMargins, QRect, QSize
 from PyQt6.QtGui import QColor, QImage, QPainter, qRgba
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,7 @@ COMP_ACQ    = 0x40
 COMP_EPOCH  = 0x80
 
 IMAGE_FILL = 0xff666666
+CROP_MARGINS = QMargins(20, 20, 20, 20)
 
 
 class PGSReader:
@@ -214,13 +215,9 @@ class DisplaySet:
             return self._image
 
         start = time()
+        frame = QRect(0, 0, 0, 0)
         comp = self._pcs.compNumber
         size = self._pcs.size
-
-        x = size.width()
-        y = size.height()
-        w = 0
-        h = 0
 
         image = QImage(size, QImage.Format.Format_ARGB32)
         image.fill(IMAGE_FILL)
@@ -268,24 +265,15 @@ class DisplaySet:
                         raw += palette[data[p+3]] * ((b2 & 0x3f)*256 + data[p+2])
                         p += 4
 
-                bx = window.topLeft().x()
-                by = window.topLeft().y()
-                bw = box.width()
-                bh = box.height()
+                frame = frame.united(window)
+                painter.drawImage(window.topLeft(), QImage(
+                    raw, box.width(), box.height(), QImage.Format.Format_ARGB32
+                ))
 
-                x = min(bx, x)
-                y = min(by, y)
-                w = max(bw, w)
-                h = max(bh, h)
-
-                painter.drawImage(bx, by, QImage(raw, bw, bh, QImage.Format.Format_ARGB32))
-
-        x = max(0, x-10)
-        y = max(0, y-10)
-        w = min(size.width(), w+20)
-        h = min(size.height(), h+20)
-
-        self._image = image.copy(x, y, w, h) if crop else image
+        if crop:
+            self._image = image.copy(frame.marginsAdded(CROP_MARGINS))
+        else:
+            self._image = image
 
         painter.end()
         logger.debug("Image rendered in %.3f ms", (time()-start)*1000)

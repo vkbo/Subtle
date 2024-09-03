@@ -32,10 +32,10 @@ from subtle.core.pgsreader import DisplaySet
 from subtle.core.tesseract import TesseractOCR
 from subtle.gui.filetree import GuiFileTree
 from subtle.gui.imageviewer import GuiImageViewer
-from subtle.gui.mediaplayer import GuiMediaPlayer
 from subtle.gui.mediaview import GuiMediaView
 from subtle.gui.subsview import GuiSubtitleView
 from subtle.gui.texteditor import GuiTextEditor
+from subtle.gui.toolspanel import GuiToolsPanel
 
 from PyQt6.QtCore import Qt, pyqtSlot
 from PyQt6.QtGui import QCloseEvent
@@ -86,9 +86,9 @@ class GuiMain(QMainWindow):
         self.fileTree = GuiFileTree(self)
         self.mediaView = GuiMediaView(self)
         self.subsView = GuiSubtitleView(self)
-        self.mediaPlayer = GuiMediaPlayer(self)
         self.imageViewer = GuiImageViewer(self)
         self.textEditor = GuiTextEditor(self)
+        self.toolsPanel = GuiToolsPanel(self)
 
         # Processing
         # ==========
@@ -100,11 +100,13 @@ class GuiMain(QMainWindow):
 
         self.fileTree.newFileSelection.connect(self._newFileSelected)
         self.fileTree.newFileSelection.connect(self.mediaView.setCurrentFile)
-        self.fileTree.newFileSelection.connect(self.subsView.newFileSelected)
+        self.fileTree.newFileSelection.connect(self.toolsPanel.newFileSelected)
         self.mediaView.newTrackAvailable.connect(self._newTrackSelected)
         self.mediaView.newTrackAvailable.connect(self.subsView.loadTrack)
+        self.mediaView.newTrackAvailable.connect(self.toolsPanel.newTrackSelected)
         self.subsView.displaySetSelected.connect(self._displaySetSelected)
         self.textEditor.newTextForDisplaySet.connect(self.subsView.updateText)
+        self.toolsPanel.requestSrtSave.connect(self.subsView.writeSrtFile)
 
         # Layout
         # ======
@@ -117,7 +119,7 @@ class GuiMain(QMainWindow):
         self.splitView = QSplitter(Qt.Orientation.Vertical, self)
         self.splitView.addWidget(self.imageViewer)
         self.splitView.addWidget(self.textEditor)
-        self.splitView.addWidget(self.mediaPlayer)
+        self.splitView.addWidget(self.toolsPanel)
         self.splitView.setSizes(CONFIG.getSizes("viewSplit"))
 
         self.splitMain = QSplitter(Qt.Orientation.Horizontal, self)

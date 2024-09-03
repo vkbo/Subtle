@@ -33,6 +33,12 @@ from PyQt6.QtGui import QImage
 
 logger = logging.getLogger(__name__)
 
+REPLACE = {
+    "|": "I",
+    "’": "'",
+    "--": "—",
+}
+
 
 class TesseractOCR(OCRBase):
 
@@ -55,6 +61,9 @@ class TesseractOCR(OCRBase):
     def _callTesseract(self, file: Path, lang: list[str]) -> str:
         """Call tesseract on an image file."""
         try:
+            cmd = ["tesseract", str(file), "-", "-l", "+".join(lang)]
+            if tessData := CONFIG.getSetting("tessData"):
+                cmd += ["--tessdata-dir", tessData]
             p = subprocess.Popen(
                 ["tesseract", str(file), "-", "-l", "+".join(lang)],
                 stdout=subprocess.PIPE,
@@ -67,4 +76,7 @@ class TesseractOCR(OCRBase):
 
     def _processText(self, text: str) -> list[str]:
         """Post-process text returned from tesseract."""
-        return text.strip().replace("|", "I").split("\n")
+        temp = text.strip()
+        for a, b in REPLACE.items():
+            temp = temp.replace(a, b)
+        return temp.split("\n")

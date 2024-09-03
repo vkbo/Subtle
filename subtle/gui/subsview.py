@@ -30,10 +30,7 @@ from subtle.core.pgsreader import DisplaySet, PGSReader
 from subtle.core.srtfile import SRTWriter
 
 from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
-from PyQt6.QtWidgets import (
-    QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTreeWidget,
-    QTreeWidgetItem, QVBoxLayout, QWidget
-)
+from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +54,6 @@ class GuiSubtitleView(QWidget):
         super().__init__(parent)
 
         self._reader = None
-        self._mediaFile: Path | None = None
-        self._trackFile: Path | None = None
-        self._trackInfo: dict = {}
         self._map: dict[int, QTreeWidgetItem] = {}
 
         # Entries View
@@ -75,26 +69,9 @@ class GuiSubtitleView(QWidget):
             if i < columns:
                 self.subEntries.setColumnWidth(i, w)
 
-        # Save SRT File
-        self.saveLabel = QLabel(self.tr("Save SRT"), self)
-        self.savePath = QLineEdit(self)
-
-        self.saveForced = QCheckBox(self.tr("Forced"), self)
-        self.saveForced.toggled.connect(self._toggleForceFlag)
-
-        self.saveButton = QPushButton(self.tr("Save"), self)
-        self.saveButton.clicked.connect(self._saveSRT)
-
-        self.saveBox = QHBoxLayout()
-        self.saveBox.addWidget(self.saveLabel, 0)
-        self.saveBox.addWidget(self.savePath, 1)
-        self.saveBox.addWidget(self.saveForced, 0)
-        self.saveBox.addWidget(self.saveButton, 0)
-
         # Assemble
         self.outerBox = QVBoxLayout()
         self.outerBox.addWidget(self.subEntries, 1)
-        self.outerBox.addLayout(self.saveBox, 0)
 
         self.setLayout(self.outerBox)
 
@@ -115,13 +92,6 @@ class GuiSubtitleView(QWidget):
     #  Public Slots
     ##
 
-    @pyqtSlot(Path)
-    def newFileSelected(self, path: Path) -> None:
-        """Store the path to the selected file for later use."""
-        self._mediaFile = path
-        self.savePath.setText(str(path.with_suffix(".srt")))
-        return
-
     @pyqtSlot(Path, dict)
     def loadTrack(self, path: Path, info: dict) -> None:
         """Load a new track, if possible."""
@@ -130,7 +100,6 @@ class GuiSubtitleView(QWidget):
                 logger.info("Processing PGS subtitle file")
                 self._reader = PGSReader(path)
                 self._map.clear()
-                self._updateTrackInfo(path, info)
                 self.subEntries.clear()
                 for entry in self._reader.listEntries():
                     tss = entry.get("start", 0.0)
@@ -155,6 +124,20 @@ class GuiSubtitleView(QWidget):
             self._updateItemText(item, ds.text)
         return
 
+    @pyqtSlot(Path)
+    def writeSrtFile(self, path: Path) -> None:
+        """Save the processed subtitles to an SRT file."""
+        writer = SRTWriter(path)
+        for i in range(self.subEntries.topLevelItemCount()):
+            if item := self.subEntries.topLevelItem(i):
+                start = item.data(self.C_DATA, self.D_START)
+                end = item.data(self.C_DATA, self.D_END)
+                text = item.data(self.C_DATA, self.D_TEXT)
+                if isinstance(start, float) and isinstance(end, float) and isinstance(text, list):
+                    writer.addBlock(start, end, text)
+        writer.write()
+        return
+
     ##
     #  Private Slots
     ##
@@ -167,42 +150,9 @@ class GuiSubtitleView(QWidget):
                 self.displaySetSelected.emit(index.row(), ds)
         return
 
-    @pyqtSlot(bool)
-    def _toggleForceFlag(self, state: bool) -> None:
-        """Update forced status."""
-        if self._trackFile and self._trackInfo:
-            self._updateTrackInfo(self._trackFile, self._trackInfo, state)
-        return
-
-    @pyqtSlot()
-    def _saveSRT(self) -> None:
-        """Save the processed subtitles to an SRT file."""
-        writer = SRTWriter(Path(self.savePath.text()))
-        for i in range(self.subEntries.topLevelItemCount()):
-            if item := self.subEntries.topLevelItem(i):
-                start = item.data(self.C_DATA, self.D_START)
-                end = item.data(self.C_DATA, self.D_END)
-                text = item.data(self.C_DATA, self.D_TEXT)
-                if isinstance(start, float) and isinstance(end, float) and isinstance(text, list):
-                    writer.addBlock(start, end, text)
-        writer.write()
-        return
-
     ##
     #  Internal Functions
     ##
-
-    def _updateTrackInfo(self, path: Path, info: dict, force: bool | None = None) -> None:
-        """Update info about the current track."""
-        self._trackFile = path
-        self._trackInfo = info
-        if isinstance(props := info.get("properties", {}), dict) and (media := self._mediaFile):
-            lang = str(props.get("language", "und"))
-            forced = bool(props.get("forced_track", False)) if force is None else force
-            flags = ".forced" if forced else ""
-            self.savePath.setText(str(media.parent / f"{media.stem}.{lang}{flags}.srt"))
-            self.saveForced.setChecked(forced)
-        return
 
     def _updateItemText(self, item: QTreeWidgetItem, text: list[str]) -> None:
         """Update the subtitle text for a given item."""
