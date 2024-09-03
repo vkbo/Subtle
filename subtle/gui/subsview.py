@@ -138,13 +138,25 @@ class GuiSubtitleView(QWidget):
         writer.write()
         return
 
+    @pyqtSlot(int)
+    def selectNearby(self, step: int) -> None:
+        """Select a different display set."""
+        if self._reader and (indexes := self.subEntries.selectedIndexes()):
+            index = indexes[0].row() + step
+            if item := self.subEntries.topLevelItem(index):
+                self.subEntries.clearSelection()
+                item.setSelected(True)
+                if ds := self._reader.displaySet(item.data(self.C_DATA, self.D_INDEX)):
+                    self.displaySetSelected.emit(index, ds)
+        return
+
     ##
     #  Private Slots
     ##
 
     @pyqtSlot(QModelIndex)
     def _itemClicked(self, index: QModelIndex) -> None:
-        """Process track double click in the media view."""
+        """Process item click in the subtitles list."""
         if self._reader and (item := self.subEntries.itemFromIndex(index)):
             if ds := self._reader.displaySet(item.data(self.C_DATA, self.D_INDEX)):
                 self.displaySetSelected.emit(index.row(), ds)

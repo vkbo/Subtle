@@ -55,6 +55,8 @@ class MkvFile:
             )
             out, _ = p.communicate()
             self._info = json.loads(out.decode("utf-8"))
+            with open(self.infoFile(), mode="w", encoding="utf-8") as fo:
+                json.dump(self._info, fo, indent=2)
         except Exception as e:
             logger.error("Failed to load media file info", exc_info=e)
             self._info = {}
@@ -74,3 +76,7 @@ class MkvFile:
     def dumpFile(self, track: int | str) -> Path:
         """Generate a file name for a track dump."""
         return CONFIG.dumpPath / f"{self._id}.{track}.tmp"
+
+    def infoFile(self) -> Path:
+        """Generate a file name for a info dump."""
+        return CONFIG.dumpPath / f"{self._id}.info.json"

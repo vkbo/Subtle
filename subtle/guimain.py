@@ -106,6 +106,7 @@ class GuiMain(QMainWindow):
         self.mediaView.newTrackAvailable.connect(self.toolsPanel.newTrackSelected)
         self.subsView.displaySetSelected.connect(self._displaySetSelected)
         self.textEditor.newTextForDisplaySet.connect(self.subsView.updateText)
+        self.textEditor.requestNewDisplaySet.connect(self.subsView.selectNearby)
         self.toolsPanel.requestSrtSave.connect(self.subsView.writeSrtFile)
 
         # Layout

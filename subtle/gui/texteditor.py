@@ -25,6 +25,7 @@ import logging
 from subtle.core.pgsreader import DisplaySet
 
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
+from PyQt6.QtGui import QShortcut, QTextCursor
 from PyQt6.QtWidgets import QTextEdit, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ class GuiTextEditor(QWidget):
 
     newTextForIndex = pyqtSignal(int, list)
     newTextForDisplaySet = pyqtSignal(DisplaySet)
+    requestNewDisplaySet = pyqtSignal(int)
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
@@ -61,6 +63,27 @@ class GuiTextEditor(QWidget):
 
         self.setLayout(self.outerBox)
 
+        # Shortcuts
+        self.kbPageUp = QShortcut(self.textEdit)
+        self.kbPageUp.setKey(Qt.Key.Key_PageUp)
+        self.kbPageUp.setContext(Qt.ShortcutContext.WidgetShortcut)
+        self.kbPageUp.activated.connect(self._keyPressPageUp)
+
+        self.kbPageDn = QShortcut(self.textEdit)
+        self.kbPageDn.setKey(Qt.Key.Key_PageDown)
+        self.kbPageDn.setContext(Qt.ShortcutContext.WidgetShortcut)
+        self.kbPageDn.activated.connect(self._keyPressPageDown)
+
+        self.kbItalic = QShortcut(self.textEdit)
+        self.kbItalic.setKey("Ctrl+I")
+        self.kbItalic.setContext(Qt.ShortcutContext.WidgetShortcut)
+        self.kbItalic.activated.connect(self._keyPressItalic)
+
+        self.kbNote = QShortcut(self.textEdit)
+        self.kbNote.setKey("Ctrl+J")
+        self.kbNote.setContext(Qt.ShortcutContext.WidgetShortcut)
+        self.kbNote.activated.connect(self._keyPressNote)
+
         return
 
     def setText(self, ds: DisplaySet) -> None:
@@ -81,4 +104,52 @@ class GuiTextEditor(QWidget):
         if self._ds and not self._block:
             self._ds.setText(self.textEdit.toPlainText().strip().split("\n"))
             self.newTextForDisplaySet.emit(self._ds)
+        return
+
+    @pyqtSlot()
+    def _keyPressPageUp(self) -> None:
+        """Process Page Up key press."""
+        self.requestNewDisplaySet.emit(-1)
+        return
+
+    @pyqtSlot()
+    def _keyPressPageDown(self) -> None:
+        """Process Page Down key press."""
+        self.requestNewDisplaySet.emit(1)
+        return
+
+    @pyqtSlot()
+    def _keyPressItalic(self) -> None:
+        """Process Ctrl+I key press."""
+        if document := self.textEdit.document():
+            cursor = self.textEdit.textCursor()
+            if uSelect := cursor.hasSelection():
+                posS = cursor.selectionStart()
+                posE = cursor.selectionEnd()
+                block = document.findBlock(posS)
+                posE = min(posE, block.position() + block.length())
+            else:
+                block = document.findBlock(cursor.position())
+                posS = block.position()
+                posE = posS + block.length() - 1
+
+            cursor.beginEditBlock()
+            cursor.setPosition(posE)
+            cursor.insertText("</i>")
+            cursor.setPosition(posS)
+            cursor.insertText("<i>")
+            cursor.endEditBlock()
+
+            if uSelect:
+                cursor.setPosition(posE+3, QTextCursor.MoveMode.MoveAnchor)
+                cursor.setPosition(posS+3, QTextCursor.MoveMode.KeepAnchor)
+                self.textEdit.setTextCursor(cursor)
+
+        return
+
+    @pyqtSlot()
+    def _keyPressNote(self) -> None:
+        """Process Ctrl+J key press."""
+        cursor = self.textEdit.textCursor()
+        cursor.insertText("\u266a")
         return
