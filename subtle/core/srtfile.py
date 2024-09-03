@@ -22,9 +22,10 @@ from __future__ import annotations
 
 import logging
 
+from collections.abc import Iterable
 from pathlib import Path
 
-from subtle.common import formatTS
+from subtle.common import checkInt, formatTS
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,15 @@ class SRTReader:
 
     def __init__(self, path: Path) -> None:
         self._path = path
-        self._data: dict[str, tuple[str, str, list[str]]] = {}
+        self._data: dict[int, tuple[str, str, list[str]]] = {}
+        self._readData()
+        return
+
+    def iterBlocks(self) -> Iterable[tuple[int, str, str, list[str]]]:
+        """Iterate through blocks."""
+        for num, (start, end, text) in self._data.items():
+            if num >= 0:
+                yield num, start, end, text
         return
 
     def _readData(self) -> bool:
@@ -42,7 +51,7 @@ class SRTReader:
             with open(self._path, mode="r", encoding="utf-8") as fo:
                 block = []
                 for line in fo:
-                    if line:
+                    if line := line.strip():
                         block.append(line)
                     else:
                         self._addBlock(block)
@@ -55,7 +64,7 @@ class SRTReader:
     def _addBlock(self, block: list[str]) -> None:
         """Add a new frame to internal data."""
         if len(block) > 2:
-            num = block[0]
+            num = checkInt(block[0], -1)
             start, _, end = block[1].partition(" --> ")
             text = block[2:]
             self._data[num] = (start, end, text)

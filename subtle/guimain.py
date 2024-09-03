@@ -108,6 +108,7 @@ class GuiMain(QMainWindow):
         self.textEditor.newTextForDisplaySet.connect(self.subsView.updateText)
         self.textEditor.requestNewDisplaySet.connect(self.subsView.selectNearby)
         self.toolsPanel.requestSrtSave.connect(self.subsView.writeSrtFile)
+        self.toolsPanel.requestSubsLoad.connect(self.subsView.readSubsFile)
 
         # Layout
         # ======
@@ -175,8 +176,7 @@ class GuiMain(QMainWindow):
 
     @pyqtSlot(int, DisplaySet)
     def _displaySetSelected(self, index: int, ds: DisplaySet) -> None:
-        """"""
-        logger.info("Selected display set with composition number %d", ds.pcs.compNumber)
+        """Process selection of display set."""
         image = ds.render()
         self.imageViewer.setImage(image)
         if self.ocrTool and (info := self._trackInfo):

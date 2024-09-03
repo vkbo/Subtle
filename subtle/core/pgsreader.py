@@ -25,7 +25,6 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from pathlib import Path
-from time import time
 
 from PyQt6.QtCore import QMargins, QRect, QSize
 from PyQt6.QtGui import QColor, QImage, QPainter, qRgba
@@ -214,7 +213,6 @@ class DisplaySet:
         if isinstance(self._image, QImage):
             return self._image
 
-        start = time()
         frame = QRect(0, 0, 0, 0)
         comp = self._pcs.compNumber
         size = self._pcs.size
@@ -270,13 +268,11 @@ class DisplaySet:
                     raw, box.width(), box.height(), QImage.Format.Format_ARGB32
                 ))
 
+        painter.end()
         if crop:
             self._image = image.copy(frame.marginsAdded(CROP_MARGINS))
         else:
             self._image = image
-
-        painter.end()
-        logger.debug("Image rendered in %.3f ms", (time()-start)*1000)
 
         return self._image
 

@@ -24,10 +24,10 @@ import logging
 
 from pathlib import Path
 
-from PyQt6.QtCore import pyqtSignal, pyqtSlot
+from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import (
-    QCheckBox, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QVBoxLayout, QWidget
+    QCheckBox, QFormLayout, QGroupBox, QHBoxLayout, QLineEdit, QListWidget,
+    QListWidgetItem, QPushButton, QVBoxLayout, QWidget
 )
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,10 @@ logger = logging.getLogger(__name__)
 
 class GuiToolsPanel(QWidget):
 
+    D_SUBS_PATH = Qt.ItemDataRole.UserRole
+
     requestSrtSave = pyqtSignal(Path)
+    requestSubsLoad = pyqtSignal(Path)
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
@@ -45,47 +48,96 @@ class GuiToolsPanel(QWidget):
         self._trackFile: Path | None = None
         self._trackInfo: dict = {}
 
-        # SRT Panel
-        self.srtForm = QGridLayout()
+        # Media Panel
+        # ===========
+        self.mediaForm = QFormLayout()
 
-        row = 0
-        self.srtSaveDir = QLineEdit()
+        self.mediaDir = QLineEdit(self)
+        self.mediaDir.setReadOnly(True)
+
+        self.mediaFile = QLineEdit(self)
+        self.mediaFile.setReadOnly(True)
+
+        self.mediaForm.addRow(self.tr("Media Folder"), self.mediaDir)
+        self.mediaForm.addRow(self.tr("Media File"), self.mediaFile)
+
+        self.mediaFrame = QGroupBox(self.tr("Current Media"), self)
+        self.mediaFrame.setLayout(self.mediaForm)
+
+        # Subs List
+        # =========
+
+        self.subsList = QListWidget(self)
+
+        self.subsLoad = QPushButton(self.tr("Load Subs"), self)
+        self.subsLoad.clicked.connect(self._clickedLoadSubs)
+
+        # Assemble
+        self.subsButtons = QHBoxLayout()
+        self.subsButtons.addStretch(1)
+        self.subsButtons.addWidget(self.subsLoad)
+
+        self.subsBox = QVBoxLayout()
+        self.subsBox.addWidget(self.subsList)
+        self.subsBox.addLayout(self.subsButtons)
+
+        self.subsFrame = QGroupBox(self.tr("Existing Subtitles"), self)
+        self.subsFrame.setLayout(self.subsBox)
+
+        # SRT Panel
+        # =========
+        self.srtForm = QFormLayout()
+
+        self.srtSaveDir = QLineEdit(self)
+        self.srtForm.addRow(self.tr("Output Folder"), self.srtSaveDir)
+
+        self.srtFileName = QLineEdit(self)
+        self.srtForm.addRow(self.tr("File Name"), self.srtFileName)
+
         self.srtSubsDir = QCheckBox(self.tr("Use 'Subs' folder"), self)
         self.srtSubsDir.clicked.connect(self._updateTrackInfo)
 
-        self.srtForm.addWidget(QLabel(self.tr("Output Folder"), self), row, 0)
-        self.srtForm.addWidget(self.srtSaveDir, row, 1)
-        self.srtForm.addWidget(self.srtSubsDir, row, 2, 1, 2)
-
-        row += 1
-        self.srtFileName = QLineEdit()
         self.srtForced = QCheckBox(self.tr("Forced"), self)
         self.srtForced.clicked.connect(self._updateTrackInfo)
+
         self.srtSDH = QCheckBox(self.tr("SDH"), self)
         self.srtSDH.clicked.connect(self._updateTrackInfo)
 
-        self.srtForm.addWidget(QLabel(self.tr("File Name"), self), row, 0)
-        self.srtForm.addWidget(self.srtFileName, row, 1)
-        self.srtForm.addWidget(self.srtForced, row, 2)
-        self.srtForm.addWidget(self.srtSDH, row, 3)
-
-        row += 1
         self.srtSaveButton = QPushButton(self.tr("Save SRT File"), self)
         self.srtSaveButton.clicked.connect(self._clickedSaveSrt)
 
-        self.srtControls = QHBoxLayout()
-        self.srtControls.addStretch(1)
-        self.srtControls.addWidget(self.srtSaveButton, 0)
+        # Assemble
+        self.srtOptions = QHBoxLayout()
+        self.srtOptions.addWidget(self.srtSubsDir)
+        self.srtOptions.addWidget(self.srtForced)
+        self.srtOptions.addWidget(self.srtSDH)
+        self.srtOptions.addStretch(1)
 
-        self.srtForm.addLayout(self.srtControls, row, 0, 1, 4)
+        self.srtButtons = QHBoxLayout()
+        self.srtButtons.addStretch(1)
+        self.srtButtons.addWidget(self.srtSaveButton)
+
+        self.srtForm.addRow("", self.srtOptions)
+        self.srtForm.addRow("", self.srtButtons)
 
         self.srtFrame = QGroupBox(self.tr("SubRip / SRT"), self)
         self.srtFrame.setLayout(self.srtForm)
 
-        # Assemble
-        self.outerBox = QVBoxLayout()
-        self.outerBox.addWidget(self.srtFrame)
-        self.outerBox.addStretch(1)
+        # Layout
+        # ======
+
+        self.leftBox = QVBoxLayout()
+        self.leftBox.addWidget(self.mediaFrame)
+        self.leftBox.addWidget(self.srtFrame)
+        self.leftBox.addStretch(1)
+
+        self.rightBox = QVBoxLayout()
+        self.rightBox.addWidget(self.subsFrame)
+        self.rightBox.addStretch(1)
+
+        self.outerBox = QHBoxLayout()
+        self.outerBox.addLayout(self.leftBox, 3)
+        self.outerBox.addLayout(self.rightBox, 2)
 
         self.setLayout(self.outerBox)
 
@@ -99,7 +151,14 @@ class GuiToolsPanel(QWidget):
     def newFileSelected(self, path: Path) -> None:
         """Store the path to the selected file for later use."""
         self._mediaFile = path
+        self._trackFile = None
+        self._trackInfo = {}
+
+        self.mediaDir.setText(str(path.parent))
+        self.mediaFile.setText(path.name)
+        self._scanForSubs(path)
         self._updateTrackInfo()
+
         return
 
     @pyqtSlot(Path, dict)
@@ -131,6 +190,14 @@ class GuiToolsPanel(QWidget):
         return
 
     @pyqtSlot()
+    def _clickedLoadSubs(self) -> None:
+        """Process load subs button click."""
+        if items := self.subsList.selectedItems():
+            if (path := Path(items[0].data(self.D_SUBS_PATH))).is_file():
+                self.requestSubsLoad.emit(path)
+        return
+
+    @pyqtSlot()
     def _updateTrackInfo(self) -> None:
         """Update info about the current track."""
         if self._mediaFile and self._trackFile and self._trackInfo:
@@ -151,5 +218,36 @@ class GuiToolsPanel(QWidget):
 
             self.srtSaveDir.setText(str(folder))
             self.srtFileName.setText(".".join(bits))
+
+        return
+
+    ##
+    #  Internal Functions
+    ##
+
+    def _scanForSubs(self, path: Path) -> None:
+        """Scan for subtitle files in path."""
+        self.subsList.clear()
+        root = path.parent
+        try:
+            folders = [root]
+            for entry in root.iterdir():
+                if entry.is_dir() and not entry.is_reserved():
+                    folders.append(entry)
+
+            prefix = path.stem.lower()
+            for folder in folders:
+                for entry in folder.iterdir():
+                    if (
+                        entry.is_file()
+                        and entry.suffix == ".srt"
+                        and entry.stem.lower().startswith(prefix)
+                    ):
+                        item = QListWidgetItem()
+                        item.setText(str(entry.relative_to(root)))
+                        item.setData(self.D_SUBS_PATH, entry)
+                        self.subsList.addItem(item)
+        except Exception as exc:
+            logger.error("Could not scan path: %s", root, exc_info=exc)
 
         return

@@ -27,7 +27,7 @@ from pathlib import Path
 from subtle import CONFIG
 from subtle.common import formatTS
 from subtle.core.pgsreader import DisplaySet, PGSReader
-from subtle.core.srtfile import SRTWriter
+from subtle.core.srtfile import SRTReader, SRTWriter
 
 from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
@@ -138,6 +138,19 @@ class GuiSubtitleView(QWidget):
         writer.write()
         return
 
+    @pyqtSlot(Path)
+    def readSubsFile(self, path: Path) -> None:
+        """Read a subs file and update entries."""
+        if path.is_file() and path.suffix == ".srt" and self._reader:
+            rdSrt = SRTReader(path)
+            rdDs = self._reader
+            for num, _, _, text in rdSrt.iterBlocks():
+                idx = num - 1
+                if (ds := rdDs.displaySet(idx)) and (item := self.subEntries.topLevelItem(idx)):
+                    ds.setText(text)
+                    self._updateItemText(item, text)
+        return
+
     @pyqtSlot(int)
     def selectNearby(self, step: int) -> None:
         """Select a different display set."""
@@ -145,6 +158,7 @@ class GuiSubtitleView(QWidget):
             index = indexes[0].row() + step
             if item := self.subEntries.topLevelItem(index):
                 self.subEntries.clearSelection()
+                self.subEntries.scrollToItem(item)
                 item.setSelected(True)
                 if ds := self._reader.displaySet(item.data(self.C_DATA, self.D_INDEX)):
                     self.displaySetSelected.emit(index, ds)
