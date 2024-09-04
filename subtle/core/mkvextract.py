@@ -42,15 +42,15 @@ class MkvExtract(QObject):
         self._pid = 0
         return
 
-    def extract(self, file: Path, track: str | int, output: Path) -> None:
+    def extract(self, file: Path, tracks: list[tuple[str, Path]]) -> None:
         """Start a subprocess running mkvextract."""
         if self._process is None:
+            args = ["--gui-mode", "tracks", str(file)]
+            args.extend(f"{i}:{p}" for i, p in tracks)
             self._process = QProcess(self)
             self._process.readyReadStandardOutput.connect(self._processStdOut)
             self._process.finished.connect(self._processFinished)
-            self._process.start("mkvextract", [
-                "--gui-mode", "tracks", str(file), f"{track}:{output}"
-            ])
+            self._process.start("mkvextract", args)
             self._pid = self._process.processId()
             logger.debug("Starting process %d", self._pid)
         return

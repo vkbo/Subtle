@@ -26,7 +26,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from subtle import CONFIG
+from subtle import CONFIG, SHARED
+from subtle.core.media import MediaData
 from subtle.core.ocrbase import OCRBase
 from subtle.core.pgsreader import DisplaySet
 from subtle.core.tesseract import TesseractOCR
@@ -75,6 +76,8 @@ class GuiMain(QMainWindow):
 
         # Cached Data
         # ===========
+
+        SHARED.initMedia(MediaData())
 
         self._mediaFile: Path | None = None
         self._trackFile: Path | None = None

@@ -143,12 +143,12 @@ class GuiSubtitleView(QWidget):
         """Read a subs file and update entries."""
         if path.is_file() and path.suffix == ".srt" and self._reader:
             rdSrt = SRTReader(path)
-            rdDs = self._reader
             for num, _, _, text in rdSrt.iterBlocks():
                 idx = num - 1
-                if (ds := rdDs.displaySet(idx)) and (item := self.subEntries.topLevelItem(idx)):
-                    ds.setText(text)
-                    self._updateItemText(item, text)
+                if item := self.subEntries.topLevelItem(idx):
+                    if ds := self._reader.displaySet(item.data(self.C_DATA, self.D_INDEX)):
+                        ds.setText(text)
+                        self._updateItemText(item, text)
         return
 
     @pyqtSlot(int)
