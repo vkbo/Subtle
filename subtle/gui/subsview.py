@@ -25,9 +25,8 @@ import logging
 from pathlib import Path
 
 from subtle import CONFIG
-from subtle.common import formatTS
-from subtle.core.pgsreader import DisplaySet, PGSReader
 from subtle.core.srtfile import SRTReader, SRTWriter
+from subtle.formats.pgssubs import DisplaySet
 
 from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
@@ -98,23 +97,23 @@ class GuiSubtitleView(QWidget):
         match info.get("codec", ""):
             case "HDMV PGS":
                 logger.info("Processing PGS subtitle file")
-                self._reader = PGSReader(path)
-                self._map.clear()
-                self.subEntries.clear()
-                for entry in self._reader.listEntries():
-                    tss = entry.get("start", 0.0)
-                    tse = entry.get("end", 0.0)
-                    num = entry.get("num", -1)
-                    if not entry.get("clear", False):
-                        item = QTreeWidgetItem()
-                        item.setText(self.C_ID, str(self.subEntries.topLevelItemCount()))
-                        item.setText(self.C_TIME, formatTS(tss))
-                        item.setText(self.C_LENGTH, f"{tse - tss:.3f}")
-                        item.setData(self.C_DATA, self.D_INDEX, entry.get("index", -1))
-                        item.setData(self.C_DATA, self.D_START, tss)
-                        item.setData(self.C_DATA, self.D_END, tse)
-                        self.subEntries.addTopLevelItem(item)
-                        self._map[num] = item
+                # self._reader = PGSSubs(path)
+                # self._map.clear()
+                # self.subEntries.clear()
+                # for entry in self._reader.listEntries():
+                #     tss = entry.get("start", 0.0)
+                #     tse = entry.get("end", 0.0)
+                #     num = entry.get("num", -1)
+                #     if not entry.get("clear", False):
+                #         item = QTreeWidgetItem()
+                #         item.setText(self.C_ID, str(self.subEntries.topLevelItemCount()))
+                #         item.setText(self.C_TIME, formatTS(tss))
+                #         item.setText(self.C_LENGTH, f"{tse - tss:.3f}")
+                #         item.setData(self.C_DATA, self.D_INDEX, entry.get("index", -1))
+                #         item.setData(self.C_DATA, self.D_START, tss)
+                #         item.setData(self.C_DATA, self.D_END, tse)
+                #         self.subEntries.addTopLevelItem(item)
+                #         self._map[num] = item
         return
 
     @pyqtSlot(DisplaySet)

@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 
-from subtle.core.pgsreader import DisplaySet
+from subtle.formats.pgssubs import DisplaySet
 
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QShortcut, QTextCursor

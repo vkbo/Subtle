@@ -29,8 +29,8 @@ from pathlib import Path
 from subtle import CONFIG, SHARED
 from subtle.core.media import MediaData
 from subtle.core.ocrbase import OCRBase
-from subtle.core.pgsreader import DisplaySet
 from subtle.core.tesseract import TesseractOCR
+from subtle.formats.pgssubs import DisplaySet
 from subtle.gui.filetree import GuiFileTree
 from subtle.gui.imageviewer import GuiImageViewer
 from subtle.gui.mediaview import GuiMediaView
@@ -102,7 +102,6 @@ class GuiMain(QMainWindow):
         # =======
 
         self.fileTree.newFileSelection.connect(self._newFileSelected)
-        self.fileTree.newFileSelection.connect(self.mediaView.setCurrentFile)
         self.fileTree.newFileSelection.connect(self.toolsPanel.newFileSelected)
         self.mediaView.newTrackAvailable.connect(self._newTrackSelected)
         self.mediaView.newTrackAvailable.connect(self.subsView.loadTrack)

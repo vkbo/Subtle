@@ -22,22 +22,18 @@ from __future__ import annotations
 
 import logging
 
-from enum import Enum
+from collections.abc import Iterable
 from pathlib import Path
 
+from subtle.common import decodeTS
+from subtle.constants import MediaType
 from subtle.core.mediafile import MediaFile
+from subtle.formats.base import SubtitlesBase
+from subtle.formats.pgssubs import PGSSubs
 
 from PyQt6.QtCore import QObject, pyqtSignal
 
 logger = logging.getLogger(__name__)
-
-
-class MediaType(Enum):
-
-    VIDEO = 0
-    AUDIO = 1
-    SUBS  = 2
-    OTHER = 4
 
 
 class MediaData(QObject):
@@ -47,9 +43,19 @@ class MediaData(QObject):
 
     def __init__(self) -> None:
         super().__init__()
-        self._tracks: dict[str, MediaTrack]
+        self._tracks: dict[str, MediaTrack] = {}
         self._file: MediaFile | None = None
         return
+
+    @property
+    def hasMedia(self) -> bool:
+        """Return True if media is loaded."""
+        return self._file is not None
+
+    @property
+    def mediaFile(self) -> MediaFile | None:
+        """Return the media file object."""
+        return self._file
 
     def clear(self) -> None:
         """Clear the data object."""
@@ -60,18 +66,26 @@ class MediaData(QObject):
 
     def loadMediaFile(self, path: Path) -> None:
         """Load a media file into the data store."""
+        logger.debug("Loading file: %s", path)
         media = MediaFile(path)
         if media.valid:
             self._file = media
-            self.newMediaLoaded.emit()
             for info in media.iterTracks():
-                print(info)
-                # if idx
-                # self._tracks[info]
-                # track = MediaTrack(self, info)
+                track = MediaTrack(self, info)
+                if idx := track.trackID:
+                    self._tracks[idx] = track
+            self.newMediaLoaded.emit()
         else:
             self._file = None
         return
+
+    def iterTracks(self) -> Iterable[MediaTrack]:
+        """Iterate through all tracks."""
+        yield from self._tracks.values()
+
+    def getTrack(self, trackID: str) -> MediaTrack | None:
+        """Return a track object."""
+        return self._tracks[trackID]
 
 
 class MediaTrack:
@@ -80,6 +94,8 @@ class MediaTrack:
         self._media = media
         self._info = {}
         self._props = {}
+        self._path: Path | None = None
+        self._wrapper: SubtitlesBase | None = None
 
         if isinstance(info, dict):
             self._info = info
@@ -95,7 +111,19 @@ class MediaTrack:
                 self._type = MediaType.SUBS
             case _:
                 self._type = MediaType.OTHER
+
+        if self._type == MediaType.SUBS:
+            match self._props.get("codec_id"):
+                case "S_HDMV/PGS":
+                    self._wrapper = PGSSubs()
+
+        print(self._wrapper)
+
         return
+
+    ##
+    #  Properties
+    ##
 
     @property
     def trackID(self) -> str:
@@ -103,10 +131,68 @@ class MediaTrack:
         return str(self._info.get("id", ""))
 
     @property
-    def codeName(self) -> str:
+    def trackType(self) -> MediaType:
+        """Return the track's type."""
+        return self._type
+
+    @property
+    def label(self) -> str:
+        """Return the track's label."""
+        return str(self._props.get("track_name", ""))
+
+    @property
+    def language(self) -> str:
+        """Return the track's language."""
+        return str(self._props.get("language", "und"))
+
+    @property
+    def frames(self) -> int:
+        """Return the track's frame count."""
+        if self._wrapper:
+            return self._wrapper.frameCount()
+        return -1
+
+    @property
+    def default(self) -> bool:
+        """Return the track's default track flag."""
+        return bool(self._props.get("default_track", False))
+
+    @property
+    def enabled(self) -> bool:
+        """Return the track's enabled track flag."""
+        return bool(self._props.get("enabled_track", False))
+
+    @property
+    def forced(self) -> bool:
+        """Return the track's forced track flag."""
+        return bool(self._props.get("forced_track", False))
+
+    @property
+    def codecName(self) -> str:
         """Return the track's codec."""
         return str(self._info.get("codec", "Unknown"))
 
-    def analyse(self, info: dict) -> None:
-        """Analyse the track by parsing data from mkvmerge."""
+    @property
+    def codecID(self) -> str:
+        """Return the track's codec."""
+        return str(self._props.get("codec_id", "NONE"))
+
+    @property
+    def duration(self) -> float:
+        """Return the track's duration."""
+        return decodeTS(self._props.get("tag_duration"), 0.0)
+
+    ##
+    #  Setters
+    ##
+
+    def setTrackFile(self, path: Path) -> None:
+        """Set the extraction location of the track file."""
+        self._path = path
+        return
+
+    def readTrackFile(self) -> None:
+        """Read the content of the track file."""
+        if self._path and self._wrapper:
+            self._wrapper.read(self._path)
         return

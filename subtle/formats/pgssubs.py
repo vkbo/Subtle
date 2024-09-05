@@ -26,6 +26,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from pathlib import Path
 
+from subtle.formats.base import FrameBase, SubtitlesBase
+
 from PyQt6.QtCore import QMargins, QRect, QSize
 from PyQt6.QtGui import QColor, QImage, QPainter, qRgba
 
@@ -39,63 +41,44 @@ IMAGE_FILL = 0xff666666
 CROP_MARGINS = QMargins(20, 20, 20, 20)
 
 
-class PGSReader:
-    """PGS Reader Class.
+class PGSSubs(SubtitlesBase):
+    """PGS Subtitles Class.
 
     Reference:
     https://blog.thescorpius.com/index.php/2017/07/15/presentation-graphic-stream-sup-files-bluray-subtitle-format/
     """
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self) -> None:
+        super().__init__()
+        return
 
-        self._path = path
-        self._data: list[DisplaySet] = []
-
+    def read(self, path: Path) -> None:
+        """Read a PGS file."""
         try:
-            self._readData()
+            self._readData(path)
+            self._path = path
         except Exception as e:
             logger.error("Failed to read file data", exc_info=e)
             self._data = []
-
         return
 
-    def displaySet(self, index: int) -> DisplaySet | None:
-        """Return a display set by its index."""
-        if 0 <= index < len(self._data):
-            return self._data[index]
-        return None
-
-    def listEntries(self) -> list[dict]:
-        """Generate a list of all subtitle entries in the file."""
-        data = []
-        prev = None
-        for i, ds in enumerate(self._data):
-            ts = ds.pcs.timestamp
-            curr = {
-                "index": i,
-                "num": ds.pcs.compNumber,
-                "start": ts,
-                "end": 0.0,
-                "epoch": ds.pcs.compState == COMP_EPOCH,
-                "clear": ds.isClearFrame(),
-            }
-            data.append(curr)
-            if prev:
-                prev["end"] = ts
-            prev = curr
-        return data
+    def write(self, path: Path | None = None) -> None:
+        """Write a PGS file."""
+        raise NotImplementedError("Cannot write PGS files.")
 
     ##
     #  Internal Functions
     ##
 
-    def _readData(self) -> None:
+    def _readData(self, path: Path) -> None:
         """Read the raw PGS file data and store it as a list of display
         sets of related segments.
         """
+        self._frames = []
+
         ds = None
         data: list[DisplaySet] = []
-        with open(self._path, mode="rb") as fo:
+        with open(path, mode="rb") as fo:
             while h := fo.read(13):
                 if len(h) < 13:
                     logger.warning("Invalid header '%s' of length %d", h[:2].hex(), len(h))
@@ -129,29 +112,66 @@ class PGSReader:
             if ds is not None:
                 logger.warning("Data past last END segment, PGS data may be truncated")
 
-        self._data = data
+        frame = None
+        frames = []
+        for ds in data:
+            if ds.pcs.compState == COMP_EPOCH:
+                frame = PGSFrame(len(self._frames))
+                frames.append(frame)
+            if frame is not None:
+                frame.appendDS(ds)
 
+        self._frames = frames
+
+        return
+
+
+class PGSFrame(FrameBase):
+
+    def __init__(self, index: int) -> None:
+        super().__init__(index=index)
+        self._ds: list[DisplaySet] = []
+        return
+
+    def appendDS(self, ds: DisplaySet) -> None:
+        """Append a display set to the frame."""
+        if (state := ds.pcs.compState) == COMP_EPOCH:
+            if self._ds:
+                logger.warning("Duplicate epoch display set for %s", ds.pcs.compNumber)
+            self._ds = [ds]
+            self._start = ds.timestamp
+        else:
+            if state == COMP_ACQ:
+                logger.warning("Ignored acquisition display set for %s", ds.pcs.compNumber)
+            self._ds.append(ds)
+            self._end = ds.timestamp
         return
 
 
 class DisplaySet:
 
-    __slots__ = ("_pcs", "_wds", "_pds", "_ods", "_image", "_text")
+    __slots__ = ("_idx", "_pcs", "_wds", "_pds", "_ods", "_image", "_text", "_end")
 
     def __init__(self, pcs: PresentationSegment) -> None:
+        self._idx: int = -1
         self._pcs: PresentationSegment = pcs
         self._wds: dict[int, QRect] = {}
         self._pds: dict[int, PaletteSegment] = {}
         self._ods: dict[int, list[ObjectSegment]] = {}
         self._image: QImage | None = None
         self._text: list[str] = []
+        self._end: float = -1.0
         return
 
     def __repr__(self) -> str:
         return (
-            f"<{self.__class__.__name__} composition={self._pcs.compNumber} "
+            f"<{self.__class__.__name__}: composition={self._pcs.compNumber} "
             f"windows={len(self._wds)} palettes={len(self._pds)} objects={len(self._ods)}>"
         )
+
+    @property
+    def index(self) -> int:
+        return self._idx
 
     @property
     def pcs(self) -> PresentationSegment:
@@ -164,6 +184,10 @@ class DisplaySet:
     @property
     def text(self) -> list[str]:
         return self._text
+
+    @property
+    def epochEnd(self) -> float:
+        return self._end
 
     def addWDS(self, wds: WindowSegment, pos: int) -> None:
         """Save all windows defined in the segment."""
@@ -196,6 +220,18 @@ class DisplaySet:
     def setText(self, text: list[str]) -> None:
         """Set the display set's text."""
         self._text = text
+        return
+
+    def setEpochIndex(self, value: int) -> None:
+        """Set the frame index for EPOCH display sets."""
+        if self._pcs.compState == COMP_EPOCH:
+            self._idx = value
+        return
+
+    def setEpochEnd(self, value: float) -> None:
+        """Set the end timestamp for EPOCH display sets."""
+        if self._pcs.compState == COMP_EPOCH:
+            self._end = value
         return
 
     def isValid(self) -> bool:
@@ -290,7 +326,7 @@ class BaseSegment(ABC):
 
     def __repr__(self) -> str:
         return (
-            f"<{self.__class__.__name__} t={self._ts/90000:.3f} "
+            f"<{self.__class__.__name__}: t={self._ts/90000:.3f} "
             f"size={len(self._data)} valid={self._valid}>"
         )
 

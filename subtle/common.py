@@ -108,3 +108,22 @@ def formatTS(value: float) -> str:
     """Format float as HH:MM:SS,uuu timestamp."""
     i, f = int(value), round(modf(value)[0]*1000)
     return f"{i//3600:02d}:{i%3600//60:02d}:{i%60:02d},{f:03d}"
+
+
+def decodeTS(value: str | None, default: float = 0.0) -> float:
+    """Decode a time stamp to seconds."""
+    if isinstance(value, str):
+        try:
+            result = 0.0
+            bits = value.replace(",", ".").split(":")
+            size = len(bits)
+            if size > 0:
+                result += float(bits[-1])
+            if size > 1:
+                result += 60*float(bits[-2])
+            if size > 2:
+                result += 3600*float(bits[-3])
+            return result
+        except Exception:
+            pass
+    return default
