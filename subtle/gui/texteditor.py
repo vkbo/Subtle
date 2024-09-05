@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 
-from subtle.formats.pgssubs import DisplaySet
+from subtle.formats.base import FrameBase
 
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QShortcut, QTextCursor
@@ -33,14 +33,13 @@ logger = logging.getLogger(__name__)
 
 class GuiTextEditor(QWidget):
 
-    newTextForIndex = pyqtSignal(int, list)
-    newTextForDisplaySet = pyqtSignal(DisplaySet)
-    requestNewDisplaySet = pyqtSignal(int)
+    newTextForFrame = pyqtSignal(FrameBase)
+    requestNewFrame = pyqtSignal(int)
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
-        self._ds: DisplaySet | None = None
+        self._frame: FrameBase | None = None
         self._block = False
 
         # Editor
@@ -86,11 +85,11 @@ class GuiTextEditor(QWidget):
 
         return
 
-    def setText(self, ds: DisplaySet) -> None:
+    def setText(self, frame: FrameBase) -> None:
         """Set the editor text."""
-        self._ds = ds
+        self._frame = frame
         self._block = True
-        self.textEdit.setPlainText("\n".join(ds.text))
+        self.textEdit.setPlainText("\n".join(frame.text))
         self._block = False
         return
 
@@ -101,21 +100,21 @@ class GuiTextEditor(QWidget):
     @pyqtSlot()
     def _textChanged(self) -> None:
         """Update display set text when editor changes."""
-        if self._ds and not self._block:
-            self._ds.setText(self.textEdit.toPlainText().strip().split("\n"))
-            self.newTextForDisplaySet.emit(self._ds)
+        if self._frame and not self._block:
+            self._frame.setText(self.textEdit.toPlainText().strip().split("\n"))
+            self.newTextForFrame.emit(self._frame)
         return
 
     @pyqtSlot()
     def _keyPressPageUp(self) -> None:
         """Process Page Up key press."""
-        self.requestNewDisplaySet.emit(-1)
+        self.requestNewFrame.emit(-1)
         return
 
     @pyqtSlot()
     def _keyPressPageDown(self) -> None:
         """Process Page Down key press."""
-        self.requestNewDisplaySet.emit(1)
+        self.requestNewFrame.emit(1)
         return
 
     @pyqtSlot()

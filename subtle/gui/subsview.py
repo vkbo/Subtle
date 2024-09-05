@@ -28,7 +28,7 @@ from subtle import CONFIG, SHARED
 from subtle.common import formatTS
 from subtle.constants import MediaType
 from subtle.core.media import MediaTrack
-from subtle.formats.pgssubs import DisplaySet
+from subtle.formats.base import FrameBase
 
 from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
@@ -46,7 +46,7 @@ class GuiSubtitleView(QWidget):
 
     D_INDEX = Qt.ItemDataRole.UserRole
 
-    displaySetSelected = pyqtSignal(int, DisplaySet)
+    subsFrameSelected = pyqtSignal(FrameBase)
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
@@ -91,7 +91,7 @@ class GuiSubtitleView(QWidget):
     ##
 
     @pyqtSlot(str)
-    def displaySubs(self, idx: str) -> None:
+    def newTrackLoaded(self, idx: str) -> None:
         """Display subtitles for a given track."""
         if (track := SHARED.media.getTrack(idx)) and track.trackType == MediaType.SUBS:
             self._map.clear()
@@ -105,16 +105,16 @@ class GuiSubtitleView(QWidget):
                 item.setText(self.C_TIME, formatTS(tss))
                 item.setText(self.C_LENGTH, f"{tse - tss:.3f}")
                 item.setData(self.C_DATA, self.D_INDEX, frame.index)
+                self._map[frame.index] = item
                 self._updateItemText(item, frame.text)
                 self.subEntries.addTopLevelItem(item)
-                self._map[frame.index] = item
         return
 
-    @pyqtSlot(DisplaySet)
-    def updateText(self, ds: DisplaySet) -> None:
-        """Update text for a specific display set."""
-        # if item := self._map.get(ds.pcs.compNumber):
-        #     self._updateItemText(item, ds.text)
+    @pyqtSlot(FrameBase)
+    def updateText(self, frame: FrameBase) -> None:
+        """Update text for a specific frame."""
+        if item := self._map.get(frame.index):
+            self._updateItemText(item, frame.text)
         return
 
     @pyqtSlot(Path)
@@ -146,14 +146,14 @@ class GuiSubtitleView(QWidget):
     @pyqtSlot(int)
     def selectNearby(self, step: int) -> None:
         """Select a different display set."""
-        # if self._reader and (indexes := self.subEntries.selectedIndexes()):
-        #     index = indexes[0].row() + step
-        #     if item := self.subEntries.topLevelItem(index):
-        #         self.subEntries.clearSelection()
-        #         self.subEntries.scrollToItem(item)
-        #         item.setSelected(True)
-        #         if ds := self._reader.displaySet(item.data(self.C_DATA, self.D_INDEX)):
-        #             self.displaySetSelected.emit(index, ds)
+        if self._track and (items := self.subEntries.selectedItems()):
+            index = items[0].data(self.C_DATA, self.D_INDEX) + step
+            if item := self.subEntries.topLevelItem(index):
+                self.subEntries.clearSelection()
+                self.subEntries.scrollToItem(item)
+                item.setSelected(True)
+                if frame := self._track.getFrame(index):
+                    self.subsFrameSelected.emit(frame)
         return
 
     ##
@@ -163,9 +163,9 @@ class GuiSubtitleView(QWidget):
     @pyqtSlot(QModelIndex)
     def _itemClicked(self, index: QModelIndex) -> None:
         """Process item click in the subtitles list."""
-        # if self._reader and (item := self.subEntries.itemFromIndex(index)):
-        #     if ds := self._reader.displaySet(item.data(self.C_DATA, self.D_INDEX)):
-        #         self.displaySetSelected.emit(index.row(), ds)
+        if self._track and (item := self.subEntries.itemFromIndex(index)):
+            if frame := self._track.getFrame(item.data(self.C_DATA, self.D_INDEX)):
+                self.subsFrameSelected.emit(frame)
         return
 
     ##

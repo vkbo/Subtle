@@ -26,6 +26,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from pathlib import Path
 
+from PyQt6.QtGui import QImage
+
 logger = logging.getLogger(__name__)
 
 
@@ -88,7 +90,18 @@ class FrameBase(ABC):
         """Frame text."""
         return self._text
 
+    @property
+    @abstractmethod
+    def imageBased(self) -> bool:
+        """Check if image based."""
+        raise NotImplementedError
+
     def setText(self, text: list[str]) -> None:
         """Set the frame's text."""
-        self._text = text
+        self._text = [t.strip() for t in text]
         return
+
+    @abstractmethod
+    def getImage(self) -> QImage:
+        """Extract the subtitles image."""
+        raise NotImplementedError

@@ -26,6 +26,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from pathlib import Path
 
+from subtle.common import formatTS
 from subtle.formats.base import FrameBase, SubtitlesBase
 
 from PyQt6.QtCore import QMargins, QRect, QSize
@@ -37,7 +38,7 @@ COMP_NORMAL = 0x00
 COMP_ACQ    = 0x40
 COMP_EPOCH  = 0x80
 
-IMAGE_FILL = 0xff666666
+IMAGE_FILL = 0xff242424
 CROP_MARGINS = QMargins(20, 20, 20, 20)
 
 
@@ -115,11 +116,24 @@ class PGSSubs(SubtitlesBase):
         frame = None
         frames = []
         for ds in data:
-            if ds.pcs.compState == COMP_EPOCH:
-                frame = PGSFrame(len(self._frames))
+            state = ds.pcs.compState
+            if state == COMP_EPOCH:
+                # Start of a new subtitles frame.
+                frame = PGSFrame(len(frames), ds)
                 frames.append(frame)
-            if frame is not None:
-                frame.appendDS(ds)
+            elif ds.isClearFrame() and frame:
+                # A normal case display set with no composition objects
+                # are blanking frames. We use them as end timestamps.
+                frame.closeFrame(ds)
+                frame = None
+            elif state == COMP_ACQ:
+                # These are used to render subtitles at skip point, like
+                # on chapter markers. We don't care about that.
+                logger.debug("Skipped acquisition point display set %d", ds.pcs.compNumber)
+            else:
+                # Normal case display sets that are not clear frame are
+                # used to crop the text. We don't care about cropping.
+                logger.debug("Skipped normal case display set %d", ds.pcs.compNumber)
 
         self._frames = frames
 
@@ -128,50 +142,45 @@ class PGSSubs(SubtitlesBase):
 
 class PGSFrame(FrameBase):
 
-    def __init__(self, index: int) -> None:
+    def __init__(self, index: int, ds: DisplaySet) -> None:
         super().__init__(index=index)
-        self._ds: list[DisplaySet] = []
+        self._ds = ds
+        self._start = ds.timestamp
         return
 
-    def appendDS(self, ds: DisplaySet) -> None:
-        """Append a display set to the frame."""
-        if (state := ds.pcs.compState) == COMP_EPOCH:
-            if self._ds:
-                logger.warning("Duplicate epoch display set for %s", ds.pcs.compNumber)
-            self._ds = [ds]
-            self._start = ds.timestamp
-        else:
-            if state == COMP_ACQ:
-                logger.warning("Ignored acquisition display set for %s", ds.pcs.compNumber)
-            self._ds.append(ds)
-            self._end = ds.timestamp
+    @property
+    def imageBased(self) -> bool:
+        """This class is image based."""
+        return True
+
+    def closeFrame(self, ds: DisplaySet) -> None:
+        """Extract timestamp from display set used to close frame."""
+        self._end = ds.timestamp
         return
+
+    def getImage(self) -> QImage:
+        """Return the rendered image."""
+        return self._ds.render()
 
 
 class DisplaySet:
 
-    __slots__ = ("_idx", "_pcs", "_wds", "_pds", "_ods", "_image", "_text", "_end")
+    __slots__ = ("_pcs", "_wds", "_pds", "_ods", "_image")
 
     def __init__(self, pcs: PresentationSegment) -> None:
-        self._idx: int = -1
         self._pcs: PresentationSegment = pcs
         self._wds: dict[int, QRect] = {}
         self._pds: dict[int, PaletteSegment] = {}
         self._ods: dict[int, list[ObjectSegment]] = {}
         self._image: QImage | None = None
-        self._text: list[str] = []
-        self._end: float = -1.0
         return
 
     def __repr__(self) -> str:
         return (
             f"<{self.__class__.__name__}: composition={self._pcs.compNumber} "
-            f"windows={len(self._wds)} palettes={len(self._pds)} objects={len(self._ods)}>"
+            f"windows={len(self._wds)} palettes={len(self._pds)} objects={len(self._ods)} "
+            f"state={self._pcs.compState:02x} timestamp={formatTS(self._pcs.timestamp)}>"
         )
-
-    @property
-    def index(self) -> int:
-        return self._idx
 
     @property
     def pcs(self) -> PresentationSegment:
@@ -180,14 +189,6 @@ class DisplaySet:
     @property
     def timestamp(self) -> float:
         return self._pcs.timestamp
-
-    @property
-    def text(self) -> list[str]:
-        return self._text
-
-    @property
-    def epochEnd(self) -> float:
-        return self._end
 
     def addWDS(self, wds: WindowSegment, pos: int) -> None:
         """Save all windows defined in the segment."""
@@ -215,23 +216,6 @@ class DisplaySet:
                 self._ods[oid].append(ods)
         else:
             logger.warning("Skipping invalid ObjectSegment at pos %d", pos)
-        return
-
-    def setText(self, text: list[str]) -> None:
-        """Set the display set's text."""
-        self._text = text
-        return
-
-    def setEpochIndex(self, value: int) -> None:
-        """Set the frame index for EPOCH display sets."""
-        if self._pcs.compState == COMP_EPOCH:
-            self._idx = value
-        return
-
-    def setEpochEnd(self, value: float) -> None:
-        """Set the end timestamp for EPOCH display sets."""
-        if self._pcs.compState == COMP_EPOCH:
-            self._end = value
         return
 
     def isValid(self) -> bool:

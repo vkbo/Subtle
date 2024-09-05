@@ -67,6 +67,7 @@ class MediaData(QObject):
     def loadMediaFile(self, path: Path) -> None:
         """Load a media file into the data store."""
         logger.debug("Loading file: %s", path)
+        self.clear()
         media = MediaFile(path)
         if media.valid:
             self._file = media
@@ -75,8 +76,6 @@ class MediaData(QObject):
                 if idx := track.trackID:
                     self._tracks[idx] = track
             self.newMediaLoaded.emit()
-        else:
-            self._file = None
         return
 
     def iterTracks(self) -> Iterable[MediaTrack]:
@@ -116,8 +115,6 @@ class MediaTrack:
             match self._props.get("codec_id"):
                 case "S_HDMV/PGS":
                     self._wrapper = PGSSubs()
-
-        print(self._wrapper)
 
         return
 
@@ -183,7 +180,7 @@ class MediaTrack:
         return decodeTS(self._props.get("tag_duration"), 0.0)
 
     ##
-    #  Setters
+    #  Methods
     ##
 
     def setTrackFile(self, path: Path) -> None:
@@ -197,9 +194,11 @@ class MediaTrack:
             self._wrapper.read(self._path)
         return
 
-    ##
-    #  Methods
-    ##
+    def getFrame(self, index: int) -> FrameBase | None:
+        """Return a subtitles frame."""
+        if self._wrapper:
+            return self._wrapper.getFrame(index)
+        return None
 
     def iterFrames(self) -> Iterable[FrameBase]:
         """Iterate over frames."""
