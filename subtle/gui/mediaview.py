@@ -52,14 +52,15 @@ class GuiMediaView(QWidget):
     C_DEFAULT = 8
     C_FORCED  = 9
 
-    newTrackAvailable = pyqtSignal(Path, dict)
+    newTrackSelection = pyqtSignal(str)
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
         self._extract = MkvExtract(self)
-        self._extractedTracks: dict[str, Path] = {}
+        self._extracted: dict[str, Path] = {}
         self._map: dict[str, QTreeWidgetItem] = {}
+        self._emitTrack: str | None = None
 
         self._trUnknown = self.tr("Unknown")
         self._trYes = self.tr("Yes")
@@ -125,6 +126,7 @@ class GuiMediaView(QWidget):
     def _newMedia(self) -> None:
         """Process new media signal."""
         self._map.clear()
+        self._extracted.clear()
         self.tracksView.clear()
         for track in SHARED.media.iterTracks():
             item = QTreeWidgetItem()
@@ -137,31 +139,29 @@ class GuiMediaView(QWidget):
     def _extractTracks(self) -> None:
         """Extract subtitle tracks from file."""
         if file := SHARED.media.mediaFile:
-            self._extractedTracks.clear()
             tracks = []
             for track in SHARED.media.iterTracks():
                 if track.trackType == MediaType.SUBS and (idx := track.trackID):
-                    path = file.dumpFile(idx)
-                    tracks.append((idx, path))
-                    track.setTrackFile(path)
-
-            self.progressText.setText(self.tr("Extracting {0} tracks ...").format(len(tracks)))
-            self.progressBar.setValue(0)
-
-            self._extract.extract(file.filePath, tracks)
-            self._extractedTracks = dict(tracks)
-
+                    if idx not in self._extracted:
+                        path = file.dumpFile(idx)
+                        tracks.append((idx, path))
+                        track.setTrackFile(path)
+            self._runTrackExtraction(file.filePath, tracks)
         return
 
     @pyqtSlot(QModelIndex)
     def _itemDoubleClicked(self, index: QModelIndex) -> None:
         """Process track double click in the media view."""
         if (file := SHARED.media.mediaFile) and (item := self.tracksView.itemFromIndex(index)):
-            track = item.text(self.C_TRACK)
-            if track in self._extractedTracks:
-                self.newTrackAvailable.emit(
-                    self._extractedTracks.get(track), file.getTrackInfo(track)
-                )
+            idx = item.text(self.C_TRACK)
+            if idx not in self._extracted:
+                if (track := SHARED.media.getTrack(idx)) and track.trackType == MediaType.SUBS:
+                    path = file.dumpFile(idx)
+                    track.setTrackFile(path)
+                    self._runTrackExtraction(file.filePath, [(idx, path)])
+                    self._emitTrack = idx
+            if idx in self._extracted:
+                self.newTrackSelection.emit(idx)
         return
 
     @pyqtSlot(int)
@@ -174,11 +174,17 @@ class GuiMediaView(QWidget):
     def _extractFinished(self) -> None:
         """Process track extraction finished."""
         self.progressText.setText(self.tr("Reading tracks ..."))
-        for idx in self._extractedTracks:
+        for idx in self._extracted:
             if track := SHARED.media.getTrack(idx):
                 track.readTrackFile()
                 self._setTrackInfo(track)
+
         self.progressText.setText(self.tr("Extraction complete"))
+        if self._emitTrack:
+            # Emit delayed new track signal
+            self.newTrackSelection.emit(self._emitTrack)
+            self._emitTrack = None
+
         return
 
     ##
@@ -200,4 +206,12 @@ class GuiMediaView(QWidget):
             item.setText(self.C_ENABLED, self._trYes if track.enabled else "")
             item.setText(self.C_DEFAULT, self._trYes if track.default else "")
             item.setText(self.C_FORCED, self._trYes if track.forced else "")
+        return
+
+    def _runTrackExtraction(self, path: Path, tracks: list[tuple[str, Path]]) -> None:
+        """Call for extraction for a set of tracks."""
+        self.progressText.setText(self.tr("Extracting {0} tracks ...").format(len(tracks)))
+        self.progressBar.setValue(0)
+        self._extract.extract(path, tracks)
+        self._extracted.update(tracks)
         return

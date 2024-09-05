@@ -28,7 +28,7 @@ from pathlib import Path
 from subtle.common import decodeTS
 from subtle.constants import MediaType
 from subtle.core.mediafile import MediaFile
-from subtle.formats.base import SubtitlesBase
+from subtle.formats.base import FrameBase, SubtitlesBase
 from subtle.formats.pgssubs import PGSSubs
 
 from PyQt6.QtCore import QObject, pyqtSignal
@@ -195,4 +195,14 @@ class MediaTrack:
         """Read the content of the track file."""
         if self._path and self._wrapper:
             self._wrapper.read(self._path)
+        return
+
+    ##
+    #  Methods
+    ##
+
+    def iterFrames(self) -> Iterable[FrameBase]:
+        """Iterate over frames."""
+        if self._wrapper:
+            yield from self._wrapper.iterFrames()
         return

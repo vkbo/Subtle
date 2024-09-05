@@ -103,9 +103,9 @@ class GuiMain(QMainWindow):
 
         self.fileTree.newFileSelection.connect(self._newFileSelected)
         self.fileTree.newFileSelection.connect(self.toolsPanel.newFileSelected)
-        self.mediaView.newTrackAvailable.connect(self._newTrackSelected)
-        self.mediaView.newTrackAvailable.connect(self.subsView.loadTrack)
-        self.mediaView.newTrackAvailable.connect(self.toolsPanel.newTrackSelected)
+        # self.mediaView.newTrackAvailable.connect(self._newTrackSelected)
+        # self.mediaView.newTrackAvailable.connect(self.toolsPanel.newTrackSelected)
+        self.mediaView.newTrackSelection.connect(self.subsView.displaySubs)
         self.subsView.displaySetSelected.connect(self._displaySetSelected)
         self.textEditor.newTextForDisplaySet.connect(self.subsView.updateText)
         self.textEditor.requestNewDisplaySet.connect(self.subsView.selectNearby)
