@@ -22,87 +22,112 @@ from __future__ import annotations
 
 import logging
 
-from collections.abc import Iterable
 from pathlib import Path
 
-from subtle.common import checkInt, formatTS
+from subtle.common import decodeTS, formatTS
+from subtle.formats.base import FrameBase, SubtitlesBase
+
+from PyQt6.QtGui import QImage
 
 logger = logging.getLogger(__name__)
 
 
-class SRTReader:
+class SRTSubs(SubtitlesBase):
 
-    def __init__(self, path: Path) -> None:
-        self._path = path
-        self._data: dict[int, tuple[str, str, list[str]]] = {}
-        self._readData()
+    def __init__(self) -> None:
+        super().__init__()
         return
 
-    def iterBlocks(self) -> Iterable[tuple[int, str, str, list[str]]]:
-        """Iterate through blocks."""
-        for num, (start, end, text) in self._data.items():
-            if num >= 0:
-                yield num, start, end, text
-        return
-
-    def _readData(self) -> bool:
+    def read(self, path: Path) -> None:
         """Read SRT info from file."""
         try:
-            with open(self._path, mode="r", encoding="utf-8") as fo:
-                block = []
-                for line in fo:
-                    if line := line.strip():
-                        block.append(line)
-                    else:
-                        self._addBlock(block)
-                        block = []
+            self._readData(path)
+            self._path = path
         except Exception as exc:
             logger.error("Could not read SRT file: %s", self._path, exc_info=exc)
-            return False
-        return True
-
-    def _addBlock(self, block: list[str]) -> None:
-        """Add a new frame to internal data."""
-        if len(block) > 2:
-            num = checkInt(block[0], -1)
-            start, _, end = block[1].partition(" --> ")
-            text = block[2:]
-            self._data[num] = (start, end, text)
         return
 
-
-class SRTWriter:
-
-    def __init__(self, path: Path) -> None:
-        self._path = path
-        self._data: list[tuple[float, float, list[str]]] = []
-        return
-
-    def addBlock(self, start: float, end: float, text: list[str]) -> bool:
-        """Add a subtitles frame if the timestamps are ok."""
-        if start >= 0.0 and end > start:
-            self._data.append((start, end, text))
-        else:
-            logger.warning("Skipping invalid subtitle timestamps start=%.3f end=%.3f", start, end)
-            return False
-        return True
-
-    def write(self) -> bool:
+    def write(self, path: Path | None = None) -> None:
         """Writer SRT data to file."""
         try:
-            with open(self._path, mode="w", encoding="utf-8") as fo:
-                prev = -1.0
-                for i, (start, end, text) in enumerate(self._data, 1):
-                    if start > prev and text:
-                        fo.write(f"{i}\n{formatTS(start)} --> {formatTS(end)}\n")
-                        fo.write("\n".join(text))
-                        fo.write("\n\n")
-                        prev = start
-                    elif start <= prev:
-                        logger.warning("Out of order text at t=%s", formatTS(start))
-                    else:
-                        logger.warning("Skipping entry with no text at t=%s", formatTS(start))
+            if path is None:
+                path = self._path
+            if path:
+                self._writeData(path)
         except Exception as exc:
             logger.error("Could not write SRT file: %s", self._path, exc_info=exc)
-            return False
-        return True
+        return
+
+    def copyFrames(self, other: SubtitlesBase) -> None:
+        return super()._copyFrames(SRTFrame, other)
+
+    ##
+    #  Internal Functions
+    ##
+
+    def _readData(self, path: Path) -> None:
+        """Read SRT text file data."""
+        self._path = path
+        with open(path, mode="r", encoding="utf-8") as fo:
+            block = []
+            for line in fo:
+                if line := line.strip():
+                    block.append(line)
+                else:
+                    self._parseFrame(block)
+                    block = []
+        return
+
+    def _writeData(self, path: Path) -> None:
+        """Write SRT text to file."""
+        with open(path, mode="w", encoding="utf-8") as fo:
+            prev = -1.0
+            for i, frame in enumerate(self._frames, 1):
+                if frame.start > prev and frame.text:
+                    fo.write(f"{i}\n{formatTS(frame.start)} --> {formatTS(frame.end)}\n")
+                    fo.write("\n".join(frame.text))
+                    fo.write("\n\n")
+                    prev = frame.start
+                elif frame.start <= prev:
+                    logger.warning("Out of order text at t=%s", formatTS(frame.start))
+                else:
+                    logger.warning("Skipping entry with no text at t=%s", formatTS(frame.start))
+        return
+
+    def _parseFrame(self, block: list[str]) -> None:
+        """Add a new frame to internal data."""
+        if len(block) > 2:
+            start, _, end = block[1].partition(" --> ")
+            self._frames.append(
+                SRTFrame(
+                    len(self._frames),
+                    decodeTS(start),
+                    decodeTS(end),
+                    block[2:],
+                )
+            )
+        return
+
+
+class SRTFrame(FrameBase):
+
+    def __init__(self, index: int, start: float, end: float, text: list[str]) -> None:
+        super().__init__(index)
+        self._start = start
+        self._end = end
+        self._text = text
+        return
+
+    @classmethod
+    def fromFrame(cls, index: int, other: FrameBase) -> FrameBase:
+        """Populate from another frame."""
+        return cls(index, other.start, other.end, other.text)
+
+    @property
+    def imageBased(self) -> bool:
+        """SRT frames are not images."""
+        return False
+
+    def getImage(self) -> QImage:
+        """There is no image."""
+        raise NotImplementedError

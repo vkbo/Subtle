@@ -84,7 +84,7 @@ class GuiMediaView(QWidget):
         self.progressBar = QProgressBar(self)
 
         # Controls
-        self.extractButton = QPushButton(self.tr("Extract"))
+        self.extractButton = QPushButton(self.tr("Extract All"))
         self.extractButton.clicked.connect(self._extractTracks)
 
         # Assemble
@@ -100,8 +100,6 @@ class GuiMediaView(QWidget):
         self.setLayout(self.outerBox)
 
         # Connect Signals
-        SHARED.media.newMediaLoaded.connect(self._newMedia)
-
         self._extract.processProgress.connect(self._extractProgress)
         self._extract.processDone.connect(self._extractFinished)
 
@@ -119,21 +117,27 @@ class GuiMediaView(QWidget):
         return
 
     ##
-    #  Private Slots
+    #  Public Slots
     ##
 
     @pyqtSlot()
-    def _newMedia(self) -> None:
+    def processNewMediaLoaded(self) -> None:
         """Process new media signal."""
         self._map.clear()
         self._extracted.clear()
         self.tracksView.clear()
+        self.progressBar.setValue(0)
+        self.progressText.setText(self.tr("Ready"))
         for track in SHARED.media.iterTracks():
             item = QTreeWidgetItem()
             self._setTrackInfo(track, item)
             self.tracksView.addTopLevelItem(item)
             self._map[track.trackID] = item
         return
+
+    ##
+    #  Private Slots
+    ##
 
     @pyqtSlot()
     def _extractTracks(self) -> None:
@@ -210,7 +214,7 @@ class GuiMediaView(QWidget):
 
     def _runTrackExtraction(self, path: Path, tracks: list[tuple[str, Path]]) -> None:
         """Call for extraction for a set of tracks."""
-        self.progressText.setText(self.tr("Extracting {0} tracks ...").format(len(tracks)))
+        self.progressText.setText(self.tr("Extracting {0} track(s) ...").format(len(tracks)))
         self.progressBar.setValue(0)
         self._extract.extract(path, tracks)
         self._extracted.update(tracks)

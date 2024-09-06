@@ -24,6 +24,10 @@ import logging
 
 from pathlib import Path
 
+from subtle import SHARED
+from subtle.constants import MediaType
+from subtle.core.media import MediaTrack
+
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import (
     QCheckBox, QFormLayout, QGroupBox, QHBoxLayout, QLineEdit, QListWidget,
@@ -44,9 +48,7 @@ class GuiToolsPanel(QWidget):
         super().__init__(parent)
 
         # Variables
-        self._mediaFile: Path | None = None
-        self._trackFile: Path | None = None
-        self._trackInfo: dict = {}
+        self._track: MediaTrack | None = None
 
         # Media Panel
         # ===========
@@ -147,30 +149,25 @@ class GuiToolsPanel(QWidget):
     #  Public Slots
     ##
 
-    @pyqtSlot(Path)
-    def newFileSelected(self, path: Path) -> None:
+    @pyqtSlot()
+    def processNewMediaLoaded(self) -> None:
         """Store the path to the selected file for later use."""
-        self._mediaFile = path
-        self._trackFile = None
-        self._trackInfo = {}
-
-        self.mediaDir.setText(str(path.parent))
-        self.mediaFile.setText(path.name)
-        self._scanForSubs(path)
+        self._track = None
+        if file := SHARED.media.mediaFile:
+            path = file.filePath
+            self.mediaDir.setText(str(path.parent))
+            self.mediaFile.setText(path.name)
+            self._scanForSubs(path)
         self._updateTrackInfo()
-
         return
 
-    @pyqtSlot(Path, dict)
-    def newTrackSelected(self, path: Path, info: dict) -> None:
+    @pyqtSlot(str)
+    def processNewTrackLoaded(self, idx: str) -> None:
         """Load a new track, if possible."""
-        self._trackFile = path
-        self._trackInfo = info
-
-        props = self._trackInfo.get("properties", {})
-        self.srtForced.setChecked(bool(props.get("forced_track", False)))
-
-        self._updateTrackInfo()
+        if (track := SHARED.media.getTrack(idx)) and track.trackType == MediaType.SUBS:
+            self._track = track
+            self.srtForced.setChecked(track.forced)
+            self._updateTrackInfo()
         return
 
     ##
@@ -200,16 +197,16 @@ class GuiToolsPanel(QWidget):
     @pyqtSlot()
     def _updateTrackInfo(self) -> None:
         """Update info about the current track."""
-        if self._mediaFile and self._trackFile and self._trackInfo:
-            props = self._trackInfo.get("properties", {})
-
+        self.srtSaveDir.setText("")
+        self.srtFileName.setText("")
+        if self._track and (file := SHARED.media.mediaFile):
             if self.srtSubsDir.isChecked():
-                folder = self._mediaFile.parent / "Subs"
+                folder = file.filePath.parent / "Subs"
             else:
-                folder = self._mediaFile.parent
+                folder = file.filePath.parent
 
-            bits = [self._mediaFile.stem]
-            bits.append(str(props.get("language", "und")))
+            bits = [file.filePath.stem]
+            bits.append(self._track.language)
             if self.srtForced.isChecked():
                 bits.append("forced")
             if self.srtSDH.isChecked():

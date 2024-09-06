@@ -60,6 +60,20 @@ class SubtitlesBase(ABC):
     def write(self, path: Path | None = None) -> None:
         raise NotImplementedError
 
+    @abstractmethod
+    def copyFrames(self, other: SubtitlesBase) -> None:
+        raise NotImplementedError
+
+    def _copyFrames(self, frameType: type[FrameBase], other: SubtitlesBase) -> None:
+        """Copy frame content from other class. Must be implemented in
+        subclasses by passing its own FrameBase implementation as
+        frameType.
+        """
+        self._frames = [
+            frameType.fromFrame(n, frame) for n, frame in enumerate(other.iterFrames())
+        ]
+        return
+
 
 class FrameBase(ABC):
 
@@ -69,6 +83,12 @@ class FrameBase(ABC):
         self._end: float = -1.0
         self._text: list[str] = []
         return
+
+    @classmethod
+    @abstractmethod
+    def fromFrame(cls, index: int, other: FrameBase) -> FrameBase:
+        """Copy another frame."""
+        raise NotImplementedError
 
     @property
     def index(self) -> int:
@@ -93,7 +113,7 @@ class FrameBase(ABC):
     @property
     @abstractmethod
     def imageBased(self) -> bool:
-        """Check if image based."""
+        """Check if image-based."""
         raise NotImplementedError
 
     def setText(self, text: list[str]) -> None:

@@ -30,7 +30,6 @@ from subtle import CONFIG, SHARED
 from subtle.constants import MediaType
 from subtle.core.media import MediaData, MediaTrack
 from subtle.core.ocrbase import OCRBase
-from subtle.core.tesseract import TesseractOCR
 from subtle.formats.base import FrameBase
 from subtle.gui.filetree import GuiFileTree
 from subtle.gui.imageviewer import GuiImageViewer
@@ -38,6 +37,7 @@ from subtle.gui.mediaview import GuiMediaView
 from subtle.gui.subsview import GuiSubtitleView
 from subtle.gui.texteditor import GuiTextEditor
 from subtle.gui.toolspanel import GuiToolsPanel
+from subtle.ocr.tesseract import TesseractOCR
 
 from PyQt6.QtCore import Qt, pyqtSlot
 from PyQt6.QtGui import QCloseEvent
@@ -100,14 +100,14 @@ class GuiMain(QMainWindow):
         # Signals
         # =======
 
-        self.fileTree.newFileSelection.connect(self._newFileSelected)
-        self.fileTree.newFileSelection.connect(self.toolsPanel.newFileSelected)
-        # self.mediaView.newTrackAvailable.connect(self._newTrackSelected)
-        # self.mediaView.newTrackAvailable.connect(self.toolsPanel.newTrackSelected)
-        self.mediaView.newTrackSelection.connect(self.subsView.newTrackLoaded)
-        self.mediaView.newTrackSelection.connect(self._newTrackLoaded)
-        # self.subsView.displaySetSelected.connect(self._displaySetSelected)
-        self.subsView.subsFrameSelected.connect(self._frameSelected)
+        SHARED.media.newMediaLoaded.connect(self._processNewMediaLoaded)
+        SHARED.media.newMediaLoaded.connect(self.toolsPanel.processNewMediaLoaded)
+        SHARED.media.newMediaLoaded.connect(self.subsView.processNewMediaLoaded)
+        SHARED.media.newMediaLoaded.connect(self.mediaView.processNewMediaLoaded)
+        self.mediaView.newTrackSelection.connect(self._processNewTrackLoaded)
+        self.mediaView.newTrackSelection.connect(self.subsView.processNewTrackLoaded)
+        self.mediaView.newTrackSelection.connect(self.toolsPanel.processNewTrackLoaded)
+        self.subsView.subsFrameSelected.connect(self._processFrameSelected)
         self.textEditor.newTextForFrame.connect(self.subsView.updateText)
         self.textEditor.requestNewFrame.connect(self.subsView.selectNearby)
         self.toolsPanel.requestSrtSave.connect(self.subsView.writeSrtFile)
@@ -164,21 +164,20 @@ class GuiMain(QMainWindow):
     ##
 
     @pyqtSlot(str)
-    def _newTrackLoaded(self, idx: str) -> None:
+    def _processNewTrackLoaded(self, idx: str) -> None:
         """Update track info."""
         if (track := SHARED.media.getTrack(idx)) and track.trackType == MediaType.SUBS:
             self._track = track
         return
 
-    @pyqtSlot(Path)
-    def _newFileSelected(self, path: Path) -> None:
-        """A new file has been selected."""
-        self._mediaFile = path
+    @pyqtSlot()
+    def _processNewMediaLoaded(self) -> None:
+        """Update info for new media loading."""
         self.ocrTool = TesseractOCR()
         return
 
     @pyqtSlot(FrameBase)
-    def _frameSelected(self, frame: FrameBase) -> None:
+    def _processFrameSelected(self, frame: FrameBase) -> None:
         """Process new frame."""
         if self._track:
             if frame.imageBased:

@@ -26,7 +26,7 @@ from pathlib import Path
 
 from subtle import CONFIG, SHARED
 
-from PyQt6.QtCore import QModelIndex, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import QModelIndex, pyqtSlot
 from PyQt6.QtGui import QFileSystemModel
 from PyQt6.QtWidgets import QTreeView, QWidget
 
@@ -34,8 +34,6 @@ logger = logging.getLogger(__name__)
 
 
 class GuiFileTree(QTreeView):
-
-    newFileSelection = pyqtSignal(Path)
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
@@ -77,9 +75,8 @@ class GuiFileTree(QTreeView):
     def _itemDoubleClicked(self, index: QModelIndex) -> None:
         """Process item double click in the file tree."""
         if (path := Path(self._model.filePath(index))).is_file():
-            SHARED.media.loadMediaFile(path)
             if path != self._current:
-                self.newFileSelection.emit(path)
+                SHARED.media.loadMediaFile(path)
                 self._current = path
         return
 

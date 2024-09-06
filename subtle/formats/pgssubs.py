@@ -60,12 +60,14 @@ class PGSSubs(SubtitlesBase):
             self._path = path
         except Exception as e:
             logger.error("Failed to read file data", exc_info=e)
-            self._data = []
         return
 
     def write(self, path: Path | None = None) -> None:
         """Write a PGS file."""
         raise NotImplementedError("Cannot write PGS files.")
+
+    def copyFrames(self, other: SubtitlesBase) -> None:
+        return super()._copyFrames(PGSFrame, other)
 
     ##
     #  Internal Functions
@@ -127,11 +129,11 @@ class PGSSubs(SubtitlesBase):
                 frame.closeFrame(ds)
                 frame = None
             elif state == COMP_ACQ:
-                # These are used to render subtitles at skip point, like
-                # on chapter markers. We don't care about that.
+                # These are used to render subtitles at skip points,
+                # like on chapter markers. We don't care about that.
                 logger.debug("Skipped acquisition point display set %d", ds.pcs.compNumber)
             else:
-                # Normal case display sets that are not clear frame are
+                # Normal case display sets that are not clear frames are
                 # used to crop the text. We don't care about cropping.
                 logger.debug("Skipped normal case display set %d", ds.pcs.compNumber)
 
@@ -147,6 +149,11 @@ class PGSFrame(FrameBase):
         self._ds = ds
         self._start = ds.timestamp
         return
+
+    @classmethod
+    def fromFrame(cls, index: int, other: FrameBase) -> FrameBase:
+        """Not implemented."""
+        raise NotImplementedError
 
     @property
     def imageBased(self) -> bool:
@@ -178,8 +185,8 @@ class DisplaySet:
     def __repr__(self) -> str:
         return (
             f"<{self.__class__.__name__}: composition={self._pcs.compNumber} "
-            f"windows={len(self._wds)} palettes={len(self._pds)} objects={len(self._ods)} "
-            f"state={self._pcs.compState:02x} timestamp={formatTS(self._pcs.timestamp)}>"
+            f"state={self._pcs.compState:02x} timestamp={formatTS(self._pcs.timestamp)} "
+            f"windows={len(self._wds)} palettes={len(self._pds)} objects={len(self._ods)}>"
         )
 
     @property

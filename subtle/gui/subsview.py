@@ -29,6 +29,7 @@ from subtle.common import formatTS
 from subtle.constants import MediaType
 from subtle.core.media import MediaTrack
 from subtle.formats.base import FrameBase
+from subtle.formats.srtsubs import SRTSubs
 
 from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
@@ -90,8 +91,16 @@ class GuiSubtitleView(QWidget):
     #  Public Slots
     ##
 
+    @pyqtSlot()
+    def processNewMediaLoaded(self) -> None:
+        """Clear previous content."""
+        self._map = {}
+        self._track = None
+        self.subEntries.clear()
+        return
+
     @pyqtSlot(str)
-    def newTrackLoaded(self, idx: str) -> None:
+    def processNewTrackLoaded(self, idx: str) -> None:
         """Display subtitles for a given track."""
         if (track := SHARED.media.getTrack(idx)) and track.trackType == MediaType.SUBS:
             self._map.clear()
@@ -120,14 +129,10 @@ class GuiSubtitleView(QWidget):
     @pyqtSlot(Path)
     def writeSrtFile(self, path: Path) -> None:
         """Save the processed subtitles to an SRT file."""
-        # writer = SRTWriter(path)
-        # for i in range(self.subEntries.topLevelItemCount()):
-        #     if item := self.subEntries.topLevelItem(i):
-        #         start = item.data(self.C_DATA, self.D_START)
-        #         end = item.data(self.C_DATA, self.D_END)
-        #         text = item.data(self.C_DATA, self.D_TEXT)
-        #         writer.addBlock(start, end, text)
-        # writer.write()
+        if self._track:
+            writer = SRTSubs()
+            self._track.copyFrames(writer)
+            writer.write(path)
         return
 
     @pyqtSlot(Path)

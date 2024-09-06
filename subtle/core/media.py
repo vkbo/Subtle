@@ -205,3 +205,9 @@ class MediaTrack:
         if self._wrapper:
             yield from self._wrapper.iterFrames()
         return
+
+    def copyFrames(self, target: SubtitlesBase) -> None:
+        """Copy all frames from current track to target."""
+        if self._wrapper:
+            target.copyFrames(self._wrapper)
+        return
