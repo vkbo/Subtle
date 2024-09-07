@@ -111,7 +111,7 @@ class SRTSubs(SubtitlesBase):
 
 class SRTFrame(FrameBase):
 
-    def __init__(self, index: int, start: float, end: float, text: list[str]) -> None:
+    def __init__(self, index: int, start: int, end: int, text: list[str]) -> None:
         super().__init__(index)
         self._start = start
         self._end = end

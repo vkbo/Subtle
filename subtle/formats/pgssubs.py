@@ -147,7 +147,7 @@ class PGSFrame(FrameBase):
     def __init__(self, index: int, ds: DisplaySet) -> None:
         super().__init__(index=index)
         self._ds = ds
-        self._start = ds.timestamp
+        self._start = int(ds.timestamp / 90.0)
         return
 
     @classmethod
@@ -162,7 +162,7 @@ class PGSFrame(FrameBase):
 
     def closeFrame(self, ds: DisplaySet) -> None:
         """Extract timestamp from display set used to close frame."""
-        self._end = ds.timestamp
+        self._end = int(ds.timestamp / 90.0)
         return
 
     def getImage(self) -> QImage:
@@ -184,9 +184,13 @@ class DisplaySet:
 
     def __repr__(self) -> str:
         return (
-            f"<{self.__class__.__name__}: composition={self._pcs.compNumber} "
-            f"state={self._pcs.compState:02x} timestamp={formatTS(self._pcs.timestamp)} "
-            f"windows={len(self._wds)} palettes={len(self._pds)} objects={len(self._ods)}>"
+            f"<{self.__class__.__name__}: "
+            f"composition={self._pcs.compNumber} "
+            f"state={self._pcs.compState:02x} "
+            f"timestamp={formatTS(int(self._pcs.timestamp / 90)):.3f} "
+            f"windows={len(self._wds)} "
+            f"palettes={len(self._pds)} "
+            f"objects={len(self._ods)}>"
         )
 
     @property
@@ -327,7 +331,7 @@ class BaseSegment(ABC):
 
     @property
     def timestamp(self) -> float:
-        return self._ts / 90000.0
+        return self._ts
 
     @abstractmethod
     def validate(self) -> None:

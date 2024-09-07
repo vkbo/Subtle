@@ -83,7 +83,7 @@ class GuiSubtitleView(QWidget):
     def saveSettings(self) -> None:
         """Save widget settings."""
         CONFIG.setSizes("subsViewColumns", [
-            self.subEntries.columnWidth(i) for i in range(self.subEntries.columnCount())
+            self.subEntries.columnWidth(i) for i in range(self.subEntries.columnCount() - 1)
         ])
         return
 
@@ -102,18 +102,20 @@ class GuiSubtitleView(QWidget):
     @pyqtSlot(str)
     def processNewTrackLoaded(self, idx: str) -> None:
         """Display subtitles for a given track."""
+        font = CONFIG.fixedFont
         if (track := SHARED.media.getTrack(idx)) and track.trackType == MediaType.SUBS:
             self._map.clear()
             self.subEntries.clear()
             self._track = track
             for frame in track.iterFrames():
-                tss = frame.start
-                tse = frame.end
                 item = QTreeWidgetItem()
                 item.setText(self.C_ID, str(self.subEntries.topLevelItemCount()))
-                item.setText(self.C_TIME, formatTS(tss))
-                item.setText(self.C_LENGTH, f"{tse - tss:.3f}")
+                item.setText(self.C_TIME, formatTS(frame.start))
+                item.setText(self.C_LENGTH, f"{frame.length/1000.0:.3f} s")
                 item.setData(self.C_DATA, self.D_INDEX, frame.index)
+                item.setFont(self.C_ID, font)
+                item.setFont(self.C_TIME, font)
+                item.setFont(self.C_LENGTH, font)
                 self._map[frame.index] = item
                 self._updateItemText(item, frame.text)
                 self.subEntries.addTopLevelItem(item)

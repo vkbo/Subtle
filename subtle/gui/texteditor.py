@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import logging
 
+from subtle import CONFIG
 from subtle.formats.base import FrameBase
 
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
@@ -44,6 +45,7 @@ class GuiTextEditor(QWidget):
 
         # Editor
         self.textEdit = QTextEdit(self)
+        self.textEdit.setFont(CONFIG.subsFont)
         self.textEdit.textChanged.connect(self._textChanged)
 
         if document := self.textEdit.document():
@@ -51,10 +53,6 @@ class GuiTextEditor(QWidget):
             options.setAlignment(Qt.AlignmentFlag.AlignCenter)
             document.setDefaultTextOption(options)
             document.setDocumentMargin(20.0)
-
-        font = self.textEdit.font()
-        font.setPointSizeF(font.pointSizeF() * 3)
-        self.textEdit.setFont(font)
 
         # Assemble
         self.outerBox = QVBoxLayout()

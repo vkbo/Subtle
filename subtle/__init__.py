@@ -136,6 +136,7 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
 
     # Run Config steps that require the QApplication
     CONFIG.load()
+    CONFIG.fonts(app)
     CONFIG.localisation(app)
 
     # Launch main GUI

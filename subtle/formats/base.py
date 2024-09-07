@@ -79,8 +79,8 @@ class FrameBase(ABC):
 
     def __init__(self, index: int) -> None:
         self._index: int = index
-        self._start: float = -1.0
-        self._end: float = -1.0
+        self._start: int = -1
+        self._end: int = -1
         self._text: list[str] = []
         return
 
@@ -96,14 +96,19 @@ class FrameBase(ABC):
         return self._index
 
     @property
-    def start(self) -> float:
+    def start(self) -> int:
         """Frame start time."""
         return self._start
 
     @property
-    def end(self) -> float:
+    def end(self) -> int:
         """Frame end time."""
         return self._end
+
+    @property
+    def length(self) -> int:
+        """Frame length."""
+        return self._end - self._start
 
     @property
     def text(self) -> list[str]:

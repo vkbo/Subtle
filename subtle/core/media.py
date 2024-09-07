@@ -175,9 +175,9 @@ class MediaTrack:
         return str(self._props.get("codec_id", "NONE"))
 
     @property
-    def duration(self) -> float:
+    def duration(self) -> int:
         """Return the track's duration."""
-        return decodeTS(self._props.get("tag_duration"), 0.0)
+        return decodeTS(self._props.get("tag_duration"))
 
     ##
     #  Methods
