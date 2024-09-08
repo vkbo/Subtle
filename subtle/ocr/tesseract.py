@@ -27,7 +27,7 @@ import uuid
 from pathlib import Path
 
 from subtle import CONFIG
-from subtle.core.ocrbase import OCRBase
+from subtle.ocr.base import OCRBase
 
 from PyQt6.QtGui import QImage
 

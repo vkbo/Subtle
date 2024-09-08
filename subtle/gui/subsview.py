@@ -27,7 +27,6 @@ from pathlib import Path
 from subtle import CONFIG, SHARED
 from subtle.common import formatTS
 from subtle.constants import MediaType
-from subtle.core.media import MediaTrack
 from subtle.formats.base import FrameBase
 from subtle.formats.srtsubs import SRTSubs
 
@@ -47,13 +46,12 @@ class GuiSubtitleView(QWidget):
 
     D_INDEX = Qt.ItemDataRole.UserRole
 
-    subsFrameSelected = pyqtSignal(FrameBase)
+    subsFrameUpdated = pyqtSignal(FrameBase)
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
         self._map: dict[int, QTreeWidgetItem] = {}
-        self._track: MediaTrack | None = None
 
         # Entries View
         self.subEntries = QTreeWidget(self)
@@ -95,18 +93,16 @@ class GuiSubtitleView(QWidget):
     def processNewMediaLoaded(self) -> None:
         """Clear previous content."""
         self._map = {}
-        self._track = None
         self.subEntries.clear()
         return
 
-    @pyqtSlot(str)
-    def processNewTrackLoaded(self, idx: str) -> None:
+    @pyqtSlot()
+    def processNewTrackLoaded(self) -> None:
         """Display subtitles for a given track."""
         font = CONFIG.fixedFont
-        if (track := SHARED.media.getTrack(idx)) and track.trackType == MediaType.SUBS:
+        if (track := SHARED.media.currentTrack) and track.trackType == MediaType.SUBS:
             self._map.clear()
             self.subEntries.clear()
-            self._track = track
             for frame in track.iterFrames():
                 item = QTreeWidgetItem()
                 item.setText(self.C_ID, str(self.subEntries.topLevelItemCount()))
@@ -131,9 +127,9 @@ class GuiSubtitleView(QWidget):
     @pyqtSlot(Path)
     def writeSrtFile(self, path: Path) -> None:
         """Save the processed subtitles to an SRT file."""
-        if self._track:
+        if SHARED.media.currentTrack:
             writer = SRTSubs()
-            self._track.copyFrames(writer)
+            SHARED.media.currentTrack.copyFrames(writer)
             writer.write(path)
         return
 
@@ -153,14 +149,13 @@ class GuiSubtitleView(QWidget):
     @pyqtSlot(int)
     def selectNearby(self, step: int) -> None:
         """Select a different display set."""
-        if self._track and (items := self.subEntries.selectedItems()):
+        if SHARED.media.currentTrack and (items := self.subEntries.selectedItems()):
             index = items[0].data(self.C_DATA, self.D_INDEX) + step
             if item := self.subEntries.topLevelItem(index):
                 self.subEntries.clearSelection()
                 self.subEntries.scrollToItem(item)
                 item.setSelected(True)
-                if frame := self._track.getFrame(index):
-                    self.subsFrameSelected.emit(frame)
+                self._itemClicked(self.subEntries.indexFromItem(item))
         return
 
     ##
@@ -170,9 +165,15 @@ class GuiSubtitleView(QWidget):
     @pyqtSlot(QModelIndex)
     def _itemClicked(self, index: QModelIndex) -> None:
         """Process item click in the subtitles list."""
-        if self._track and (item := self.subEntries.itemFromIndex(index)):
-            if frame := self._track.getFrame(item.data(self.C_DATA, self.D_INDEX)):
-                self.subsFrameSelected.emit(frame)
+        if (track := SHARED.media.currentTrack) and (item := self.subEntries.itemFromIndex(index)):
+            if frame := SHARED.media.currentTrack.getFrame(item.data(self.C_DATA, self.D_INDEX)):
+                if frame.imageBased:
+                    image = frame.getImage()
+                    if (ocrTool := SHARED.ocr) and not (text := frame.text):
+                        text = ocrTool.processImage(frame.index, image, [track.language])
+                        frame.setText(text)
+                    self.updateText(frame)
+                self.subsFrameUpdated.emit(frame)
         return
 
     ##

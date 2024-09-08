@@ -40,10 +40,12 @@ class MediaData(QObject):
 
     mediaDataCleared = pyqtSignal()
     newMediaLoaded = pyqtSignal()
+    newTrackSelected = pyqtSignal()
 
     def __init__(self) -> None:
         super().__init__()
         self._tracks: dict[str, MediaTrack] = {}
+        self._track: MediaTrack | None = None
         self._file: MediaFile | None = None
         return
 
@@ -57,9 +59,15 @@ class MediaData(QObject):
         """Return the media file object."""
         return self._file
 
+    @property
+    def currentTrack(self) -> MediaTrack | None:
+        """Return the active media track."""
+        return self._track
+
     def clear(self) -> None:
         """Clear the data object."""
         self._tracks.clear()
+        self._track = None
         self._file = None
         self.mediaDataCleared.emit()
         return
@@ -78,13 +86,20 @@ class MediaData(QObject):
             self.newMediaLoaded.emit()
         return
 
+    def setCurrentTrack(self, trackID: str) -> None:
+        """Set the current active track."""
+        if (track := self._tracks.get(trackID)) is not self._track:
+            self._track = track
+            self.newTrackSelected.emit()
+        return
+
     def iterTracks(self) -> Iterable[MediaTrack]:
         """Iterate through all tracks."""
         yield from self._tracks.values()
 
     def getTrack(self, trackID: str) -> MediaTrack | None:
         """Return a track object."""
-        return self._tracks[trackID]
+        return self._tracks.get(trackID)
 
 
 class MediaTrack:

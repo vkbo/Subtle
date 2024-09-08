@@ -83,7 +83,12 @@ class GuiTextEditor(QWidget):
 
         return
 
-    def setText(self, frame: FrameBase) -> None:
+    ##
+    #  Public Slots
+    ##
+
+    @pyqtSlot(FrameBase)
+    def setEditorText(self, frame: FrameBase) -> None:
         """Set the editor text."""
         self._frame = frame
         self._block = True

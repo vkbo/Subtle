@@ -26,7 +26,6 @@ from pathlib import Path
 
 from subtle import SHARED
 from subtle.constants import MediaType
-from subtle.core.media import MediaTrack
 
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import (
@@ -46,9 +45,6 @@ class GuiToolsPanel(QWidget):
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
-
-        # Variables
-        self._track: MediaTrack | None = None
 
         # Media Panel
         # ===========
@@ -152,7 +148,6 @@ class GuiToolsPanel(QWidget):
     @pyqtSlot()
     def processNewMediaLoaded(self) -> None:
         """Store the path to the selected file for later use."""
-        self._track = None
         if file := SHARED.media.mediaFile:
             path = file.filePath
             self.mediaDir.setText(str(path.parent))
@@ -161,11 +156,10 @@ class GuiToolsPanel(QWidget):
         self._updateTrackInfo()
         return
 
-    @pyqtSlot(str)
-    def processNewTrackLoaded(self, idx: str) -> None:
+    @pyqtSlot()
+    def processNewTrackLoaded(self) -> None:
         """Load a new track, if possible."""
-        if (track := SHARED.media.getTrack(idx)) and track.trackType == MediaType.SUBS:
-            self._track = track
+        if (track := SHARED.media.currentTrack) and track.trackType == MediaType.SUBS:
             self.srtForced.setChecked(track.forced)
             self._updateTrackInfo()
         return
@@ -199,14 +193,14 @@ class GuiToolsPanel(QWidget):
         """Update info about the current track."""
         self.srtSaveDir.setText("")
         self.srtFileName.setText("")
-        if self._track and (file := SHARED.media.mediaFile):
+        if SHARED.media.currentTrack and (file := SHARED.media.mediaFile):
             if self.srtSubsDir.isChecked():
                 folder = file.filePath.parent / "Subs"
             else:
                 folder = file.filePath.parent
 
             bits = [file.filePath.stem]
-            bits.append(self._track.language)
+            bits.append(SHARED.media.currentTrack.language)
             if self.srtForced.isChecked():
                 bits.append("forced")
             if self.srtSDH.isChecked():

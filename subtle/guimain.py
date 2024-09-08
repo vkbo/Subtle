@@ -23,14 +23,8 @@ from __future__ import annotations
 import logging
 import sys
 
-from dataclasses import dataclass
-from pathlib import Path
-
 from subtle import CONFIG, SHARED
-from subtle.constants import MediaType
-from subtle.core.media import MediaData, MediaTrack
-from subtle.core.ocrbase import OCRBase
-from subtle.formats.base import FrameBase
+from subtle.core.media import MediaData
 from subtle.gui.filetree import GuiFileTree
 from subtle.gui.imageviewer import GuiImageViewer
 from subtle.gui.mediaview import GuiMediaView
@@ -39,19 +33,11 @@ from subtle.gui.texteditor import GuiTextEditor
 from subtle.gui.toolspanel import GuiToolsPanel
 from subtle.ocr.tesseract import TesseractOCR
 
-from PyQt6.QtCore import Qt, pyqtSlot
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import QMainWindow, QSplitter
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class CurrentObject:
-
-    mediaFile: Path
-    trackFile: Path | None = None
-    trackInfo: dict | None = None
 
 
 class GuiMain(QMainWindow):
@@ -78,11 +64,9 @@ class GuiMain(QMainWindow):
         # Cached Data
         # ===========
 
-        SHARED.initMedia(MediaData())
+        SHARED.initSharedData(MediaData(), TesseractOCR())
 
-        self._track: MediaTrack | None = None
-
-        # Gui Elements
+        # GUI Elements
         # ============
 
         self.fileTree = GuiFileTree(self)
@@ -92,22 +76,17 @@ class GuiMain(QMainWindow):
         self.textEditor = GuiTextEditor(self)
         self.toolsPanel = GuiToolsPanel(self)
 
-        # Processing
-        # ==========
-
-        self.ocrTool: OCRBase | None = None
-
         # Signals
         # =======
 
-        SHARED.media.newMediaLoaded.connect(self._processNewMediaLoaded)
-        SHARED.media.newMediaLoaded.connect(self.toolsPanel.processNewMediaLoaded)
-        SHARED.media.newMediaLoaded.connect(self.subsView.processNewMediaLoaded)
         SHARED.media.newMediaLoaded.connect(self.mediaView.processNewMediaLoaded)
-        self.mediaView.newTrackSelection.connect(self._processNewTrackLoaded)
-        self.mediaView.newTrackSelection.connect(self.subsView.processNewTrackLoaded)
-        self.mediaView.newTrackSelection.connect(self.toolsPanel.processNewTrackLoaded)
-        self.subsView.subsFrameSelected.connect(self._processFrameSelected)
+        SHARED.media.newMediaLoaded.connect(self.subsView.processNewMediaLoaded)
+        SHARED.media.newMediaLoaded.connect(self.toolsPanel.processNewMediaLoaded)
+        SHARED.media.newTrackSelected.connect(self.subsView.processNewTrackLoaded)
+        SHARED.media.newTrackSelected.connect(self.toolsPanel.processNewTrackLoaded)
+
+        self.subsView.subsFrameUpdated.connect(self.imageViewer.processFrameUpdate)
+        self.subsView.subsFrameUpdated.connect(self.textEditor.setEditorText)
         self.textEditor.newTextForFrame.connect(self.subsView.updateText)
         self.textEditor.requestNewFrame.connect(self.subsView.selectNearby)
         self.toolsPanel.requestSrtSave.connect(self.subsView.writeSrtFile)
@@ -157,35 +136,4 @@ class GuiMain(QMainWindow):
         CONFIG.save()
         CONFIG.cleanup()
         event.accept()
-        return
-
-    ##
-    #  Private Slots
-    ##
-
-    @pyqtSlot(str)
-    def _processNewTrackLoaded(self, idx: str) -> None:
-        """Update track info."""
-        if (track := SHARED.media.getTrack(idx)) and track.trackType == MediaType.SUBS:
-            self._track = track
-        return
-
-    @pyqtSlot()
-    def _processNewMediaLoaded(self) -> None:
-        """Update info for new media loading."""
-        self.ocrTool = TesseractOCR()
-        return
-
-    @pyqtSlot(FrameBase)
-    def _processFrameSelected(self, frame: FrameBase) -> None:
-        """Process new frame."""
-        if self._track:
-            if frame.imageBased:
-                image = frame.getImage()
-                self.imageViewer.setImage(image)
-                if self.ocrTool and not (text := frame.text):
-                    text = self.ocrTool.processImage(frame.index, image, [self._track.language])
-                    frame.setText(text)
-                self.subsView.updateText(frame)
-            self.textEditor.setText(frame)
         return

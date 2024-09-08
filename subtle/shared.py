@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from subtle.core.media import MediaData
+    from subtle.ocr.base import OCRBase
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ class SharedData:
 
     def __init__(self) -> None:
         self._media: MediaData | None = None
+        self._ocr: OCRBase | None = None
         return
 
     @property
@@ -43,9 +45,17 @@ class SharedData:
             return self._media
         raise RuntimeError("Shared data object not yet initialised.")
 
-    def initMedia(self, media: MediaData) -> None:
-        """Init the media object. This must be called right after the
-        GUI is created.
+    @property
+    def ocr(self) -> OCRBase:
+        """Return the ocr object."""
+        if self._ocr is not None:
+            return self._ocr
+        raise RuntimeError("Shared data object not yet initialised.")
+
+    def initSharedData(self, media: MediaData, ocr: OCRBase) -> None:
+        """Init the shared data object. This must be called right after
+        the GUI is created.
         """
         self._media = media
+        self._ocr = ocr
         return

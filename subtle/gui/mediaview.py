@@ -30,7 +30,7 @@ from subtle.constants import GuiLabels, MediaType, trConst
 from subtle.core.media import MediaTrack
 from subtle.core.mkvextract import MkvExtract
 
-from PyQt6.QtCore import QModelIndex, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import QModelIndex, pyqtSlot
 from PyQt6.QtWidgets import (
     QHBoxLayout, QLabel, QProgressBar, QPushButton, QTreeWidget,
     QTreeWidgetItem, QVBoxLayout, QWidget
@@ -51,8 +51,6 @@ class GuiMediaView(QWidget):
     C_ENABLED = 7
     C_DEFAULT = 8
     C_FORCED  = 9
-
-    newTrackSelection = pyqtSignal(str)
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
@@ -164,8 +162,8 @@ class GuiMediaView(QWidget):
                     track.setTrackFile(path)
                     self._runTrackExtraction(file.filePath, [(idx, path)])
                     self._emitTrack = idx
-            if idx in self._extracted:
-                self.newTrackSelection.emit(idx)
+            if idx in self._extracted and not self._emitTrack:
+                SHARED.media.setCurrentTrack(idx)
         return
 
     @pyqtSlot(int)
@@ -186,7 +184,7 @@ class GuiMediaView(QWidget):
         self.progressText.setText(self.tr("Extraction complete"))
         if self._emitTrack:
             # Emit delayed new track signal
-            self.newTrackSelection.emit(self._emitTrack)
+            SHARED.media.setCurrentTrack(self._emitTrack)
             self._emitTrack = None
 
         return
