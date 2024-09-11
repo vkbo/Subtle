@@ -33,12 +33,17 @@ from subtle import CONFIG
 logger = logging.getLogger(__name__)
 
 
-class MkvFile:
+class MediaFile:
+    """Media File Wrapper.
+
+    Wraps a single media file and holds media info about it.
+    """
 
     def __init__(self, file: Path) -> None:
         self._file = file
         self._id = sha1(bytes(file), usedforsecurity=False).hexdigest()
         self._info = {}
+        self._getInfo()
         return
 
     @property
@@ -46,24 +51,13 @@ class MkvFile:
         """The path to the MKV file."""
         return self._file
 
-    def getInfo(self) -> None:
-        """Load info about the media file."""
-        try:
-            p = subprocess.Popen(
-                ["mkvmerge", "-J", str(self._file)],
-                stdout=subprocess.PIPE,
-            )
-            out, _ = p.communicate()
-            self._info = json.loads(out.decode("utf-8"))
-            with open(self.infoFile(), mode="w", encoding="utf-8") as fo:
-                json.dump(self._info, fo, indent=2)
-        except Exception as e:
-            logger.error("Failed to load media file info", exc_info=e)
-            self._info = {}
-        return
+    @property
+    def valid(self) -> bool:
+        """True if the media file was read successfully."""
+        return bool(self._info)
 
     def getTrackInfo(self, track: str | int) -> dict:
-        """"""
+        """Return information about a specific track."""
         for entry in self._info.get("tracks", []):
             if isinstance(entry, dict) and str(entry.get("id", "")) == str(track):
                 return entry
@@ -80,3 +74,23 @@ class MkvFile:
     def infoFile(self) -> Path:
         """Generate a file name for a info dump."""
         return CONFIG.dumpPath / f"{self._id}.info.json"
+
+    ##
+    #  Internal Functions
+    ##
+
+    def _getInfo(self) -> None:
+        """Load info about the media file."""
+        try:
+            p = subprocess.Popen(
+                ["mkvmerge", "-J", str(self._file)],
+                stdout=subprocess.PIPE,
+            )
+            out, _ = p.communicate()
+            self._info = json.loads(out.decode("utf-8"))
+            with open(self.infoFile(), mode="w", encoding="utf-8") as fo:
+                json.dump(self._info, fo, indent=2)
+        except Exception as e:
+            logger.error("Failed to load media file info", exc_info=e)
+            self._info = {}
+        return

@@ -24,14 +24,16 @@ import logging
 
 from pathlib import Path
 
-from subtle import CONFIG
-from subtle.common import formatInt
+from subtle import CONFIG, SHARED
+from subtle.common import formatTS
+from subtle.constants import GuiLabels, MediaType, trConst
+from subtle.core.media import MediaTrack
 from subtle.core.mkvextract import MkvExtract
-from subtle.core.mkvfile import MkvFile
 
-from PyQt6.QtCore import QModelIndex, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import QModelIndex, pyqtSlot
 from PyQt6.QtWidgets import (
-    QLabel, QProgressBar, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+    QHBoxLayout, QLabel, QProgressBar, QPushButton, QTreeWidget,
+    QTreeWidgetItem, QVBoxLayout, QWidget
 )
 
 logger = logging.getLogger(__name__)
@@ -44,47 +46,54 @@ class GuiMediaView(QWidget):
     C_CODEC   = 2
     C_LANG    = 3
     C_LENGTH  = 4
-    C_LABEL   = 5
-    C_ENABLED = 6
-    C_DEFAULT = 7
-    C_FORCED  = 8
-
-    newTrackAvailable = pyqtSignal(Path, dict)
+    C_FRAMES  = 5
+    C_LABEL   = 6
+    C_ENABLED = 7
+    C_DEFAULT = 8
+    C_FORCED  = 9
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
-        self._current: MkvFile | None = None
         self._extract = MkvExtract(self)
-
-        self._trackInfo: dict | None = None
-        self._trackFile: Path | None = None
+        self._extracted: dict[str, Path] = {}
+        self._map: dict[str, QTreeWidgetItem] = {}
+        self._emitTrack: str | None = None
 
         self._trUnknown = self.tr("Unknown")
         self._trYes = self.tr("Yes")
 
-        self._tracks = QTreeWidget(self)
-        self._tracks.setIndentation(0)
-        self._tracks.setHeaderLabels([
+        self.tracksView = QTreeWidget(self)
+        self.tracksView.setIndentation(0)
+        self.tracksView.setHeaderLabels([
             "#", self.tr("Type"), self.tr("Codec"), self.tr("Lang"), self.tr("Length"),
-            self.tr("Label"), self.tr("Enabled"), self.tr("Default"), self.tr("Forced"),
+            self.tr("Frames"), self.tr("Label"), self.tr("Enabled"), self.tr("Default"),
+            self.tr("Forced"),
         ])
-        self._tracks.doubleClicked.connect(self._itemDoubleClicked)
+        self.tracksView.doubleClicked.connect(self._itemDoubleClicked)
 
-        columns = self._tracks.columnCount()
+        columns = self.tracksView.columnCount()
         for i, w in enumerate(CONFIG.getSizes("mediaViewColumns")):
             if i < columns:
-                self._tracks.setColumnWidth(i, w)
+                self.tracksView.setColumnWidth(i, w)
 
         # Progress
-        self._progressText = QLabel(self)
-        self._progressBar = QProgressBar(self)
+        self.progressText = QLabel(self.tr("No file selected ..."), self)
+        self.progressBar = QProgressBar(self)
+
+        # Controls
+        self.extractButton = QPushButton(self.tr("Extract All"))
+        self.extractButton.clicked.connect(self._extractTracks)
 
         # Assemble
+        self.controlsBox = QHBoxLayout()
+        self.controlsBox.addWidget(self.progressBar, 1)
+        self.controlsBox.addWidget(self.extractButton, 0)
+
         self.outerBox = QVBoxLayout()
-        self.outerBox.addWidget(self._tracks)
-        self.outerBox.addWidget(self._progressText)
-        self.outerBox.addWidget(self._progressBar)
+        self.outerBox.addWidget(self.tracksView)
+        self.outerBox.addWidget(self.progressText)
+        self.outerBox.addLayout(self.controlsBox)
 
         self.setLayout(self.outerBox)
 
@@ -101,7 +110,7 @@ class GuiMediaView(QWidget):
     def saveSettings(self) -> None:
         """Save widget settings."""
         CONFIG.setSizes("mediaViewColumns", [
-            self._tracks.columnWidth(i) for i in range(self._tracks.columnCount())
+            self.tracksView.columnWidth(i) for i in range(self.tracksView.columnCount())
         ])
         return
 
@@ -109,85 +118,102 @@ class GuiMediaView(QWidget):
     #  Public Slots
     ##
 
-    @pyqtSlot(Path)
-    def setCurrentFile(self, file: Path) -> None:
-        """Set the current file."""
-        self._current = MkvFile(file)
-        self._current.getInfo()
-        self._listTracks()
+    @pyqtSlot()
+    def processNewMediaLoaded(self) -> None:
+        """Process new media signal."""
+        self._map.clear()
+        self._extracted.clear()
+        self.tracksView.clear()
+        self.progressBar.setValue(0)
+        self.progressText.setText(self.tr("Ready"))
+        for track in SHARED.media.iterTracks():
+            item = QTreeWidgetItem()
+            self._setTrackInfo(track, item)
+            self.tracksView.addTopLevelItem(item)
+            self._map[track.trackID] = item
         return
 
     ##
     #  Private Slots
     ##
 
+    @pyqtSlot()
+    def _extractTracks(self) -> None:
+        """Extract subtitle tracks from file."""
+        if file := SHARED.media.mediaFile:
+            tracks = []
+            for track in SHARED.media.iterTracks():
+                if track.trackType == MediaType.SUBS and (idx := track.trackID):
+                    if idx not in self._extracted:
+                        path = file.dumpFile(idx)
+                        tracks.append((idx, path))
+                        track.setTrackFile(path)
+            self._runTrackExtraction(file.filePath, tracks)
+        return
+
     @pyqtSlot(QModelIndex)
     def _itemDoubleClicked(self, index: QModelIndex) -> None:
         """Process track double click in the media view."""
-        if self._current and (item := self._tracks.itemFromIndex(index)):
-            track = item.text(self.C_TRACK)
-            mkvFile = self._current.filePath
-            outFile = self._current.dumpFile(track)
-
-            self._progressText.setText("Extracting ...")
-            self._progressBar.setValue(0)
-
-            self._trackInfo = self._current.getTrackInfo(track)
-            self._trackFile = outFile
-            self._extract.extract(mkvFile, track, outFile)
-
+        if (file := SHARED.media.mediaFile) and (item := self.tracksView.itemFromIndex(index)):
+            idx = item.text(self.C_TRACK)
+            if idx not in self._extracted:
+                if (track := SHARED.media.getTrack(idx)) and track.trackType == MediaType.SUBS:
+                    path = file.dumpFile(idx)
+                    track.setTrackFile(path)
+                    self._runTrackExtraction(file.filePath, [(idx, path)])
+                    self._emitTrack = idx
+            if idx in self._extracted and not self._emitTrack:
+                SHARED.media.setCurrentTrack(idx)
         return
 
     @pyqtSlot(int)
     def _extractProgress(self, value: int) -> None:
         """Process track extraction progress count."""
-        if (file := self._trackFile) and (info := self._trackInfo):
-            tID    = str(info.get("id", "-"))
-            tType  = info.get("type", self._trUnknown).title()
-            tCodec = info.get("codec", self._trUnknown)
-            tSize  = formatInt(file.stat().st_size)
-            self._progressText.setText(f"Extracting Track {tID}: {tType} ({tCodec}) - {tSize}B")
-            self._progressBar.setValue(value)
+        self.progressBar.setValue(value)
         return
 
     @pyqtSlot()
     def _extractFinished(self) -> None:
         """Process track extraction finished."""
-        if (file := self._trackFile) and (info := self._trackInfo):
-            self.newTrackAvailable.emit(file, info)
+        self.progressText.setText(self.tr("Reading tracks ..."))
+        for idx in self._extracted:
+            if track := SHARED.media.getTrack(idx):
+                track.readTrackFile()
+                self._setTrackInfo(track)
+
+        self.progressText.setText(self.tr("Extraction complete"))
+        if self._emitTrack:
+            # Emit delayed new track signal
+            SHARED.media.setCurrentTrack(self._emitTrack)
+            self._emitTrack = None
+
         return
 
     ##
     #  Internal Functions
     ##
 
-    def _listTracks(self) -> None:
-        """"""
-        self._tracks.clear()
-        if isinstance(self._current, MkvFile):
-            for track in self._current.iterTracks():
-                props = track.get("properties", {})
+    def _setTrackInfo(self, track: MediaTrack, item: QTreeWidgetItem | None = None) -> None:
+        """Set the info for a media track."""
+        if item is None:
+            item = self._map.get(track.trackID, None)
+        if item is not None:
+            item.setText(self.C_TRACK, track.trackID)
+            item.setText(self.C_TYPE, trConst(GuiLabels.MEDIA_TYPES[track.trackType]))
+            item.setText(self.C_CODEC, track.codecName)
+            item.setText(self.C_LANG, track.language)
+            item.setText(self.C_LENGTH, formatTS(track.duration)[:8])
+            item.setText(self.C_FRAMES, str(track.frames) if track.frames > 0 else "")
+            item.setText(self.C_LABEL, track.label)
+            item.setText(self.C_ENABLED, self._trYes if track.enabled else "")
+            item.setText(self.C_DEFAULT, self._trYes if track.default else "")
+            item.setText(self.C_FORCED, self._trYes if track.forced else "")
+        return
 
-                tID      = str(track.get("id", "-"))
-                tType    = track.get("type", self._trUnknown).title()
-                tCodec   = track.get("codec", self._trUnknown)
-                tLang    = props.get("language", "und")
-                tLength  = props.get("tag_duration", "Unknown")[:8]
-                tLabel   = props.get("track_name", "")
-                tEnabled = self._trYes if props.get("enabled_track", False) else ""
-                tDefault = self._trYes if props.get("default_track", False) else ""
-                tForced  = self._trYes if props.get("forced_track", False) else ""
-
-                item = QTreeWidgetItem()
-                item.setText(self.C_TRACK, tID)
-                item.setText(self.C_TYPE, tType)
-                item.setText(self.C_CODEC, tCodec)
-                item.setText(self.C_LANG, tLang)
-                item.setText(self.C_LENGTH, tLength)
-                item.setText(self.C_LABEL, tLabel)
-                item.setText(self.C_ENABLED, tEnabled)
-                item.setText(self.C_DEFAULT, tDefault)
-                item.setText(self.C_FORCED, tForced)
-
-                self._tracks.addTopLevelItem(item)
+    def _runTrackExtraction(self, path: Path, tracks: list[tuple[str, Path]]) -> None:
+        """Call for extraction for a set of tracks."""
+        self.progressText.setText(self.tr("Extracting {0} track(s) ...").format(len(tracks)))
+        self.progressBar.setValue(0)
+        self._extract.extract(path, tracks)
+        self._extracted.update(tracks)
         return

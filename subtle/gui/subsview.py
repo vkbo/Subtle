@@ -24,10 +24,11 @@ import logging
 
 from pathlib import Path
 
-from subtle import CONFIG
+from subtle import CONFIG, SHARED
 from subtle.common import formatTS
-from subtle.core.pgsreader import DisplaySet, PGSReader
-from subtle.core.srtfile import SRTReader, SRTWriter
+from subtle.constants import MediaType
+from subtle.formats.base import FrameBase
+from subtle.formats.srtsubs import SRTSubs
 
 from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
@@ -44,16 +45,12 @@ class GuiSubtitleView(QWidget):
     C_TEXT   = 3
 
     D_INDEX = Qt.ItemDataRole.UserRole
-    D_START = Qt.ItemDataRole.UserRole + 1
-    D_END   = Qt.ItemDataRole.UserRole + 2
-    D_TEXT  = Qt.ItemDataRole.UserRole + 3
 
-    displaySetSelected = pyqtSignal(int, DisplaySet)
+    subsFrameUpdated = pyqtSignal(FrameBase)
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
-        self._reader = None
         self._map: dict[int, QTreeWidgetItem] = {}
 
         # Entries View
@@ -84,7 +81,7 @@ class GuiSubtitleView(QWidget):
     def saveSettings(self) -> None:
         """Save widget settings."""
         CONFIG.setSizes("subsViewColumns", [
-            self.subEntries.columnWidth(i) for i in range(self.subEntries.columnCount())
+            self.subEntries.columnWidth(i) for i in range(self.subEntries.columnCount() - 1)
         ])
         return
 
@@ -92,76 +89,72 @@ class GuiSubtitleView(QWidget):
     #  Public Slots
     ##
 
-    @pyqtSlot(Path, dict)
-    def loadTrack(self, path: Path, info: dict) -> None:
-        """Load a new track, if possible."""
-        match info.get("codec", ""):
-            case "HDMV PGS":
-                logger.info("Processing PGS subtitle file")
-                self._reader = PGSReader(path)
-                self._map.clear()
-                self.subEntries.clear()
-                for entry in self._reader.listEntries():
-                    tss = entry.get("start", 0.0)
-                    tse = entry.get("end", 0.0)
-                    num = entry.get("num", -1)
-                    if not entry.get("clear", False):
-                        item = QTreeWidgetItem()
-                        item.setText(self.C_ID, str(self.subEntries.topLevelItemCount()))
-                        item.setText(self.C_TIME, formatTS(tss))
-                        item.setText(self.C_LENGTH, f"{tse - tss:.3f}")
-                        item.setData(self.C_DATA, self.D_INDEX, entry.get("index", -1))
-                        item.setData(self.C_DATA, self.D_START, tss)
-                        item.setData(self.C_DATA, self.D_END, tse)
-                        self.subEntries.addTopLevelItem(item)
-                        self._map[num] = item
+    @pyqtSlot()
+    def processNewMediaLoaded(self) -> None:
+        """Clear previous content."""
+        self._map = {}
+        self.subEntries.clear()
         return
 
-    @pyqtSlot(DisplaySet)
-    def updateText(self, ds: DisplaySet) -> None:
-        """Update text for a specific display set."""
-        if item := self._map.get(ds.pcs.compNumber):
-            self._updateItemText(item, ds.text)
+    @pyqtSlot()
+    def processNewTrackLoaded(self) -> None:
+        """Display subtitles for a given track."""
+        font = CONFIG.fixedFont
+        if (track := SHARED.media.currentTrack) and track.trackType == MediaType.SUBS:
+            self._map.clear()
+            self.subEntries.clear()
+            for frame in track.iterFrames():
+                item = QTreeWidgetItem()
+                item.setText(self.C_ID, str(self.subEntries.topLevelItemCount()))
+                item.setText(self.C_TIME, formatTS(frame.start))
+                item.setText(self.C_LENGTH, f"{frame.length/1000.0:.3f} s")
+                item.setData(self.C_DATA, self.D_INDEX, frame.index)
+                item.setFont(self.C_ID, font)
+                item.setFont(self.C_TIME, font)
+                item.setFont(self.C_LENGTH, font)
+                self._map[frame.index] = item
+                self._updateItemText(item, frame.text)
+                self.subEntries.addTopLevelItem(item)
+        return
+
+    @pyqtSlot(FrameBase)
+    def updateText(self, frame: FrameBase) -> None:
+        """Update text for a specific frame."""
+        if item := self._map.get(frame.index):
+            self._updateItemText(item, frame.text)
         return
 
     @pyqtSlot(Path)
     def writeSrtFile(self, path: Path) -> None:
         """Save the processed subtitles to an SRT file."""
-        writer = SRTWriter(path)
-        for i in range(self.subEntries.topLevelItemCount()):
-            if item := self.subEntries.topLevelItem(i):
-                start = item.data(self.C_DATA, self.D_START)
-                end = item.data(self.C_DATA, self.D_END)
-                text = item.data(self.C_DATA, self.D_TEXT)
-                if isinstance(start, float) and isinstance(end, float) and isinstance(text, list):
-                    writer.addBlock(start, end, text)
-        writer.write()
+        if SHARED.media.currentTrack:
+            writer = SRTSubs()
+            SHARED.media.currentTrack.copyFrames(writer)
+            writer.write(path)
         return
 
     @pyqtSlot(Path)
     def readSubsFile(self, path: Path) -> None:
         """Read a subs file and update entries."""
-        if path.is_file() and path.suffix == ".srt" and self._reader:
-            rdSrt = SRTReader(path)
-            rdDs = self._reader
-            for num, _, _, text in rdSrt.iterBlocks():
-                idx = num - 1
-                if (ds := rdDs.displaySet(idx)) and (item := self.subEntries.topLevelItem(idx)):
-                    ds.setText(text)
-                    self._updateItemText(item, text)
+        if (track := SHARED.media.currentTrack) and path.is_file() and path.suffix == ".srt":
+            subs = SRTSubs()
+            subs.read(path)
+            track.copyText(subs)
+            for frame in track.iterFrames():
+                if item := self._map.get(frame.index):
+                    self._updateItemText(item, frame.text)
         return
 
     @pyqtSlot(int)
     def selectNearby(self, step: int) -> None:
         """Select a different display set."""
-        if self._reader and (indexes := self.subEntries.selectedIndexes()):
-            index = indexes[0].row() + step
+        if SHARED.media.currentTrack and (items := self.subEntries.selectedItems()):
+            index = items[0].data(self.C_DATA, self.D_INDEX) + step
             if item := self.subEntries.topLevelItem(index):
                 self.subEntries.clearSelection()
                 self.subEntries.scrollToItem(item)
                 item.setSelected(True)
-                if ds := self._reader.displaySet(item.data(self.C_DATA, self.D_INDEX)):
-                    self.displaySetSelected.emit(index, ds)
+                self._itemClicked(self.subEntries.indexFromItem(item))
         return
 
     ##
@@ -171,9 +164,15 @@ class GuiSubtitleView(QWidget):
     @pyqtSlot(QModelIndex)
     def _itemClicked(self, index: QModelIndex) -> None:
         """Process item click in the subtitles list."""
-        if self._reader and (item := self.subEntries.itemFromIndex(index)):
-            if ds := self._reader.displaySet(item.data(self.C_DATA, self.D_INDEX)):
-                self.displaySetSelected.emit(index.row(), ds)
+        if (track := SHARED.media.currentTrack) and (item := self.subEntries.itemFromIndex(index)):
+            if frame := SHARED.media.currentTrack.getFrame(item.data(self.C_DATA, self.D_INDEX)):
+                if frame.imageBased:
+                    image = frame.getImage()
+                    if (ocrTool := SHARED.ocr) and not (text := frame.text):
+                        text = ocrTool.processImage(frame.index, image, [track.language])
+                        frame.setText(text)
+                    self.updateText(frame)
+                self.subsFrameUpdated.emit(frame)
         return
 
     ##
@@ -183,5 +182,4 @@ class GuiSubtitleView(QWidget):
     def _updateItemText(self, item: QTreeWidgetItem, text: list[str]) -> None:
         """Update the subtitle text for a given item."""
         item.setText(self.C_TEXT, "\u21b2".join(text))
-        item.setData(self.C_DATA, self.D_TEXT, text)
         return

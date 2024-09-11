@@ -26,6 +26,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from pathlib import Path
 
+from subtle.common import formatTS
+from subtle.formats.base import FrameBase, SubtitlesBase
+
 from PyQt6.QtCore import QMargins, QRect, QSize
 from PyQt6.QtGui import QColor, QImage, QPainter, qRgba
 
@@ -35,67 +38,50 @@ COMP_NORMAL = 0x00
 COMP_ACQ    = 0x40
 COMP_EPOCH  = 0x80
 
-IMAGE_FILL = 0xff666666
+IMAGE_FILL = 0xff242424
 CROP_MARGINS = QMargins(20, 20, 20, 20)
 
 
-class PGSReader:
-    """PGS Reader Class.
+class PGSSubs(SubtitlesBase):
+    """PGS Subtitles Class.
 
     Reference:
     https://blog.thescorpius.com/index.php/2017/07/15/presentation-graphic-stream-sup-files-bluray-subtitle-format/
     """
 
-    def __init__(self, path: Path) -> None:
-
-        self._path = path
-        self._data: list[DisplaySet] = []
-
-        try:
-            self._readData()
-        except Exception as e:
-            logger.error("Failed to read file data", exc_info=e)
-            self._data = []
-
+    def __init__(self) -> None:
+        super().__init__()
         return
 
-    def displaySet(self, index: int) -> DisplaySet | None:
-        """Return a display set by its index."""
-        if 0 <= index < len(self._data):
-            return self._data[index]
-        return None
+    def read(self, path: Path) -> None:
+        """Read a PGS file."""
+        try:
+            self._readData(path)
+            self._path = path
+        except Exception as e:
+            logger.error("Failed to read file data", exc_info=e)
+        return
 
-    def listEntries(self) -> list[dict]:
-        """Generate a list of all subtitle entries in the file."""
-        data = []
-        prev = None
-        for i, ds in enumerate(self._data):
-            ts = ds.pcs.timestamp
-            curr = {
-                "index": i,
-                "num": ds.pcs.compNumber,
-                "start": ts,
-                "end": 0.0,
-                "epoch": ds.pcs.compState == COMP_EPOCH,
-                "clear": ds.isClearFrame(),
-            }
-            data.append(curr)
-            if prev:
-                prev["end"] = ts
-            prev = curr
-        return data
+    def write(self, path: Path | None = None) -> None:
+        """Write a PGS file."""
+        raise NotImplementedError("Cannot write PGS files.")
+
+    def copyFrames(self, other: SubtitlesBase) -> None:
+        return super()._copyFrames(PGSFrame, other)
 
     ##
     #  Internal Functions
     ##
 
-    def _readData(self) -> None:
+    def _readData(self, path: Path) -> None:
         """Read the raw PGS file data and store it as a list of display
         sets of related segments.
         """
+        self._frames = []
+
         ds = None
         data: list[DisplaySet] = []
-        with open(self._path, mode="rb") as fo:
+        with open(path, mode="rb") as fo:
             while h := fo.read(13):
                 if len(h) < 13:
                     logger.warning("Invalid header '%s' of length %d", h[:2].hex(), len(h))
@@ -129,14 +115,64 @@ class PGSReader:
             if ds is not None:
                 logger.warning("Data past last END segment, PGS data may be truncated")
 
-        self._data = data
+        frame = None
+        frames = []
+        for ds in data:
+            state = ds.pcs.compState
+            if state == COMP_EPOCH:
+                # Start of a new subtitles frame.
+                frame = PGSFrame(len(frames), ds)
+                frames.append(frame)
+            elif ds.isClearFrame() and frame:
+                # A normal case display set with no composition objects
+                # are blanking frames. We use them as end timestamps.
+                frame.closeFrame(ds)
+                frame = None
+            elif state == COMP_ACQ:
+                # These are used to render subtitles at skip points,
+                # like on chapter markers. We don't care about that.
+                logger.debug("Skipped acquisition point display set %d", ds.pcs.compNumber)
+            else:
+                # Normal case display sets that are not clear frames are
+                # used to crop the text. We don't care about cropping.
+                logger.debug("Skipped normal case display set %d", ds.pcs.compNumber)
+
+        self._frames = frames
 
         return
 
 
+class PGSFrame(FrameBase):
+
+    def __init__(self, index: int, ds: DisplaySet) -> None:
+        super().__init__(index=index)
+        self._ds = ds
+        self._start = int(ds.timestamp / 90.0)
+        return
+
+    @classmethod
+    def fromFrame(cls, index: int, other: FrameBase) -> FrameBase:
+        """Not implemented."""
+        raise NotImplementedError
+
+    @property
+    def imageBased(self) -> bool:
+        """This class is image based."""
+        return True
+
+    def closeFrame(self, ds: DisplaySet) -> None:
+        """Extract timestamp from display set used to close frame."""
+        self._end = int(ds.timestamp / 90.0)
+        return
+
+    def getImage(self) -> QImage:
+        """Return the rendered image."""
+        return self._ds.render()
+
+
 class DisplaySet:
 
-    __slots__ = ("_pcs", "_wds", "_pds", "_ods", "_image", "_text")
+    __slots__ = ("_pcs", "_wds", "_pds", "_ods", "_image")
 
     def __init__(self, pcs: PresentationSegment) -> None:
         self._pcs: PresentationSegment = pcs
@@ -144,13 +180,17 @@ class DisplaySet:
         self._pds: dict[int, PaletteSegment] = {}
         self._ods: dict[int, list[ObjectSegment]] = {}
         self._image: QImage | None = None
-        self._text: list[str] = []
         return
 
     def __repr__(self) -> str:
         return (
-            f"<{self.__class__.__name__} composition={self._pcs.compNumber} "
-            f"windows={len(self._wds)} palettes={len(self._pds)} objects={len(self._ods)}>"
+            f"<{self.__class__.__name__}: "
+            f"composition={self._pcs.compNumber} "
+            f"state={self._pcs.compState:02x} "
+            f"timestamp={formatTS(int(self._pcs.timestamp / 90)):.3f} "
+            f"windows={len(self._wds)} "
+            f"palettes={len(self._pds)} "
+            f"objects={len(self._ods)}>"
         )
 
     @property
@@ -160,10 +200,6 @@ class DisplaySet:
     @property
     def timestamp(self) -> float:
         return self._pcs.timestamp
-
-    @property
-    def text(self) -> list[str]:
-        return self._text
 
     def addWDS(self, wds: WindowSegment, pos: int) -> None:
         """Save all windows defined in the segment."""
@@ -191,11 +227,6 @@ class DisplaySet:
                 self._ods[oid].append(ods)
         else:
             logger.warning("Skipping invalid ObjectSegment at pos %d", pos)
-        return
-
-    def setText(self, text: list[str]) -> None:
-        """Set the display set's text."""
-        self._text = text
         return
 
     def isValid(self) -> bool:
@@ -290,7 +321,7 @@ class BaseSegment(ABC):
 
     def __repr__(self) -> str:
         return (
-            f"<{self.__class__.__name__} t={self._ts/90000:.3f} "
+            f"<{self.__class__.__name__}: t={self._ts/90000:.3f} "
             f"size={len(self._data)} valid={self._valid}>"
         )
 
@@ -300,7 +331,7 @@ class BaseSegment(ABC):
 
     @property
     def timestamp(self) -> float:
-        return self._ts / 90000.0
+        return self._ts
 
     @abstractmethod
     def validate(self) -> None:

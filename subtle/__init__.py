@@ -27,6 +27,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from subtle.config import Config
+from subtle.shared import SharedData
 
 from PyQt6.QtWidgets import QApplication
 
@@ -54,6 +55,7 @@ logger = logging.getLogger(__name__)
 ##
 
 CONFIG = Config()
+SHARED = SharedData()
 
 
 def main(sysArgs: list | None = None) -> GuiMain | None:
@@ -134,6 +136,7 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
 
     # Run Config steps that require the QApplication
     CONFIG.load()
+    CONFIG.fonts(app)
     CONFIG.localisation(app)
 
     # Launch main GUI

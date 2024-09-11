@@ -27,7 +27,7 @@ import uuid
 from pathlib import Path
 
 from subtle import CONFIG
-from subtle.core.ocrbase import OCRBase
+from subtle.ocr.base import OCRBase
 
 from PyQt6.QtGui import QImage
 
@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 REPLACE = {
     "|": "I",
     "--": "\u2014",
+    "....": "...",
     "\u2018": "\u0027",
     "\u2019": "\u0027",
     "\u201c": "\u0022",
@@ -82,4 +83,7 @@ class TesseractOCR(OCRBase):
         temp = text.strip()
         for a, b in REPLACE.items():
             temp = temp.replace(a, b)
-        return temp.split("\n")
+        result = []
+        for line in temp.split("\n"):
+            result.append(" ".join(line.strip().split()))
+        return [r for r in result if r]

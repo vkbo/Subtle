@@ -27,6 +27,7 @@ import sys
 
 from copy import deepcopy
 from pathlib import Path
+from typing import Literal
 
 from subtle.common import jsonEncode
 
@@ -34,6 +35,7 @@ from PyQt6.QtCore import (
     PYQT_VERSION, PYQT_VERSION_STR, QT_VERSION, QT_VERSION_STR, QSize,
     QStandardPaths, QSysInfo
 )
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication
 
 logger = logging.getLogger(__name__)
@@ -51,8 +53,15 @@ DEFAULTS: dict = {
     },
     "Settings": {
         "tessData": "",
+    },
+    "Fonts": {
+        "guiFont": "",
+        "fixedFont": "",
+        "subsFont": "",
     }
 }
+
+T_Fonts = Literal["gui"] | Literal["fixed"] | Literal["subs"]
 
 
 class Config:
@@ -79,6 +88,11 @@ class Config:
         self._appRoot = self._appPath.parent
 
         self._confFile = self._confPath / "subtle.json"
+
+        # Fonts
+        self.guiFont = QFont()
+        self.fixedFont = QFont()
+        self.subsFont = QFont()
 
         # Check Qt6 Versions
         self.verQtString   = QT_VERSION_STR
@@ -164,6 +178,26 @@ class Config:
                 logger.error("Problem when saving sizes list", exc_info=e)
         return
 
+    def setFontSpec(self, target: T_Fonts, font: QFont | str) -> None:
+        """Set the font """
+        if isinstance(font, str):
+            temp = QFont()
+            temp.fromString(font)
+            font = temp
+
+        if target == "gui":
+            self.guiFont = font
+            self._data["Fonts"]["guiFont"] = font.toString()
+            QApplication.setFont(self.guiFont)
+        elif target == "fixed":
+            self.fixedFont = font
+            self._data["Fonts"]["fixedFont"] = font.toString()
+        elif target == "subs":
+            self.subsFont = font
+            self._data["Fonts"]["subsFont"] = font.toString()
+
+        return
+
     ##
     #  Methods
     ##
@@ -185,6 +219,26 @@ class Config:
     def localisation(self, app: QApplication) -> None:
         return
 
+    def fonts(self, app: QApplication) -> None:
+        """Set up fonts."""
+        if font := self._data["Fonts"].get("guiFont"):
+            self.setFontSpec("gui", font)
+        else:
+            self.setFontSpec("gui", app.font())
+
+        if font := self._data["Fonts"].get("fixedFont"):
+            self.setFontSpec("fixed", font)
+        else:
+            self.setFontSpec("fixed", QFont("monospace", app.font().pointSize()))
+
+        if font := self._data["Fonts"].get("subsFont"):
+            self.setFontSpec("subs", font)
+        else:
+            temp = app.font()
+            temp.setPointSizeF(3.0*temp.pointSizeF())
+            self.setFontSpec("subs", temp)
+        return
+
     def load(self) -> None:
         """Load the app config."""
         if self._confFile.is_file():
@@ -194,6 +248,7 @@ class Config:
                     data = json.load(fo)
                 self._storeConfigGroup(data, "Sizes")
                 self._storeConfigGroup(data, "Settings")
+                self._storeConfigGroup(data, "Fonts")
             except Exception as e:
                 logger.error("Could not load config", exc_info=e)
         return

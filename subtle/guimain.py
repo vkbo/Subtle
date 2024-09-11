@@ -23,33 +23,21 @@ from __future__ import annotations
 import logging
 import sys
 
-from dataclasses import dataclass
-from pathlib import Path
-
-from subtle import CONFIG
-from subtle.core.ocrbase import OCRBase
-from subtle.core.pgsreader import DisplaySet
-from subtle.core.tesseract import TesseractOCR
+from subtle import CONFIG, SHARED
+from subtle.core.media import MediaData
 from subtle.gui.filetree import GuiFileTree
 from subtle.gui.imageviewer import GuiImageViewer
 from subtle.gui.mediaview import GuiMediaView
 from subtle.gui.subsview import GuiSubtitleView
 from subtle.gui.texteditor import GuiTextEditor
 from subtle.gui.toolspanel import GuiToolsPanel
+from subtle.ocr.tesseract import TesseractOCR
 
-from PyQt6.QtCore import Qt, pyqtSlot
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import QMainWindow, QSplitter
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class CurrentObject:
-
-    mediaFile: Path
-    trackFile: Path | None = None
-    trackInfo: dict | None = None
 
 
 class GuiMain(QMainWindow):
@@ -76,11 +64,9 @@ class GuiMain(QMainWindow):
         # Cached Data
         # ===========
 
-        self._mediaFile: Path | None = None
-        self._trackFile: Path | None = None
-        self._trackInfo: dict = {}
+        SHARED.initSharedData(MediaData(), TesseractOCR())
 
-        # Gui Elements
+        # GUI Elements
         # ============
 
         self.fileTree = GuiFileTree(self)
@@ -90,23 +76,19 @@ class GuiMain(QMainWindow):
         self.textEditor = GuiTextEditor(self)
         self.toolsPanel = GuiToolsPanel(self)
 
-        # Processing
-        # ==========
-
-        self.ocrTool: OCRBase | None = None
-
         # Signals
         # =======
 
-        self.fileTree.newFileSelection.connect(self._newFileSelected)
-        self.fileTree.newFileSelection.connect(self.mediaView.setCurrentFile)
-        self.fileTree.newFileSelection.connect(self.toolsPanel.newFileSelected)
-        self.mediaView.newTrackAvailable.connect(self._newTrackSelected)
-        self.mediaView.newTrackAvailable.connect(self.subsView.loadTrack)
-        self.mediaView.newTrackAvailable.connect(self.toolsPanel.newTrackSelected)
-        self.subsView.displaySetSelected.connect(self._displaySetSelected)
-        self.textEditor.newTextForDisplaySet.connect(self.subsView.updateText)
-        self.textEditor.requestNewDisplaySet.connect(self.subsView.selectNearby)
+        SHARED.media.newMediaLoaded.connect(self.mediaView.processNewMediaLoaded)
+        SHARED.media.newMediaLoaded.connect(self.subsView.processNewMediaLoaded)
+        SHARED.media.newMediaLoaded.connect(self.toolsPanel.processNewMediaLoaded)
+        SHARED.media.newTrackSelected.connect(self.subsView.processNewTrackLoaded)
+        SHARED.media.newTrackSelected.connect(self.toolsPanel.processNewTrackLoaded)
+
+        self.subsView.subsFrameUpdated.connect(self.imageViewer.processFrameUpdate)
+        self.subsView.subsFrameUpdated.connect(self.textEditor.setEditorText)
+        self.textEditor.newTextForFrame.connect(self.subsView.updateText)
+        self.textEditor.requestNewFrame.connect(self.subsView.selectNearby)
         self.toolsPanel.requestSrtSave.connect(self.subsView.writeSrtFile)
         self.toolsPanel.requestSubsLoad.connect(self.subsView.readSubsFile)
 
@@ -154,36 +136,4 @@ class GuiMain(QMainWindow):
         CONFIG.save()
         CONFIG.cleanup()
         event.accept()
-        return
-
-    ##
-    #  Private Slots
-    ##
-
-    @pyqtSlot(Path, dict)
-    def _newTrackSelected(self, path: Path, info: dict) -> None:
-        """A new track has been selected."""
-        self._trackFile = path
-        self._trackInfo = info
-        return
-
-    @pyqtSlot(Path)
-    def _newFileSelected(self, path: Path) -> None:
-        """A new file has been selected."""
-        self._mediaFile = path
-        self.ocrTool = TesseractOCR()
-        return
-
-    @pyqtSlot(int, DisplaySet)
-    def _displaySetSelected(self, index: int, ds: DisplaySet) -> None:
-        """Process selection of display set."""
-        image = ds.render()
-        self.imageViewer.setImage(image)
-        if self.ocrTool and (info := self._trackInfo):
-            lang = info.get("properties", {}).get("language", "und")
-            if not (text := ds.text):
-                text = self.ocrTool.processImage(index, image, [lang])
-                ds.setText(text)
-            self.subsView.updateText(ds)
-            self.textEditor.setText(ds)
         return

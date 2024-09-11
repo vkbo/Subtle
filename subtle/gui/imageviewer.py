@@ -22,8 +22,10 @@ from __future__ import annotations
 
 import logging
 
-from PyQt6.QtCore import QRect, QRectF, Qt
-from PyQt6.QtGui import QImage, QPixmap, QResizeEvent
+from subtle.formats.base import FrameBase
+
+from PyQt6.QtCore import QRect, QRectF, Qt, pyqtSlot
+from PyQt6.QtGui import QPixmap, QResizeEvent
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView, QHBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
@@ -49,14 +51,21 @@ class GuiImageViewer(QWidget):
 
         return
 
-    def setImage(self, image: QImage) -> None:
-        """Display an image of subtitles."""
-        self._imageSize = image.rect()
-        scene = QGraphicsScene(self)
-        scene.addPixmap(QPixmap.fromImage(image))
-        scene.setSceneRect(QRectF(self._imageSize))
-        self.imageView.setScene(scene)
-        self._updateSizes()
+    ##
+    #  Public Slots
+    ##
+
+    @pyqtSlot(FrameBase)
+    def processFrameUpdate(self, frame: FrameBase) -> None:
+        """Process frame update."""
+        if frame.imageBased:
+            image = frame.getImage()
+            self._imageSize = image.rect()
+            scene = QGraphicsScene(self)
+            scene.addPixmap(QPixmap.fromImage(image))
+            scene.setSceneRect(QRectF(self._imageSize))
+            self.imageView.setScene(scene)
+            self._updateSizes()
         return
 
     ##
