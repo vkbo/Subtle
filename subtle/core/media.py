@@ -226,3 +226,9 @@ class MediaTrack:
         if self._wrapper:
             target.copyFrames(self._wrapper)
         return
+
+    def copyText(self, source: SubtitlesBase) -> None:
+        """Copy all text from source to current track."""
+        if self._wrapper:
+            self._wrapper.copyText(source)
+        return

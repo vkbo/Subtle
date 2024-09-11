@@ -64,6 +64,26 @@ class SubtitlesBase(ABC):
     def copyFrames(self, other: SubtitlesBase) -> None:
         raise NotImplementedError
 
+    def copyText(self, other: SubtitlesBase) -> None:
+        """Copy text elements from other subtitle."""
+        frames = {f.start: f for f in self._frames}
+        missing: list[FrameBase] = []
+        for source in other.iterFrames():
+            if text := source.text:
+                if (start := source.start) in frames:
+                    frames[start].setText(text)
+                else:
+                    missing.append(source)
+
+        if missing:
+            logger.info("Found %d subtitles with non-matching timestamps", len(missing))
+            for frame in missing:
+                for offset in (-2, -1, 1, 2):
+                    if (pos := frame.start + offset) in frames:
+                        frames[pos].setText(frame.text)
+
+        return
+
     def _copyFrames(self, frameType: type[FrameBase], other: SubtitlesBase) -> None:
         """Copy frame content from other class. Must be implemented in
         subclasses by passing its own FrameBase implementation as
