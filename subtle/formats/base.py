@@ -143,7 +143,7 @@ class FrameBase(ABC):
 
     def setText(self, text: list[str]) -> None:
         """Set the frame's text."""
-        self._text = [t.strip() for t in text]
+        self._text = [t.strip() for t in text if t.strip()]
         return
 
     @abstractmethod

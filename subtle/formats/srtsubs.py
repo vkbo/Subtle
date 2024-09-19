@@ -82,9 +82,11 @@ class SRTSubs(SubtitlesBase):
         """Write SRT text to file."""
         with open(path, mode="w", encoding="utf-8") as fo:
             prev = -1.0
-            for i, frame in enumerate(self._frames, 1):
+            index = 0
+            for frame in self._frames:
                 if frame.start > prev and frame.text:
-                    fo.write(f"{i}\n{formatTS(frame.start)} --> {formatTS(frame.end)}\n")
+                    index += 1
+                    fo.write(f"{index}\n{formatTS(frame.start)} --> {formatTS(frame.end)}\n")
                     fo.write("\n".join(frame.text))
                     fo.write("\n\n")
                     prev = frame.start
