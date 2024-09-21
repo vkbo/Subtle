@@ -83,6 +83,7 @@ class SRTSubs(SubtitlesBase):
         with open(path, mode="w", encoding="utf-8") as fo:
             prev = -1.0
             index = 0
+            skipped = 0
             for frame in self._frames:
                 if frame.start > prev and frame.text:
                     index += 1
@@ -93,7 +94,10 @@ class SRTSubs(SubtitlesBase):
                 elif frame.start <= prev:
                     logger.warning("Out of order text at t=%s", formatTS(frame.start))
                 else:
-                    logger.warning("Skipping entry with no text at t=%s", formatTS(frame.start))
+                    skipped += 1
+            if skipped:
+                logger.warning("Skipping %d entries with no text", skipped)
+            logger.info("Saved %d subtitle entries to SRT file.", index)
         return
 
     def _parseFrame(self, block: list[str]) -> None:
