@@ -24,6 +24,7 @@ import logging
 
 from subtle import CONFIG
 from subtle.formats.base import FrameBase
+from subtle.gui.highlighter import GuiDocHighlighter
 
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QShortcut, QTextCursor
@@ -53,6 +54,7 @@ class GuiTextEditor(QWidget):
             options.setAlignment(Qt.AlignmentFlag.AlignCenter)
             document.setDefaultTextOption(options)
             document.setDocumentMargin(20.0)
+            self.highlight = GuiDocHighlighter(document)
 
         # Assemble
         self.outerBox = QVBoxLayout()
