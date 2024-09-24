@@ -27,7 +27,7 @@ from subtle.formats.base import FrameBase
 from subtle.gui.highlighter import GuiDocHighlighter, TextBlockData
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal, pyqtSlot
-from PyQt6.QtGui import QShortcut, QTextBlock, QTextCursor
+from PyQt6.QtGui import QShortcut, QTextBlock, QTextBlockFormat, QTextCursor
 from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QMenu, QTextEdit, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
@@ -116,7 +116,16 @@ class GuiTextEditor(QWidget):
         """Set the editor text."""
         self._frame = frame
         self._block = True
+
         self.textEdit.setPlainText("\n".join(frame.text))
+
+        blockFmt = QTextBlockFormat()
+        blockFmt.setLineHeight(120.0, 1)
+        cursor = self.textEdit.textCursor()
+        cursor.clearSelection()
+        cursor.select(QTextCursor.SelectionType.Document)
+        cursor.mergeBlockFormat(blockFmt)
+
         self._block = False
         return
 

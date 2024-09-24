@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 SPELL_RX = re.compile(r"\b[^\s\-–—\/<>]+\b", re.UNICODE)
 IGNORE_PATTERNS = [
-    re.compile(r"[0-9][0-9,\.]+[0-9]", re.UNICODE),
+    re.compile(r"[0-9][0-9,\.:]+[0-9]", re.UNICODE),
 ]
 
 
