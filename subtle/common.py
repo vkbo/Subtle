@@ -22,10 +22,18 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
+def simplified(text: str) -> str:
+    """Take a string and strip leading and trailing whitespaces, and
+    replace all occurrences of (multiple) whitespaces with a 0x20 space.
+    """
+    return " ".join(str(text).strip().split())
 
 
 def checkInt(value: Any, default: int) -> int:
@@ -54,6 +62,18 @@ def formatInt(value: int) -> str:
                     return f"{fVal:3.0f}\u202f{pF}"
 
     return str(value) + "\u202f"
+
+
+def regexCleanup(text: str, patterns: list[tuple[re.Pattern, str]]) -> str:
+    """Replaces all occurrences of match group 1 in patterns."""
+    for regEx, value in patterns:
+        matches = []
+        for match in regEx.finditer(text):
+            if (s := match.start(1)) >= 0 and (e := match.end(1)) >= 0:
+                matches.append((s, e, value))
+        for s, e, value in reversed(matches):
+            text = text[:s] + value + text[e:]
+    return text
 
 
 def jsonEncode(data: dict | list | tuple, n: int = 0, nmax: int = 0) -> str:

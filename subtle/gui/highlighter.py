@@ -33,7 +33,10 @@ from PyQt6.QtWidgets import QApplication
 
 logger = logging.getLogger(__name__)
 
-SPELL_RX = re.compile(r"\b[^\s\-–—<>]+\b", re.UNICODE)
+SPELL_RX = re.compile(r"\b[^\s\-–—\/<>]+\b", re.UNICODE)
+IGNORE_PATTERNS = [
+    re.compile(r"[0-9][0-9,\.]+[0-9]", re.UNICODE),
+]
 
 
 class GuiDocHighlighter(QSyntaxHighlighter):
@@ -86,7 +89,16 @@ class TextBlockData(QTextBlockUserData):
         """
         self._spellErrors = []
         checker = SHARED.spelling
+
+        for rX in IGNORE_PATTERNS:
+            for match in rX.finditer(text):
+                if (s := match.start(0)) >= 0 and (e := match.end(0)) >= 0:
+                    text = text[:s] + " "*(e - s) + text[e:]
+
         for match in re.finditer(SPELL_RX, text.replace("_", " ")):
-            if (word := match.group(0)) and not (word.isnumeric() or checker.checkWord(word)):
+            if (
+                (word := match.group(0))
+                and not (word.isnumeric() or word.isupper() or checker.checkWord(word))
+            ):
                 self._spellErrors.append((match.start(0), match.end(0)))
         return self._spellErrors

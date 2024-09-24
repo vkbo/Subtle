@@ -21,19 +21,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 from __future__ import annotations
 
 import logging
+import re
 import subprocess
 import uuid
 
 from pathlib import Path
 
 from subtle import CONFIG
+from subtle.common import regexCleanup, simplified
 from subtle.ocr.base import OCRBase
 
 from PyQt6.QtGui import QImage
 
 logger = logging.getLogger(__name__)
 
-REPLACE = {
+TXT_REPLACE = {
     "|": "I",
     "--": "\u2014",
     "....": "...",
@@ -42,6 +44,12 @@ REPLACE = {
     "\u201c": "\u0022",
     "\u201d": "\u0022",
 }
+
+RX_REPLACE = [
+    (re.compile(r"^(\.-)[\s\w]", re.UNICODE), "-"),
+    (re.compile(r"^(\.{2})[\s\w]", re.UNICODE), "..."),
+    (re.compile(r"^(\.{3}\s)\w", re.UNICODE), "..."),
+]
 
 
 class TesseractOCR(OCRBase):
@@ -81,9 +89,12 @@ class TesseractOCR(OCRBase):
     def _processText(self, text: str) -> list[str]:
         """Post-process text returned from tesseract."""
         temp = text.strip()
-        for a, b in REPLACE.items():
+        for a, b in TXT_REPLACE.items():
             temp = temp.replace(a, b)
-        result = []
-        for line in temp.split("\n"):
-            result.append(" ".join(line.strip().split()))
-        return [r for r in result if r]
+
+        fixed = regexCleanup(temp, RX_REPLACE)
+        if fixed != temp:
+            logger.debug("Rx Before: '%s'", temp.replace("\n", "|"))
+            logger.debug("Rx Result: '%s'", fixed.replace("\n", "|"))
+
+        return [r for r in [simplified(t) for t in fixed.split("\n")] if r]

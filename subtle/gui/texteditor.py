@@ -100,7 +100,7 @@ class GuiTextEditor(QWidget):
         self.kbNote.setContext(Qt.ShortcutContext.WidgetShortcut)
         self.kbNote.activated.connect(self._keyPressNote)
 
-        self.keyContext = QShortcut(self)
+        self.keyContext = QShortcut(self.textEdit)
         self.keyContext.setKey("Ctrl+.")
         self.keyContext.setContext(Qt.ShortcutContext.WidgetShortcut)
         self.keyContext.activated.connect(self._openContextFromCursor)
