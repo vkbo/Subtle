@@ -25,6 +25,7 @@ import logging
 from collections.abc import Iterable
 from pathlib import Path
 
+from subtle import SHARED
 from subtle.common import decodeTS
 from subtle.constants import MediaType
 from subtle.core.mediafile import MediaFile
@@ -90,6 +91,7 @@ class MediaData(QObject):
         """Set the current active track."""
         if (track := self._tracks.get(trackID)) is not self._track:
             self._track = track
+            SHARED.setSpellLanguage(track)
             self.newTrackSelected.emit()
         return
 

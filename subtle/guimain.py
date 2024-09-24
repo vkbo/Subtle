@@ -25,6 +25,7 @@ import sys
 
 from subtle import CONFIG, SHARED
 from subtle.core.media import MediaData
+from subtle.core.spellcheck import SpellEnchant
 from subtle.gui.filetree import GuiFileTree
 from subtle.gui.imageviewer import GuiImageViewer
 from subtle.gui.mediaview import GuiMediaView
@@ -64,7 +65,7 @@ class GuiMain(QMainWindow):
         # Cached Data
         # ===========
 
-        SHARED.initSharedData(MediaData(), TesseractOCR())
+        SHARED.initSharedData(MediaData(), TesseractOCR(), SpellEnchant())
 
         # GUI Elements
         # ============
@@ -78,6 +79,8 @@ class GuiMain(QMainWindow):
 
         # Signals
         # =======
+
+        SHARED.spellLanguageChanged.connect(self.textEditor.updateSpellLanguage)
 
         SHARED.media.newMediaLoaded.connect(self.mediaView.processNewMediaLoaded)
         SHARED.media.newMediaLoaded.connect(self.subsView.processNewMediaLoaded)

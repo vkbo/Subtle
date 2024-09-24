@@ -129,6 +129,12 @@ class Config:
     ##
 
     @property
+    def confPath(self) -> Path:
+        """Return the location for config files."""
+        self._confPath.mkdir(exist_ok=True)
+        return self._confPath
+
+    @property
     def dumpPath(self) -> Path:
         """Return a location for dumping files during a session."""
         path = self._cachePath / "dump"
