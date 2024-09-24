@@ -24,7 +24,7 @@ import logging
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QLocale
+from PyQt6.QtCore import QLocale, QObject, pyqtSignal
 
 if TYPE_CHECKING:
     from subtle.core.media import MediaData, MediaTrack
@@ -34,9 +34,12 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class SharedData:
+class SharedData(QObject):
+
+    spellLanguageChanged = pyqtSignal(str)
 
     def __init__(self) -> None:
+        super().__init__()
         self._media: MediaData | None = None
         self._ocr: OCRBase | None = None
         self._spell: SpellEnchant | None = None
@@ -77,6 +80,8 @@ class SharedData:
         if track is not None:
             locale = QLocale(track.language)
             self.spelling.setLanguage(locale.bcp47Name())
+            self.spellLanguageChanged.emit(locale.bcp47Name())
         else:
             self.spelling.setLanguage(None)
+            self.spellLanguageChanged.emit("None")
         return

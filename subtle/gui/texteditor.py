@@ -22,13 +22,13 @@ from __future__ import annotations
 
 import logging
 
-from subtle import CONFIG
+from subtle import CONFIG, SHARED
 from subtle.formats.base import FrameBase
 from subtle.gui.highlighter import GuiDocHighlighter
 
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QShortcut, QTextCursor
-from PyQt6.QtWidgets import QTextEdit, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QTextEdit, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,14 @@ class GuiTextEditor(QWidget):
         self._frame: FrameBase | None = None
         self._block = False
 
+        # Controls
+        self.spellLang = QComboBox(self)
+        self.spellLang.addItem(self.tr("Default"), "None")
+        for tag, language in SHARED.spelling.listDictionaries():
+            self.spellLang.addItem(language, tag)
+
+        self.spellLang.currentIndexChanged.connect(self._spellLangChanged)
+
         # Editor
         self.textEdit = QTextEdit(self)
         self.textEdit.setFont(CONFIG.subsFont)
@@ -57,7 +65,12 @@ class GuiTextEditor(QWidget):
             self.highlight = GuiDocHighlighter(document)
 
         # Assemble
+        self.controlsBox = QHBoxLayout()
+        self.controlsBox.addWidget(self.spellLang)
+        self.controlsBox.addStretch(1)
+
         self.outerBox = QVBoxLayout()
+        self.outerBox.addLayout(self.controlsBox)
         self.outerBox.addWidget(self.textEdit)
 
         self.setLayout(self.outerBox)
@@ -98,6 +111,17 @@ class GuiTextEditor(QWidget):
         self._block = False
         return
 
+    @pyqtSlot(str)
+    def updateSpellLanguage(self, language: str) -> None:
+        """Update the spell check language box."""
+        self.spellLang.blockSignals(True)
+        if (idx := self.spellLang.findData(language)) != -1:
+            self.spellLang.setCurrentIndex(idx)
+        else:
+            self.spellLang.setCurrentIndex(0)
+        self.spellLang.blockSignals(False)
+        return
+
     ##
     #  Private Slots
     ##
@@ -108,6 +132,13 @@ class GuiTextEditor(QWidget):
         if self._frame and not self._block:
             self._frame.setText(self.textEdit.toPlainText().strip().split("\n"))
             self.newTextForFrame.emit(self._frame)
+        return
+
+    @pyqtSlot(int)
+    def _spellLangChanged(self, index: int) -> None:
+        """Process change in spell check language."""
+        SHARED.spelling.setLanguage(self.spellLang.currentData())
+        self.highlight.rehighlight()
         return
 
     @pyqtSlot()

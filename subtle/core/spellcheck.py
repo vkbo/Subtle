@@ -45,11 +45,6 @@ class SpellEnchant:
         self._userDict = UserDictionary()
         self._language = None
         self._broker = None
-        logger.debug("Ready: NWSpellEnchant")
-        return
-
-    def __del__(self) -> None:  # pragma: no cover
-        logger.debug("Delete: NWSpellEnchant")
         return
 
     ##

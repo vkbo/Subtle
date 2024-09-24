@@ -80,6 +80,8 @@ class GuiMain(QMainWindow):
         # Signals
         # =======
 
+        SHARED.spellLanguageChanged.connect(self.textEditor.updateSpellLanguage)
+
         SHARED.media.newMediaLoaded.connect(self.mediaView.processNewMediaLoaded)
         SHARED.media.newMediaLoaded.connect(self.subsView.processNewMediaLoaded)
         SHARED.media.newMediaLoaded.connect(self.toolsPanel.processNewMediaLoaded)
