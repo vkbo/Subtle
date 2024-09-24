@@ -31,7 +31,7 @@ from subtle.formats.base import FrameBase
 from subtle.formats.srtsubs import SRTSubs
 
 from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
-from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QAbstractItemView, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +152,10 @@ class GuiSubtitleView(QWidget):
             index = items[0].data(self.C_DATA, self.D_INDEX) + step
             if item := self.subEntries.topLevelItem(index):
                 self.subEntries.clearSelection()
-                self.subEntries.scrollToItem(item)
+                self.subEntries.scrollTo(
+                    self.subEntries.indexFromItem(item, 0),
+                    QAbstractItemView.ScrollHint.PositionAtCenter
+                )
                 item.setSelected(True)
                 self._itemClicked(self.subEntries.indexFromItem(item))
         return
