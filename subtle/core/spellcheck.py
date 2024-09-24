@@ -120,8 +120,7 @@ class SpellEnchant:
         except Exception:
             return False
 
-        added = self._userDict.add(word)
-        if added:
+        if added := self._userDict.add(word):
             self._userDict.save()
 
         return added
@@ -201,7 +200,7 @@ class UserDictionary:
             try:
                 with open(wordList, mode="r", encoding="utf-8") as fObj:
                     data = json.load(fObj)
-                self._words = set(data.get("novelWriter.userDict", []))
+                self._words = set(data.get("subtle.dictionary", []))
                 logger.info("Loaded user dictionary")
             except Exception as exc:
                 logger.error("Failed to load user dictionary", exc_info=exc)
@@ -213,7 +212,7 @@ class UserDictionary:
         if isinstance(wordList, Path):
             try:
                 with open(wordList, mode="w", encoding="utf-8") as fObj:
-                    data = {"novelWriter.userDict": list(self._words)}
+                    data = {"subtle.dictionary": list(self._words)}
                     json.dump(data, fObj, indent=2)
             except Exception as exc:
                 logger.error("Failed to save user dictionary", exc_info=exc)
