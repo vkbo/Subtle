@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import QLocale, QObject, pyqtSignal
 
 if TYPE_CHECKING:
+    from subtle.core.icons import GuiIcons
     from subtle.core.media import MediaData, MediaTrack
     from subtle.core.spellcheck import SpellEnchant
     from subtle.ocr.base import OCRBase
@@ -43,6 +44,7 @@ class SharedData(QObject):
         self._media: MediaData | None = None
         self._ocr: OCRBase | None = None
         self._spell: SpellEnchant | None = None
+        self._icons: GuiIcons | None = None
         return
 
     @property
@@ -66,13 +68,27 @@ class SharedData(QObject):
             return self._spell
         raise RuntimeError("Shared data object not yet initialised.")
 
-    def initSharedData(self, media: MediaData, ocr: OCRBase, spell: SpellEnchant) -> None:
+    @property
+    def icons(self) -> GuiIcons:
+        """Return the spell checker object."""
+        if self._icons is not None:
+            return self._icons
+        raise RuntimeError("Shared data object not yet initialised.")
+
+    def initSharedData(
+        self,
+        media: MediaData,
+        ocr: OCRBase,
+        spell: SpellEnchant,
+        icons: GuiIcons
+    ) -> None:
         """Init the shared data object. This must be called right after
         the GUI is created.
         """
         self._media = media
         self._ocr = ocr
         self._spell = spell
+        self._icons = icons
         return
 
     def setSpellLanguage(self, track: MediaTrack | None) -> None:

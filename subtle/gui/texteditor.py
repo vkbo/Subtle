@@ -27,8 +27,10 @@ from subtle.formats.base import FrameBase
 from subtle.gui.highlighter import GuiDocHighlighter, TextBlockData
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal, pyqtSlot
-from PyQt6.QtGui import QShortcut, QTextBlock, QTextBlockFormat, QTextCursor
-from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QMenu, QTextEdit, QVBoxLayout, QWidget
+from PyQt6.QtGui import QShortcut, QTextBlock, QTextBlockFormat, QTextCharFormat, QTextCursor
+from PyQt6.QtWidgets import (
+    QComboBox, QMenu, QTextEdit, QToolBar, QToolButton, QVBoxLayout, QWidget
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +54,26 @@ class GuiTextEditor(QWidget):
 
         self.spellLang.currentIndexChanged.connect(self._spellLangChanged)
 
+        self.btnUp = QToolButton(self)
+        self.btnUp.setIcon(SHARED.icons.icon("up"))
+        self.btnUp.setShortcut("PgUp")
+        self.btnUp.clicked.connect(self._requestPrevious)
+
+        self.btnDown = QToolButton(self)
+        self.btnDown.setIcon(SHARED.icons.icon("down"))
+        self.btnDown.setShortcut("PgDown")
+        self.btnDown.clicked.connect(self._requestNext)
+
+        self.btnItalic = QToolButton(self)
+        self.btnItalic.setIcon(SHARED.icons.icon("italic"))
+        self.btnItalic.setShortcut("Ctrl+I")
+        self.btnItalic.clicked.connect(self._formatItalic)
+
+        self.btnNote = QToolButton(self)
+        self.btnNote.setIcon(SHARED.icons.icon("note"))
+        self.btnNote.setShortcut("Ctrl+J")
+        self.btnNote.clicked.connect(self._insertNoteSymbol)
+
         # Editor
         self.textEdit = QTextEdit(self)
         self.textEdit.setFont(CONFIG.subsFont)
@@ -69,37 +91,22 @@ class GuiTextEditor(QWidget):
         self.textEdit.customContextMenuRequested.connect(self._openContextMenu)
 
         # Assemble
-        self.controlsBox = QHBoxLayout()
+        self.controlsBox = QToolBar()
+        self.controlsBox.addWidget(self.btnUp)
+        self.controlsBox.addWidget(self.btnDown)
+        self.controlsBox.addSeparator()
+        self.controlsBox.addWidget(self.btnItalic)
+        self.controlsBox.addWidget(self.btnNote)
+        self.controlsBox.addSeparator()
         self.controlsBox.addWidget(self.spellLang)
-        self.controlsBox.addStretch(1)
 
         self.outerBox = QVBoxLayout()
-        self.outerBox.addLayout(self.controlsBox)
+        self.outerBox.addWidget(self.controlsBox)
         self.outerBox.addWidget(self.textEdit)
 
         self.setLayout(self.outerBox)
 
         # Shortcuts
-        self.kbPageUp = QShortcut(self.textEdit)
-        self.kbPageUp.setKey(Qt.Key.Key_PageUp)
-        self.kbPageUp.setContext(Qt.ShortcutContext.WidgetShortcut)
-        self.kbPageUp.activated.connect(self._keyPressPageUp)
-
-        self.kbPageDn = QShortcut(self.textEdit)
-        self.kbPageDn.setKey(Qt.Key.Key_PageDown)
-        self.kbPageDn.setContext(Qt.ShortcutContext.WidgetShortcut)
-        self.kbPageDn.activated.connect(self._keyPressPageDown)
-
-        self.kbItalic = QShortcut(self.textEdit)
-        self.kbItalic.setKey("Ctrl+I")
-        self.kbItalic.setContext(Qt.ShortcutContext.WidgetShortcut)
-        self.kbItalic.activated.connect(self._keyPressItalic)
-
-        self.kbNote = QShortcut(self.textEdit)
-        self.kbNote.setKey("Ctrl+J")
-        self.kbNote.setContext(Qt.ShortcutContext.WidgetShortcut)
-        self.kbNote.activated.connect(self._keyPressNote)
-
         self.keyContext = QShortcut(self.textEdit)
         self.keyContext.setKey("Ctrl+.")
         self.keyContext.setContext(Qt.ShortcutContext.WidgetShortcut)
@@ -117,16 +124,22 @@ class GuiTextEditor(QWidget):
         self._frame = frame
         self._block = True
 
-        self.textEdit.setPlainText("\n".join(frame.text))
+        bFmt = QTextBlockFormat()
+        bFmt.setLineHeight(120.0, 1)
 
-        blockFmt = QTextBlockFormat()
-        blockFmt.setLineHeight(120.0, 1)
+        self.textEdit.clear()
         cursor = self.textEdit.textCursor()
-        cursor.clearSelection()
-        cursor.select(QTextCursor.SelectionType.Document)
-        cursor.mergeBlockFormat(blockFmt)
+        cursor.setBlockFormat(bFmt)
+        for n, line in enumerate(frame.text):
+            if n > 0:
+                cursor.insertBlock()
+            cursor.insertHtml(line)
+
+        cursor.setPosition(0)
+        self.textEdit.setTextCursor(cursor)
 
         self._block = False
+
         return
 
     @pyqtSlot(str)
@@ -148,7 +161,7 @@ class GuiTextEditor(QWidget):
     def _textChanged(self) -> None:
         """Update display set text when editor changes."""
         if self._frame and not self._block:
-            self._frame.setText(self.textEdit.toPlainText().strip().split("\n"))
+            self._frame.setText(self._getText())
             self.newTextForFrame.emit(self._frame)
         return
 
@@ -160,23 +173,25 @@ class GuiTextEditor(QWidget):
         return
 
     @pyqtSlot()
-    def _keyPressPageUp(self) -> None:
+    def _requestPrevious(self) -> None:
         """Process Page Up key press."""
         self.requestNewFrame.emit(-1)
         return
 
     @pyqtSlot()
-    def _keyPressPageDown(self) -> None:
+    def _requestNext(self) -> None:
         """Process Page Down key press."""
         self.requestNewFrame.emit(1)
         return
 
     @pyqtSlot()
-    def _keyPressItalic(self) -> None:
+    def _formatItalic(self) -> None:
         """Process Ctrl+I key press."""
         if document := self.textEdit.document():
             cursor = self.textEdit.textCursor()
-            if uSelect := cursor.hasSelection():
+            posO = cursor.position()
+            italic = cursor.charFormat().fontItalic()
+            if cursor.hasSelection():
                 posS = cursor.selectionStart()
                 posE = cursor.selectionEnd()
                 block = document.findBlock(posS)
@@ -185,23 +200,23 @@ class GuiTextEditor(QWidget):
                 block = document.findBlock(cursor.position())
                 posS = block.position()
                 posE = posS + block.length() - 1
+                cursor.setPosition(posS, QTextCursor.MoveMode.MoveAnchor)
+                cursor.setPosition(posE, QTextCursor.MoveMode.KeepAnchor)
+
+            cFmt = QTextCharFormat()
+            cFmt.setFontItalic(not italic)
 
             cursor.beginEditBlock()
-            cursor.setPosition(posE)
-            cursor.insertText("</i>")
-            cursor.setPosition(posS)
-            cursor.insertText("<i>")
+            cursor.setCharFormat(cFmt)
+            cursor.setPosition(posO)
             cursor.endEditBlock()
 
-            if uSelect:
-                cursor.setPosition(posE+3, QTextCursor.MoveMode.MoveAnchor)
-                cursor.setPosition(posS+3, QTextCursor.MoveMode.KeepAnchor)
-                self.textEdit.setTextCursor(cursor)
+            self.textEdit.setTextCursor(cursor)
 
         return
 
     @pyqtSlot()
-    def _keyPressNote(self) -> None:
+    def _insertNoteSymbol(self) -> None:
         """Process Ctrl+J key press."""
         cursor = self.textEdit.textCursor()
         cursor.insertText("\u266a")
@@ -243,8 +258,10 @@ class GuiTextEditor(QWidget):
                 ctxMenu.addAction(self.tr("No Suggestions"))
 
             ctxMenu.addSeparator()
+            if action := ctxMenu.addAction(self.tr("Ignore Word")):
+                action.triggered.connect(lambda: self._addWord(word, block, False))
             if action := ctxMenu.addAction(self.tr("Add Word to Dictionary")):
-                action.triggered.connect(lambda: self._addWord(word, block))
+                action.triggered.connect(lambda: self._addWord(word, block, True))
 
         # Execute the context menu
         if viewport := self.textEdit.viewport():
@@ -253,7 +270,31 @@ class GuiTextEditor(QWidget):
 
         return
 
-    @pyqtSlot("QTextCursor", str)
+    ##
+    #  Internal Functions
+    ##
+
+    def _getText(self) -> list[str]:
+        """Get the text of the document."""
+        result = []
+        if document := self.textEdit.document():
+            for i in range(document.blockCount()):
+                if (block := document.findBlockByNumber(i)).isValid():
+                    line = ""
+                    it = block.begin()
+                    while not it.atEnd():
+                        if (fragment := it.fragment()).isValid():
+                            fmt = fragment.charFormat()
+                            text = fragment.text()
+                            if fmt.fontItalic():
+                                line = f"{line}<i>{text}</i>"
+                            else:
+                                line = f"{line}{text}"
+                        it += 1
+                    if line := line.strip():
+                        result.append(line)
+        return result
+
     def _correctWord(self, cursor: QTextCursor, word: str) -> None:
         """Slot for the spell check context menu triggering the
         replacement of a word with the word from the dictionary.
@@ -267,19 +308,15 @@ class GuiTextEditor(QWidget):
         self.textEdit.setTextCursor(cursor)
         return
 
-    @pyqtSlot(str, "QTextBlock")
-    def _addWord(self, word: str, block: QTextBlock) -> None:
+    def _addWord(self, word: str, block: QTextBlock, save: bool) -> None:
         """Slot for the spell check context menu triggered when the user
-        wants to add a word to the project dictionary.
+        wants to add a word to the user dictionary, or ignore it for the
+        current session.
         """
-        logger.debug("Added '%s' to project dictionary", word)
-        SHARED.spelling.addWord(word)
+        logger.debug("Added '%s' to session dictionary, saved = %s", word, str(save))
+        SHARED.spelling.addWord(word, save=save)
         self.highlight.rehighlightBlock(block)
         return
-
-    ##
-    #  Internal Functions
-    ##
 
     def _spellErrorAtPos(self, pos: int) -> tuple[str, int, int, list[str]]:
         """Check if there is a misspelled word at a given position in

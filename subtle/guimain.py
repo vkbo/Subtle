@@ -24,6 +24,7 @@ import logging
 import sys
 
 from subtle import CONFIG, SHARED
+from subtle.core.icons import GuiIcons
 from subtle.core.media import MediaData
 from subtle.core.spellcheck import SpellEnchant
 from subtle.gui.filetree import GuiFileTree
@@ -65,7 +66,7 @@ class GuiMain(QMainWindow):
         # Cached Data
         # ===========
 
-        SHARED.initSharedData(MediaData(), TesseractOCR(), SpellEnchant())
+        SHARED.initSharedData(MediaData(), TesseractOCR(), SpellEnchant(), GuiIcons())
 
         # GUI Elements
         # ============
