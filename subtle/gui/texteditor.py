@@ -28,7 +28,9 @@ from subtle.gui.highlighter import GuiDocHighlighter, TextBlockData
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QShortcut, QTextBlock, QTextBlockFormat, QTextCharFormat, QTextCursor
-from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QMenu, QTextEdit, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QComboBox, QMenu, QTextEdit, QToolBar, QToolButton, QVBoxLayout, QWidget
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +54,26 @@ class GuiTextEditor(QWidget):
 
         self.spellLang.currentIndexChanged.connect(self._spellLangChanged)
 
+        self.btnUp = QToolButton(self)
+        self.btnUp.setIcon(SHARED.icons.icon("up"))
+        self.btnUp.setShortcut("PgUp")
+        self.btnUp.clicked.connect(self._requestPrevious)
+
+        self.btnDown = QToolButton(self)
+        self.btnDown.setIcon(SHARED.icons.icon("down"))
+        self.btnDown.setShortcut("PgDown")
+        self.btnDown.clicked.connect(self._requestNext)
+
+        self.btnItalic = QToolButton(self)
+        self.btnItalic.setIcon(SHARED.icons.icon("italic"))
+        self.btnItalic.setShortcut("Ctrl+I")
+        self.btnItalic.clicked.connect(self._formatItalic)
+
+        self.btnNote = QToolButton(self)
+        self.btnNote.setIcon(SHARED.icons.icon("note"))
+        self.btnNote.setShortcut("Ctrl+J")
+        self.btnNote.clicked.connect(self._insertNoteSymbol)
+
         # Editor
         self.textEdit = QTextEdit(self)
         self.textEdit.setFont(CONFIG.subsFont)
@@ -69,37 +91,22 @@ class GuiTextEditor(QWidget):
         self.textEdit.customContextMenuRequested.connect(self._openContextMenu)
 
         # Assemble
-        self.controlsBox = QHBoxLayout()
+        self.controlsBox = QToolBar()
+        self.controlsBox.addWidget(self.btnUp)
+        self.controlsBox.addWidget(self.btnDown)
+        self.controlsBox.addSeparator()
+        self.controlsBox.addWidget(self.btnItalic)
+        self.controlsBox.addWidget(self.btnNote)
+        self.controlsBox.addSeparator()
         self.controlsBox.addWidget(self.spellLang)
-        self.controlsBox.addStretch(1)
 
         self.outerBox = QVBoxLayout()
-        self.outerBox.addLayout(self.controlsBox)
+        self.outerBox.addWidget(self.controlsBox)
         self.outerBox.addWidget(self.textEdit)
 
         self.setLayout(self.outerBox)
 
         # Shortcuts
-        self.kbPageUp = QShortcut(self.textEdit)
-        self.kbPageUp.setKey(Qt.Key.Key_PageUp)
-        self.kbPageUp.setContext(Qt.ShortcutContext.WidgetShortcut)
-        self.kbPageUp.activated.connect(self._keyPressPageUp)
-
-        self.kbPageDn = QShortcut(self.textEdit)
-        self.kbPageDn.setKey(Qt.Key.Key_PageDown)
-        self.kbPageDn.setContext(Qt.ShortcutContext.WidgetShortcut)
-        self.kbPageDn.activated.connect(self._keyPressPageDown)
-
-        self.kbItalic = QShortcut(self.textEdit)
-        self.kbItalic.setKey("Ctrl+I")
-        self.kbItalic.setContext(Qt.ShortcutContext.WidgetShortcut)
-        self.kbItalic.activated.connect(self._keyPressItalic)
-
-        self.kbNote = QShortcut(self.textEdit)
-        self.kbNote.setKey("Ctrl+J")
-        self.kbNote.setContext(Qt.ShortcutContext.WidgetShortcut)
-        self.kbNote.activated.connect(self._keyPressNote)
-
         self.keyContext = QShortcut(self.textEdit)
         self.keyContext.setKey("Ctrl+.")
         self.keyContext.setContext(Qt.ShortcutContext.WidgetShortcut)
@@ -127,6 +134,9 @@ class GuiTextEditor(QWidget):
             if n > 0:
                 cursor.insertBlock()
             cursor.insertHtml(line)
+
+        cursor.setPosition(0)
+        self.textEdit.setTextCursor(cursor)
 
         self._block = False
 
@@ -163,19 +173,19 @@ class GuiTextEditor(QWidget):
         return
 
     @pyqtSlot()
-    def _keyPressPageUp(self) -> None:
+    def _requestPrevious(self) -> None:
         """Process Page Up key press."""
         self.requestNewFrame.emit(-1)
         return
 
     @pyqtSlot()
-    def _keyPressPageDown(self) -> None:
+    def _requestNext(self) -> None:
         """Process Page Down key press."""
         self.requestNewFrame.emit(1)
         return
 
     @pyqtSlot()
-    def _keyPressItalic(self) -> None:
+    def _formatItalic(self) -> None:
         """Process Ctrl+I key press."""
         if document := self.textEdit.document():
             cursor = self.textEdit.textCursor()
@@ -206,7 +216,7 @@ class GuiTextEditor(QWidget):
         return
 
     @pyqtSlot()
-    def _keyPressNote(self) -> None:
+    def _insertNoteSymbol(self) -> None:
         """Process Ctrl+J key press."""
         cursor = self.textEdit.textCursor()
         cursor.insertText("\u266a")
