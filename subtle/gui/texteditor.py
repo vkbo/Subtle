@@ -27,7 +27,7 @@ from subtle.formats.base import FrameBase
 from subtle.gui.highlighter import GuiDocHighlighter, TextBlockData
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal, pyqtSlot
-from PyQt6.QtGui import QShortcut, QTextBlock, QTextBlockFormat, QTextCursor
+from PyQt6.QtGui import QShortcut, QTextBlock, QTextBlockFormat, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QMenu, QTextEdit, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
@@ -117,16 +117,19 @@ class GuiTextEditor(QWidget):
         self._frame = frame
         self._block = True
 
-        self.textEdit.setPlainText("\n".join(frame.text))
+        bFmt = QTextBlockFormat()
+        bFmt.setLineHeight(120.0, 1)
 
-        blockFmt = QTextBlockFormat()
-        blockFmt.setLineHeight(120.0, 1)
+        self.textEdit.clear()
         cursor = self.textEdit.textCursor()
-        cursor.clearSelection()
-        cursor.select(QTextCursor.SelectionType.Document)
-        cursor.mergeBlockFormat(blockFmt)
+        cursor.setBlockFormat(bFmt)
+        for n, line in enumerate(frame.text):
+            if n > 0:
+                cursor.insertBlock()
+            cursor.insertHtml(line)
 
         self._block = False
+
         return
 
     @pyqtSlot(str)
@@ -148,7 +151,7 @@ class GuiTextEditor(QWidget):
     def _textChanged(self) -> None:
         """Update display set text when editor changes."""
         if self._frame and not self._block:
-            self._frame.setText(self.textEdit.toPlainText().strip().split("\n"))
+            self._frame.setText(self._getText())
             self.newTextForFrame.emit(self._frame)
         return
 
@@ -176,7 +179,9 @@ class GuiTextEditor(QWidget):
         """Process Ctrl+I key press."""
         if document := self.textEdit.document():
             cursor = self.textEdit.textCursor()
-            if uSelect := cursor.hasSelection():
+            posO = cursor.position()
+            italic = cursor.charFormat().fontItalic()
+            if cursor.hasSelection():
                 posS = cursor.selectionStart()
                 posE = cursor.selectionEnd()
                 block = document.findBlock(posS)
@@ -185,18 +190,18 @@ class GuiTextEditor(QWidget):
                 block = document.findBlock(cursor.position())
                 posS = block.position()
                 posE = posS + block.length() - 1
+                cursor.setPosition(posS, QTextCursor.MoveMode.MoveAnchor)
+                cursor.setPosition(posE, QTextCursor.MoveMode.KeepAnchor)
+
+            cFmt = QTextCharFormat()
+            cFmt.setFontItalic(not italic)
 
             cursor.beginEditBlock()
-            cursor.setPosition(posE)
-            cursor.insertText("</i>")
-            cursor.setPosition(posS)
-            cursor.insertText("<i>")
+            cursor.setCharFormat(cFmt)
+            cursor.setPosition(posO)
             cursor.endEditBlock()
 
-            if uSelect:
-                cursor.setPosition(posE+3, QTextCursor.MoveMode.MoveAnchor)
-                cursor.setPosition(posS+3, QTextCursor.MoveMode.KeepAnchor)
-                self.textEdit.setTextCursor(cursor)
+            self.textEdit.setTextCursor(cursor)
 
         return
 
@@ -258,6 +263,27 @@ class GuiTextEditor(QWidget):
     ##
     #  Internal Functions
     ##
+
+    def _getText(self) -> list[str]:
+        """Get the text of the document."""
+        result = []
+        if document := self.textEdit.document():
+            for i in range(document.blockCount()):
+                if (block := document.findBlockByNumber(i)).isValid():
+                    line = ""
+                    it = block.begin()
+                    while not it.atEnd():
+                        if (fragment := it.fragment()).isValid():
+                            fmt = fragment.charFormat()
+                            text = fragment.text()
+                            if fmt.fontItalic():
+                                line = f"{line}<i>{text}</i>"
+                            else:
+                                line = f"{line}{text}"
+                        it += 1
+                    if line := line.strip():
+                        result.append(line)
+        return result
 
     def _correctWord(self, cursor: QTextCursor, word: str) -> None:
         """Slot for the spell check context menu triggering the
