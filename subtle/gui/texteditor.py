@@ -124,12 +124,8 @@ class GuiTextEditor(QWidget):
         self._frame = frame
         self._block = True
 
-        bFmt = QTextBlockFormat()
-        bFmt.setLineHeight(120.0, 1)
-
         self.textEdit.clear()
         cursor = self.textEdit.textCursor()
-        cursor.setBlockFormat(bFmt)
         for n, line in enumerate(frame.text):
             if n > 0:
                 cursor.insertBlock()
@@ -137,6 +133,11 @@ class GuiTextEditor(QWidget):
 
         cursor.setPosition(0)
         self.textEdit.setTextCursor(cursor)
+
+        bFmt = QTextBlockFormat()
+        bFmt.setLineHeight(120.0, 1)
+        cursor.select(QTextCursor.SelectionType.Document)
+        cursor.mergeBlockFormat(bFmt)
 
         self._block = False
 
