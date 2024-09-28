@@ -110,20 +110,16 @@ class SpellEnchant:
         except Exception:
             return []
 
-    def addWord(self, word: str) -> bool:
+    def addWord(self, word: str, save: bool = True) -> None:
         """Add a word to the project dictionary."""
-        word = word.strip()
-        if not word:
-            return False
-        try:
-            self._enchant.add_to_session(word)
-        except Exception:
-            return False
-
-        if added := self._userDict.add(word):
-            self._userDict.save()
-
-        return added
+        if word := word.strip():
+            try:
+                self._enchant.add_to_session(word)
+            except Exception:
+                return
+            if save:
+                self._userDict.add(word)
+        return
 
     def listDictionaries(self) -> list[tuple[str, str]]:
         """List available dictionaries."""
@@ -190,6 +186,7 @@ class UserDictionary:
         if word in self._words:
             return False
         self._words.add(word)
+        self.save()
         return True
 
     def load(self) -> None:

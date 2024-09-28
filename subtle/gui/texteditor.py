@@ -243,8 +243,10 @@ class GuiTextEditor(QWidget):
                 ctxMenu.addAction(self.tr("No Suggestions"))
 
             ctxMenu.addSeparator()
+            if action := ctxMenu.addAction(self.tr("Ignore Word")):
+                action.triggered.connect(lambda: self._addWord(word, block, False))
             if action := ctxMenu.addAction(self.tr("Add Word to Dictionary")):
-                action.triggered.connect(lambda: self._addWord(word, block))
+                action.triggered.connect(lambda: self._addWord(word, block, True))
 
         # Execute the context menu
         if viewport := self.textEdit.viewport():
@@ -253,7 +255,10 @@ class GuiTextEditor(QWidget):
 
         return
 
-    @pyqtSlot("QTextCursor", str)
+    ##
+    #  Internal Functions
+    ##
+
     def _correctWord(self, cursor: QTextCursor, word: str) -> None:
         """Slot for the spell check context menu triggering the
         replacement of a word with the word from the dictionary.
@@ -267,19 +272,15 @@ class GuiTextEditor(QWidget):
         self.textEdit.setTextCursor(cursor)
         return
 
-    @pyqtSlot(str, "QTextBlock")
-    def _addWord(self, word: str, block: QTextBlock) -> None:
+    def _addWord(self, word: str, block: QTextBlock, save: bool) -> None:
         """Slot for the spell check context menu triggered when the user
-        wants to add a word to the project dictionary.
+        wants to add a word to the user dictionary, or ignore it for the
+        current session.
         """
-        logger.debug("Added '%s' to project dictionary", word)
-        SHARED.spelling.addWord(word)
+        logger.debug("Added '%s' to session dictionary, saved = %s", word, str(save))
+        SHARED.spelling.addWord(word, save=save)
         self.highlight.rehighlightBlock(block)
         return
-
-    ##
-    #  Internal Functions
-    ##
 
     def _spellErrorAtPos(self, pos: int) -> tuple[str, int, int, list[str]]:
         """Check if there is a misspelled word at a given position in
