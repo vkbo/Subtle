@@ -21,16 +21,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 from __future__ import annotations
 
 import logging
+import re
 
 from pathlib import Path
 from typing import NamedTuple
 
-from subtle.common import decodeTS
+from subtle.common import closeItalics, decodeTS, regexCleanup
 from subtle.formats.base import FrameBase, SubtitlesBase
 
 from PyQt6.QtGui import QImage
 
 logger = logging.getLogger(__name__)
+
+RX_REPLACE = [
+    (re.compile(r"(\{\\[ub]1\})", re.UNICODE), "<i>"),
+    (re.compile(r"(\{\\[ub]0\})", re.UNICODE), "</i>"),
+    (re.compile(r"(\{\\.+?\})", re.UNICODE), ""),
+]
 
 
 class EventFormat(NamedTuple):
@@ -71,6 +78,7 @@ class SSASubs(SubtitlesBase):
 
     def _readData(self, path: Path) -> None:
         """Read SubStation Alpha text file data."""
+        self._frames = []
         with open(path, mode="r", encoding="utf-8") as fo:
             parse = False
             for line in fo:
@@ -94,7 +102,6 @@ class SSASubs(SubtitlesBase):
                 parts.index("End"),
                 parts.index("Text")
             )
-            print(self._format)
         except ValueError:
             logger.error("Invalid events format string")
         return
@@ -107,13 +114,28 @@ class SSASubs(SubtitlesBase):
         fmt = self._format
         bits = line.split(",", fmt.length - 1)
         if len(bits) == fmt.length:
-            start = decodeTS(bits[fmt.start])
-            end = decodeTS(bits[fmt.end])
-            text = bits[fmt.text]
-            print(start, end, text)
+            self._frames.append(SSAFrame(
+                len(self._frames),
+                decodeTS(bits[fmt.start], fmt="SSA"),
+                decodeTS(bits[fmt.end], fmt="SSA"),
+                self._processText(bits[fmt.text]),
+            ))
         else:
             logger.error("Dialogue entry is malformed on line %d", self._line)
         return
+
+    def _processText(self, text: str) -> list[str]:
+        """Process SSA dialogue format and preserve supported syntax."""
+        temp = text.replace(r"\n", " ").replace(r"\h", " ")
+        temp = temp.replace(r"{\i1}", "<i>").replace(r"{\i0}", "</i>")
+
+        # Strip or replace other formatting
+        fixed = regexCleanup(temp, RX_REPLACE)
+        if fixed != temp:
+            logger.debug("Rx Before: '%s'", temp.replace("\n", "|"))
+            logger.debug("Rx Result: '%s'", fixed.replace("\n", "|"))
+
+        return closeItalics(fixed.split(r"\N"))
 
 
 class SSAFrame(FrameBase):
