@@ -66,6 +66,11 @@ def formatInt(value: int) -> str:
     return str(value) + "\u202f"
 
 
+def textCleanup(text: str) -> str:
+    """Do some common cleanup on text strings."""
+    return text.replace("--", "\u2014").replace("....", "...")
+
+
 def regexCleanup(text: str, patterns: list[tuple[re.Pattern, str]]) -> str:
     """Replaces all occurrences of match group 1 in patterns."""
     for regEx, value in patterns:

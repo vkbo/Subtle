@@ -26,7 +26,7 @@ import re
 from pathlib import Path
 from typing import NamedTuple
 
-from subtle.common import closeItalics, decodeTS, regexCleanup
+from subtle.common import closeItalics, decodeTS, regexCleanup, simplified, textCleanup
 from subtle.formats.base import FrameBase, SubtitlesBase
 
 from PyQt6.QtGui import QImage
@@ -126,8 +126,10 @@ class SSASubs(SubtitlesBase):
 
     def _processText(self, text: str) -> list[str]:
         """Process SSA dialogue format and preserve supported syntax."""
-        temp = text.replace(r"\n", " ").replace(r"\h", " ")
+        temp = textCleanup(text)
+        temp = temp.replace(r"\n", " ").replace(r"\h", " ")
         temp = temp.replace(r"{\i1}", "<i>").replace(r"{\i0}", "</i>")
+        temp = simplified(temp)
 
         # Strip or replace other formatting
         fixed = regexCleanup(temp, RX_REPLACE)

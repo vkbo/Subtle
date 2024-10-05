@@ -46,7 +46,7 @@ TXT_REPLACE = {
 }
 
 RX_REPLACE = [
-    (re.compile(r"^(\.-)[\s\w]", re.UNICODE), "-"),
+    (re.compile(r"^(-\s)[\w]", re.UNICODE), "-"),
     (re.compile(r"^(\.{2})[\s\w]", re.UNICODE), "..."),
     (re.compile(r"^(\.{3}\s)\w", re.UNICODE), "..."),
 ]

@@ -161,6 +161,7 @@ class GuiToolsPanel(QWidget):
         """Load a new track, if possible."""
         if (track := SHARED.media.currentTrack) and track.trackType == MediaType.SUBS:
             self.srtForced.setChecked(track.forced)
+            self.srtSDH.setChecked(track.sdh)
             self._updateTrackInfo()
         return
 

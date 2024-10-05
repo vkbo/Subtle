@@ -190,6 +190,11 @@ class MediaTrack:
         return bool(self._props.get("forced_track", False))
 
     @property
+    def sdh(self) -> bool:
+        """Check if SDH is mentioned in name."""
+        return "SDH" in self.label.upper()
+
+    @property
     def codecName(self) -> str:
         """Return the track's codec."""
         return str(self._info.get("codec", "Unknown"))

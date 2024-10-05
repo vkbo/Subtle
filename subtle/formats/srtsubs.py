@@ -24,7 +24,7 @@ import logging
 
 from pathlib import Path
 
-from subtle.common import closeItalics, decodeTS, formatTS
+from subtle.common import closeItalics, decodeTS, formatTS, textCleanup
 from subtle.formats.base import FrameBase, SubtitlesBase
 
 from PyQt6.QtGui import QImage
@@ -109,7 +109,7 @@ class SRTSubs(SubtitlesBase):
                     len(self._frames),
                     decodeTS(start),
                     decodeTS(end),
-                    closeItalics(block[2:]),
+                    closeItalics([textCleanup(t) for t in block[2:]]),
                 )
             )
         return
