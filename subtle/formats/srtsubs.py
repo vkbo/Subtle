@@ -24,7 +24,7 @@ import logging
 
 from pathlib import Path
 
-from subtle.common import decodeTS, formatTS
+from subtle.common import closeItalics, decodeTS, formatTS, textCleanup
 from subtle.formats.base import FrameBase, SubtitlesBase
 
 from PyQt6.QtGui import QImage
@@ -67,7 +67,7 @@ class SRTSubs(SubtitlesBase):
 
     def _readData(self, path: Path) -> None:
         """Read SRT text file data."""
-        self._path = path
+        self._frames = []
         with open(path, mode="r", encoding="utf-8") as fo:
             block = []
             for line in fo:
@@ -109,7 +109,7 @@ class SRTSubs(SubtitlesBase):
                     len(self._frames),
                     decodeTS(start),
                     decodeTS(end),
-                    block[2:],
+                    closeItalics([textCleanup(t) for t in block[2:]]),
                 )
             )
         return

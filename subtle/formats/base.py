@@ -38,6 +38,9 @@ class SubtitlesBase(ABC):
         self._frames: list[FrameBase] = []
         return
 
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}: id={id(self)}>"
+
     def frameCount(self) -> int:
         """Return number of frames."""
         return len(self._frames)

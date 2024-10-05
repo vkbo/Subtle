@@ -24,9 +24,11 @@ import json
 import logging
 import re
 
-from typing import Any
+from typing import Any, Literal
 
 logger = logging.getLogger(__name__)
+
+T_Subs = Literal["SRT"] | Literal["SSA"]
 
 
 def simplified(text: str) -> str:
@@ -64,6 +66,11 @@ def formatInt(value: int) -> str:
     return str(value) + "\u202f"
 
 
+def textCleanup(text: str) -> str:
+    """Do some common cleanup on text strings."""
+    return text.replace("--", "\u2014").replace("....", "...")
+
+
 def regexCleanup(text: str, patterns: list[tuple[re.Pattern, str]]) -> str:
     """Replaces all occurrences of match group 1 in patterns."""
     for regEx, value in patterns:
@@ -74,6 +81,20 @@ def regexCleanup(text: str, patterns: list[tuple[re.Pattern, str]]) -> str:
         for s, e, value in reversed(matches):
             text = text[:s] + value + text[e:]
     return text
+
+
+def closeItalics(text: list[str]) -> list[str]:
+    """Make sure italics doesn't span multiple lines."""
+    italics = False
+    result = []
+    for line in text:
+        if italics:
+            line = f"<i>{line}"
+        if line.count("<i>") - line.count("</i>") > 0:
+            italics = True
+            line = f"{line}</i>"
+        result.append(line)
+    return result
 
 
 def jsonEncode(data: dict | list | tuple, n: int = 0, nmax: int = 0) -> str:
@@ -129,16 +150,27 @@ def formatTS(value: int) -> str:
     return f"{i//3600:02d}:{i%3600//60:02d}:{i%60:02d},{f:03d}"
 
 
-def decodeTS(value: str | None, default: int = 0) -> int:
-    """Decode a time stamp to milliseconds."""
-    if isinstance(value, str) and len(value) >= 12:
-        if value[2] == ":" and value[5] == ":" and value[8] in ".,":
-            try:
-                return (
-                    3600000*int(value[0:2])
-                    + 60000*int(value[3:5])
-                    + int(value[6:8] + value[9:12])
-                )
-            except Exception:
-                pass
+def decodeTS(value: str | None, default: int = 0, fmt: T_Subs = "SRT") -> int:
+    """Decode a SRT time stamp to milliseconds."""
+    if isinstance(value, str):
+        if fmt == "SRT" and len(value) >= 12:
+            if value[2] == ":" and value[5] == ":" and value[8] in ".,":
+                try:
+                    return (
+                        3600000*int(value[0:2])
+                        + 60000*int(value[3:5])
+                        + int(value[6:8] + value[9:12])
+                    )
+                except Exception:
+                    pass
+        elif fmt == "SSA" and len(value) == 10:
+            if value[1] == ":" and value[4] == ":" and value[7] in ":.,":
+                try:
+                    return (
+                        3600000*int(value[0])
+                        + 60000*int(value[2:4])
+                        + 10*int(value[5:7] + value[8:10])
+                    )
+                except Exception:
+                    pass
     return default
