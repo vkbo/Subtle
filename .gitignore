@@ -3,3 +3,5 @@
 
 # Tests
 .pytest_cache
+.coverage
+coverage.*
