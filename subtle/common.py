@@ -130,7 +130,7 @@ def formatTS(value: int) -> str:
 
 
 def decodeTS(value: str | None, default: int = 0) -> int:
-    """Decode a time stamp to milliseconds."""
+    """Decode a SRT time stamp to milliseconds."""
     if isinstance(value, str) and len(value) >= 12:
         if value[2] == ":" and value[5] == ":" and value[8] in ".,":
             try:

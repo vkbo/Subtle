@@ -32,6 +32,7 @@ from subtle.core.mediafile import MediaFile
 from subtle.formats.base import FrameBase, SubtitlesBase
 from subtle.formats.pgssubs import PGSSubs
 from subtle.formats.srtsubs import SRTSubs
+from subtle.formats.ssasubs import SSASubs
 
 from PyQt6.QtCore import QObject, pyqtSignal
 
@@ -130,11 +131,15 @@ class MediaTrack:
                 self._type = MediaType.OTHER
 
         if self._type == MediaType.SUBS:
-            match self._props.get("codec_id"):
+            match codec := self._props.get("codec_id"):
                 case "S_HDMV/PGS":
                     self._wrapper = PGSSubs()
                 case "S_TEXT/UTF8":
                     self._wrapper = SRTSubs()
+                case "S_TEXT/ASS":
+                    self._wrapper = SSASubs()
+                case _:
+                    logger.info("Unsupported subtitle format: %s", codec)
 
         return
 

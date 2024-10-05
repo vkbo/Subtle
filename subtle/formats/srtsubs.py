@@ -67,7 +67,6 @@ class SRTSubs(SubtitlesBase):
 
     def _readData(self, path: Path) -> None:
         """Read SRT text file data."""
-        self._path = path
         with open(path, mode="r", encoding="utf-8") as fo:
             block = []
             for line in fo:
