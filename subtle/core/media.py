@@ -79,8 +79,7 @@ class MediaData(QObject):
         """Load a media file into the data store."""
         logger.debug("Loading file: %s", path)
         self.clear()
-        media = MediaFile(path)
-        if media.valid:
+        if (media := MediaFile(path)).valid:
             self._file = media
             for info in media.iterTracks():
                 track = MediaTrack(self, info)
@@ -131,15 +130,16 @@ class MediaTrack:
                 self._type = MediaType.OTHER
 
         if self._type == MediaType.SUBS:
-            match codec := self._props.get("codec_id"):
-                case "S_HDMV/PGS":
-                    self._wrapper = PGSSubs()
-                case "S_TEXT/UTF8":
-                    self._wrapper = SRTSubs()
-                case "S_TEXT/ASS":
-                    self._wrapper = SSASubs()
-                case _:
-                    logger.info("Unsupported subtitle format: %s", codec)
+            codec_id = self._props.get("codec_id")
+            codec_nm = self._info.get("codec")
+            if codec_id == "S_HDMV/PGS" or codec_nm == "HDMV PGS":
+                self._wrapper = PGSSubs()
+            elif codec_id == "S_TEXT/UTF8" or codec_nm == "SubRip/SRT":
+                self._wrapper = SRTSubs()
+            elif codec_id == "S_TEXT/ASS" or codec_nm == "SubStationAlpha":
+                self._wrapper = SSASubs()
+            else:
+                logger.info("Unsupported subtitle format: %s", codec_id or codec_nm)
 
         return
 
