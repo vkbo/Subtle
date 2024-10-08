@@ -36,11 +36,31 @@ logger = logging.getLogger(__name__)
 
 class ContainerType(IntEnum):
 
-    UNKNOWN  = 0
-    AVI      = 5
-    MATROSKA = 17
-    PGS_SUP  = 24
-    SRT      = 27
+    UNKNOWN     = 0
+    AVI         = 5
+    MATROSKA    = 17
+    MPEG_STREAM = 21
+    OGM         = 23
+    PGSSUP      = 24
+    QUICKTIME   = 25
+    SRT         = 27
+    SSA_ASS     = 28
+    VOBSUB      = 34
+
+
+EXTRACTABLE = (
+    ContainerType.AVI,
+    ContainerType.MATROSKA,
+    ContainerType.MPEG_STREAM,
+    ContainerType.OGM,
+    ContainerType.QUICKTIME,
+)
+
+SUBTITLE_FILE = (
+    ContainerType.SRT,
+    ContainerType.SSA_ASS,
+    ContainerType.PGSSUP,
+)
 
 
 class MediaFile:
@@ -75,6 +95,15 @@ class MediaFile:
         except Exception:
             logger.error("Unknown or unsupported media type")
         return ContainerType.UNKNOWN
+
+    @property
+    def supported(self) -> bool:
+        """True if the format is supported."""
+        try:
+            return self._info["container"]["supported"]
+        except Exception:
+            pass
+        return False
 
     def getTrackInfo(self, track: str | int) -> dict:
         """Return information about a specific track."""

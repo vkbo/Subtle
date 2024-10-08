@@ -29,7 +29,7 @@ from subtle import CONFIG, SHARED
 from subtle.common import formatTS
 from subtle.constants import GuiLabels, MediaType, trConst
 from subtle.core.media import MediaTrack
-from subtle.core.mediafile import ContainerType
+from subtle.core.mediafile import EXTRACTABLE, SUBTITLE_FILE
 from subtle.core.mkvextract import MkvExtract
 
 from PyQt6.QtCore import QModelIndex, pyqtSlot
@@ -216,13 +216,13 @@ class GuiMediaView(QWidget):
         self.progressText.setText(self.tr("Extracting {0} track(s) ...").format(len(tracks)))
 
         extract = None
-        if file.container in (ContainerType.MATROSKA, ContainerType.AVI):
+        if file.container in EXTRACTABLE:
             extract = MkvExtract(self)
             extract.processProgress.connect(self._extractProgress)
             extract.processDone.connect(self._extractFinished)
             extract.extract(path, tracks)
             self._extracted.update(tracks)
-        elif len(tracks) == 1 and file.container in (ContainerType.SRT, ContainerType.PGS_SUP):
+        elif len(tracks) == 1 and file.container in SUBTITLE_FILE:
             idx, output = tracks[0]
             shutil.copyfile(path, output)
             self._extracted.update(tracks)
