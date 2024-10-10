@@ -21,6 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 from __future__ import annotations
 
 import logging
+import shutil
 
 from pathlib import Path
 
@@ -28,6 +29,7 @@ from subtle import CONFIG, SHARED
 from subtle.common import formatTS
 from subtle.constants import GuiLabels, MediaType, trConst
 from subtle.core.media import MediaTrack
+from subtle.core.mediafile import EXTRACTABLE, SUBTITLE_FILE
 from subtle.core.mkvextract import MkvExtract
 
 from PyQt6.QtCore import QModelIndex, pyqtSlot
@@ -55,7 +57,6 @@ class GuiMediaView(QWidget):
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
-        self._extract = MkvExtract(self)
         self._extracted: dict[str, Path] = {}
         self._map: dict[str, QTreeWidgetItem] = {}
         self._emitTrack: str | None = None
@@ -96,10 +97,6 @@ class GuiMediaView(QWidget):
         self.outerBox.addLayout(self.controlsBox)
 
         self.setLayout(self.outerBox)
-
-        # Connect Signals
-        self._extract.processProgress.connect(self._extractProgress)
-        self._extract.processDone.connect(self._extractFinished)
 
         return
 
@@ -212,8 +209,29 @@ class GuiMediaView(QWidget):
 
     def _runTrackExtraction(self, path: Path, tracks: list[tuple[str, Path]]) -> None:
         """Call for extraction for a set of tracks."""
-        self.progressText.setText(self.tr("Extracting {0} track(s) ...").format(len(tracks)))
+        if not (file := SHARED.media.mediaFile):
+            return
+
         self.progressBar.setValue(0)
-        self._extract.extract(path, tracks)
-        self._extracted.update(tracks)
+        self.progressText.setText(self.tr("Extracting {0} track(s) ...").format(len(tracks)))
+
+        extract = None
+        if file.container in EXTRACTABLE:
+            extract = MkvExtract(self)
+            extract.processProgress.connect(self._extractProgress)
+            extract.processDone.connect(self._extractFinished)
+            extract.extract(path, tracks)
+            self._extracted.update(tracks)
+        elif len(tracks) == 1 and file.container in SUBTITLE_FILE:
+            idx, output = tracks[0]
+            shutil.copyfile(path, output)
+            self._extracted.update(tracks)
+            self.progressText.setText(self.tr("Copied track ..."))
+            self.progressBar.setValue(100)
+            if track := SHARED.media.getTrack(idx):
+                track.readTrackFile()
+                self._setTrackInfo(track)
+
+            SHARED.media.setCurrentTrack(idx)
+
         return

@@ -25,12 +25,42 @@ import logging
 import subprocess
 
 from collections.abc import Iterable
+from enum import IntEnum
 from hashlib import sha1
 from pathlib import Path
 
 from subtle import CONFIG
 
 logger = logging.getLogger(__name__)
+
+
+class ContainerType(IntEnum):
+
+    UNKNOWN     = 0
+    AVI         = 5
+    MATROSKA    = 17
+    MPEG_STREAM = 21
+    OGM         = 23
+    PGSSUP      = 24
+    QUICKTIME   = 25
+    SRT         = 27
+    SSA_ASS     = 28
+    VOBSUB      = 34
+
+
+EXTRACTABLE = (
+    ContainerType.AVI,
+    ContainerType.MATROSKA,
+    ContainerType.MPEG_STREAM,
+    ContainerType.OGM,
+    ContainerType.QUICKTIME,
+)
+
+SUBTITLE_FILE = (
+    ContainerType.SRT,
+    ContainerType.SSA_ASS,
+    ContainerType.PGSSUP,
+)
 
 
 class MediaFile:
@@ -43,7 +73,7 @@ class MediaFile:
         self._file = file
         self._id = sha1(bytes(file), usedforsecurity=False).hexdigest()
         self._info = {}
-        self._getInfo()
+        self._process()
         return
 
     @property
@@ -55,6 +85,25 @@ class MediaFile:
     def valid(self) -> bool:
         """True if the media file was read successfully."""
         return bool(self._info)
+
+    @property
+    def container(self) -> ContainerType:
+        """Return the file's container type."""
+        try:
+            container = self._info["container"]["properties"]["container_type"]
+            return ContainerType(container)
+        except Exception:
+            logger.error("Unknown or unsupported media type")
+        return ContainerType.UNKNOWN
+
+    @property
+    def supported(self) -> bool:
+        """True if the format is supported."""
+        try:
+            return self._info["container"]["supported"]
+        except Exception:
+            pass
+        return False
 
     def getTrackInfo(self, track: str | int) -> dict:
         """Return information about a specific track."""
@@ -79,7 +128,7 @@ class MediaFile:
     #  Internal Functions
     ##
 
-    def _getInfo(self) -> None:
+    def _process(self) -> None:
         """Load info about the media file."""
         try:
             p = subprocess.Popen(
