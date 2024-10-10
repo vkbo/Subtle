@@ -76,6 +76,8 @@ class SRTSubs(SubtitlesBase):
                 else:
                     self._parseFrame(block)
                     block = []
+            if block:
+                self._parseFrame(block)
         return
 
     def _writeData(self, path: Path) -> None:
