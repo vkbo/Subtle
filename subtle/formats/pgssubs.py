@@ -291,8 +291,7 @@ class DisplaySet:
                         raw += palette[data[p+3]] * ((b2 & 0x3f)*256 + data[p+2])
                         p += 4
 
-                rect = QRect(offset, box)
-                frame = frame.united(rect)
+                frame = frame.united(QRect(offset, box))
                 painter.drawImage(offset, QImage(
                     raw, box.width(), box.height(), QImage.Format.Format_ARGB32
                 ))
