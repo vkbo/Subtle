@@ -230,7 +230,7 @@ class DisplaySet:
         return
 
     def isValid(self) -> bool:
-        return self._pcs is not None and self._pcs.valid  # and len(self._wds) > 0
+        return self._pcs is not None and self._pcs.valid
 
     def isClearFrame(self) -> bool:
         return self._pcs.compState == COMP_NORMAL and self._pcs.compObjectCount == 0
