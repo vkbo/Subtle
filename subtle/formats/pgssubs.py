@@ -29,7 +29,7 @@ from pathlib import Path
 from subtle.common import formatTS
 from subtle.formats.base import FrameBase, SubtitlesBase
 
-from PyQt6.QtCore import QMargins, QRect, QSize
+from PyQt6.QtCore import QMargins, QPoint, QRect, QSize
 from PyQt6.QtGui import QColor, QImage, QPainter, qRgba
 
 logger = logging.getLogger(__name__)
@@ -230,7 +230,7 @@ class DisplaySet:
         return
 
     def isValid(self) -> bool:
-        return self._pcs is not None and self._pcs.valid and len(self._wds) > 0
+        return self._pcs is not None and self._pcs.valid  # and len(self._wds) > 0
 
     def isClearFrame(self) -> bool:
         return self._pcs.compState == COMP_NORMAL and self._pcs.compObjectCount == 0
@@ -254,7 +254,7 @@ class DisplaySet:
 
         if pds := self._pds.get(self._pcs.paletteID):
             palette = pds.palette()
-            for oid, wid in self._pcs.compObjects():
+            for oid, _, offset in self._pcs.compObjects():
                 data = bytearray()
                 box = None
                 length = 0
@@ -269,9 +269,6 @@ class DisplaySet:
                     length = len(data)  # Try to render what we have
                 if box is None:
                     logger.error("Size not defined for composition %d", comp)
-                    break
-                if (window := self._wds.get(wid)) is None:
-                    logger.error("Unknown window %d in composition %d", wid, comp)
                     break
 
                 p = 0
@@ -294,8 +291,9 @@ class DisplaySet:
                         raw += palette[data[p+3]] * ((b2 & 0x3f)*256 + data[p+2])
                         p += 4
 
-                frame = frame.united(window)
-                painter.drawImage(window.topLeft(), QImage(
+                rect = QRect(offset, box)
+                frame = frame.united(rect)
+                painter.drawImage(offset, QImage(
                     raw, box.width(), box.height(), QImage.Format.Format_ARGB32
                 ))
 
@@ -396,16 +394,16 @@ class PresentationSegment(BaseSegment):
         """Number of composition objects defined in this segment."""
         return int.from_bytes(self._data[10:11])
 
-    def compObjects(self) -> Iterable[tuple[int, int]]:
+    def compObjects(self) -> Iterable[tuple[int, int, QPoint]]:
         """The composition objects, also known as window information
         objects, define the position on the screen of every image that
         will be shown.
 
         These also contain cropping information, which we don't care
-        about, and skip. We only return the Object ID and Window ID of
-        each entry. They also contain the x and y offset of each window
-        and object, but we already have that information elsewhere, so
-        we skip bytes 5 to 8.
+        about, and skip. We only return the Object ID, Window ID, and
+        position of each entry. The position is the coordinate where to
+        draw the object. It may or may not also be defined in the window
+        segment.
         """
         pos = 11
         size = len(self._data)
@@ -413,8 +411,10 @@ class PresentationSegment(BaseSegment):
             o = int.from_bytes(self._data[pos:pos+2])    # Object ID
             w = int.from_bytes(self._data[pos+2:pos+3])  # Window ID
             f = int.from_bytes(self._data[pos+3:pos+4])  # Crop flag, only used for offset
+            x = int.from_bytes(self._data[pos+4:pos+6])  # Horizontal position
+            y = int.from_bytes(self._data[pos+6:pos+8])  # Vertical position
             pos += (16 if f == 0x40 else 8)
-            yield o, w
+            yield o, w, QPoint(x, y)
         return
 
 
@@ -430,8 +430,7 @@ class WindowSegment(BaseSegment):
 
     def validate(self) -> None:
         """Length is 1 + n*9"""
-        size = len(self._data)
-        self._valid = (size >= 10 and size % 9 == 1)
+        self._valid = (len(self._data) % 9 == 1)
         return
 
     @property
