@@ -26,12 +26,16 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from pathlib import Path
 
+from subtle.common import formatTS
+
 from PyQt6.QtGui import QImage
 
 logger = logging.getLogger(__name__)
 
 
 class SubtitlesBase(ABC):
+
+    __slots__ = ("_path", "_frames")
 
     def __init__(self) -> None:
         self._path: Path | None = None
@@ -54,6 +58,21 @@ class SubtitlesBase(ABC):
     def iterFrames(self) -> Iterable[FrameBase]:
         """Iterate over frames."""
         yield from self._frames
+
+    def checkFrames(self) -> None:
+        """Check all frames to ensure that time stamps make sense."""
+        for i in range(len(self._frames) - 1):
+            cf, nf = self._frames[i:i+2]
+            if cf.end < cf.start:
+                te = cf.end
+                ts = cf.start
+                tn = nf.start - 90
+                cf.setRange(end=max(ts + 90, tn))
+                logger.warning(
+                    "Correcting end time for frame %d to %s (%+.3fs from %+.3fs)",
+                    i+1, formatTS(tn), (tn-ts)/1000.0, (te-ts)/1000.0
+                )
+        return
 
     @abstractmethod
     def read(self, path: Path) -> None:
@@ -99,6 +118,8 @@ class SubtitlesBase(ABC):
 
 
 class FrameBase(ABC):
+
+    __slots__ = ("_index", "_start", "_end", "_text")
 
     def __init__(self, index: int) -> None:
         self._index: int = index
@@ -147,6 +168,14 @@ class FrameBase(ABC):
     def setText(self, text: list[str]) -> None:
         """Set the frame's text."""
         self._text = [t.strip() for t in text if t.strip()]
+        return
+
+    def setRange(self, *, start: int | None = None, end: int | None = None) -> None:
+        """Update the start and end times."""
+        if start:
+            self._start = start
+        if end:
+            self._end = end
         return
 
     @abstractmethod

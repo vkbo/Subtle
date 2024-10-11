@@ -222,6 +222,7 @@ class MediaTrack:
         """Read the content of the track file."""
         if self._path and self._wrapper:
             self._wrapper.read(self._path)
+            self._wrapper.checkFrames()
         return
 
     def getFrame(self, index: int) -> FrameBase | None:
