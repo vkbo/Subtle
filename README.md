@@ -19,3 +19,22 @@ app works and I've used it to convert subtitles from numerous movies and TV epis
 The app is developed on Debian Linux, and I have no idea if it runs on other systems. The file
 browser certainly assumes that file system root is `/`, so it probably doesn't work on Windows
 without modification.
+
+## Usage
+
+Install the PyQt6 and enchant dependencies, either from distro repo or in a Python virtual env
+using the `requirements.txt` file.
+
+Install MkvToolNix and Tesseract. For Debian, this is:
+
+```bash
+sudo apt install mkvtoolnix tesseract-ocr
+```
+
+Launch the Subtle start script from the root of the source:
+
+```bash
+./subtle.py
+```
+
+Add `--info` or `--debug` for more log output.

@@ -107,7 +107,9 @@ class _IconEngine(QIconEngine):
         self.paint(painter, QRect(QPoint(0, 0), size), mode, state)
         return pix
 
-    def paint(self, painter: QPainter, rect: QRect, mode: QIcon.Mode, state: QIcon.State) -> None:
+    def paint(
+        self, painter: QPainter | None, rect: QRect, mode: QIcon.Mode, state: QIcon.State
+    ) -> None:
         """SVG icon painter."""
         renderer = QSvgRenderer(self._data)
         renderer.render(painter, QRectF(rect))

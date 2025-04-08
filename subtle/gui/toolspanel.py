@@ -224,21 +224,28 @@ class GuiToolsPanel(QWidget):
         try:
             folders = [root]
             for entry in root.iterdir():
-                if entry.is_dir() and not entry.is_reserved():
-                    folders.append(entry)
+                try:
+                    if entry.is_dir() and not entry.is_reserved():
+                        folders.append(entry)
+                except PermissionError:
+                    logger.info("Permission denied: %s", entry)
 
             prefix = path.stem.lower()
             for folder in folders:
-                for entry in folder.iterdir():
-                    if (
-                        entry.is_file()
-                        and entry.suffix == ".srt"
-                        and entry.stem.lower().startswith(prefix)
-                    ):
-                        item = QListWidgetItem()
-                        item.setText(str(entry.relative_to(root)))
-                        item.setData(self.D_SUBS_PATH, entry)
-                        self.subsList.addItem(item)
+                try:
+                    for entry in folder.iterdir():
+                        if (
+                            entry.is_file()
+                            and entry.suffix == ".srt"
+                            and entry.stem.lower().startswith(prefix)
+                        ):
+                            item = QListWidgetItem()
+                            item.setText(str(entry.relative_to(root)))
+                            item.setData(self.D_SUBS_PATH, entry)
+                            self.subsList.addItem(item)
+                except PermissionError:
+                    logger.info("Permission denied: %s", folder)
+
         except Exception as exc:
             logger.error("Could not scan path: %s", root, exc_info=exc)
 

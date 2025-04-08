@@ -45,6 +45,13 @@ TXT_REPLACE = {
     "\u201d": "\u0022",
 }
 
+WORD_REPLACE = {
+    " Know ": " know ",
+    " SO ": " so ",
+    " sO ": " so ",
+    " yOu ": " you ",
+}
+
 RX_REPLACE = [
     (re.compile(r"^(-\s)[\w]", re.UNICODE), "-"),
     (re.compile(r"^(\.{2})[\s\w]", re.UNICODE), "..."),
@@ -91,6 +98,10 @@ class TesseractOCR(OCRBase):
         temp = text.strip()
         for a, b in TXT_REPLACE.items():
             temp = temp.replace(a, b)
+
+        for a, b in WORD_REPLACE.items():
+            temp = temp.replace(a, b)
+            logger.debug(f"Corrected '{a}' to '{b}'")
 
         fixed = regexCleanup(temp, RX_REPLACE)
         if fixed != temp:
