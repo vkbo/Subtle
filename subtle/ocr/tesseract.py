@@ -45,17 +45,29 @@ TXT_REPLACE = {
     "\u201d": "\u0022",
 }
 
-WORD_REPLACE = {
-    " Know ": " know ",
-    " SO ": " so ",
-    " sO ": " so ",
-    " yOu ": " you ",
-}
-
 RX_REPLACE = [
     (re.compile(r"^(-\s)[\w]", re.UNICODE), "-"),
     (re.compile(r"^(\.{2})[\s\w]", re.UNICODE), "..."),
     (re.compile(r"^(\.{3}\s)\w", re.UNICODE), "..."),
+
+    # Misinterpreted words
+    (re.compile(r"\b(tt)\b", re.UNICODE), "it"),
+    (re.compile(r"\b(fo)\b", re.UNICODE), "to"),
+
+    # Wrong capitalisation in the middle of words
+    (re.compile(r"[a-z]+(S)", re.UNICODE), "s"),
+    (re.compile(r"[a-z]+(O)", re.UNICODE), "o"),
+
+    # Wrong capitalisation at the start of words
+    (re.compile(r"(?<![.!?\)\]-])\s(K)now", re.UNICODE), "k"),
+    (re.compile(r"(?<![.!?\)\]-])\s(I)t+", re.UNICODE), "i"),
+    (re.compile(r"(?<![.!?\)\]-])\s(S)o+", re.UNICODE), "s"),
+
+    # Slash for I in italics
+    (re.compile(r"(?:^|\s)(\/)\s", re.UNICODE), "I"),
+
+    # Notes
+    (re.compile(r"(?:^|\s|\[|\()(J|f)(?:$|\s|\]|\))", re.UNICODE), "\u266a"),
 ]
 
 
@@ -98,10 +110,6 @@ class TesseractOCR(OCRBase):
         temp = text.strip()
         for a, b in TXT_REPLACE.items():
             temp = temp.replace(a, b)
-
-        for a, b in WORD_REPLACE.items():
-            temp = temp.replace(a, b)
-            logger.debug(f"Corrected '{a}' to '{b}'")
 
         fixed = regexCleanup(temp, RX_REPLACE)
         if fixed != temp:
