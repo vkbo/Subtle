@@ -45,30 +45,39 @@ TXT_REPLACE = {
     "\u201d": "\u0022",
 }
 
-RX_REPLACE = [
-    (re.compile(r"^(-\s)[\w]", re.UNICODE), "-"),
-    (re.compile(r"^(\.{2})[\s\w]", re.UNICODE), "..."),
-    (re.compile(r"^(\.{3}\s)\w", re.UNICODE), "..."),
+RX_REPLACE = {
+    "all": [
+        (re.compile(r"^(-\s)[\w]", re.UNICODE), "-"),
+        (re.compile(r"^(\.{2})[\s\w]", re.UNICODE), "..."),
+        (re.compile(r"^(\.{3}\s)\w", re.UNICODE), "..."),
 
-    # Misinterpreted words
-    (re.compile(r"\b(tt)\b", re.UNICODE), "it"),
-    (re.compile(r"\b(fo)\b", re.UNICODE), "to"),
+        # Wrong capitalisation in the middle of words
+        (re.compile(r"[a-z]+(S)", re.UNICODE), "s"),
+        (re.compile(r"[a-z]+(O)", re.UNICODE), "o"),
 
-    # Wrong capitalisation in the middle of words
-    (re.compile(r"[a-z]+(S)", re.UNICODE), "s"),
-    (re.compile(r"[a-z]+(O)", re.UNICODE), "o"),
+        # Slash for I in italics
+        (re.compile(r"(?:^|\s)(\/)\s", re.UNICODE), "I"),
 
-    # Wrong capitalisation at the start of words
-    (re.compile(r"(?<![.!?\)\]-])\s(K)now", re.UNICODE), "k"),
-    (re.compile(r"(?<![.!?\)\]-])\s(I)t+", re.UNICODE), "i"),
-    (re.compile(r"(?<![.!?\)\]-])\s(S)o+", re.UNICODE), "s"),
+        # Notes
+        (re.compile(r"(?:^|\s|\[|\()(J|f)(?:$|\s|\]|\))", re.UNICODE), "\u266a"),
+    ],
+    "eng": [
+        # Misinterpreted words
+        (re.compile(r"\b(tt)\b", re.UNICODE), "it"),
+        (re.compile(r"\b(fo)\b", re.UNICODE), "to"),
 
-    # Slash for I in italics
-    (re.compile(r"(?:^|\s)(\/)\s", re.UNICODE), "I"),
+        # Wrong capitalisation at the start of words
+        (re.compile(r"(?<![.!?\)\]-])\s(K)now", re.UNICODE), "k"),
+        (re.compile(r"(?<![.!?\)\]-])\s(I)t+", re.UNICODE), "i"),
+        (re.compile(r"(?<![.!?\)\]-])\s(S)o+", re.UNICODE), "s"),
 
-    # Notes
-    (re.compile(r"(?:^|\s|\[|\()(J|f)(?:$|\s|\]|\))", re.UNICODE), "\u266a"),
-]
+        # Missing apostrophe
+        (re.compile(r"\b[D|d]id(nt)\b", re.UNICODE), "n't"),
+        (re.compile(r"\b[T|t]hey(re)\b", re.UNICODE), "'re"),
+        (re.compile(r"\b[Y|y]ou(ll)\b", re.UNICODE), "'ll"),
+        (re.compile(r"\b(l'll)\b", re.UNICODE), "I'll"),
+    ]
+}
 
 
 class TesseractOCR(OCRBase):
@@ -81,7 +90,7 @@ class TesseractOCR(OCRBase):
         """Perform OCR on a QImage."""
         tmpFile = CONFIG.dumpPath / f"{str(uuid.uuid4())}.png"
         image.save(str(tmpFile), quality=100)
-        result = self._processText(self._callTesseract(tmpFile, lang))
+        result = self._processText(self._callTesseract(tmpFile, lang), lang)
         tmpFile.unlink(missing_ok=True)
         return result
 
@@ -105,15 +114,19 @@ class TesseractOCR(OCRBase):
             logger.error("Failed to extract text with tesseract", exc_info=e)
         return ""
 
-    def _processText(self, text: str) -> list[str]:
+    def _processText(self, text: str, lang: list[str]) -> list[str]:
         """Post-process text returned from tesseract."""
         temp = text.strip()
         for a, b in TXT_REPLACE.items():
             temp = temp.replace(a, b)
 
-        fixed = regexCleanup(temp, RX_REPLACE)
-        if fixed != temp:
-            logger.debug("Rx Before: '%s'", temp.replace("\n", "|"))
-            logger.debug("Rx Result: '%s'", fixed.replace("\n", "|"))
+        fixed = temp
+        for key, patterns in RX_REPLACE.items():
+            if key in ("all", *lang):
+                prev = fixed
+                fixed = regexCleanup(prev, patterns)
+                if fixed != prev:
+                    logger.debug("Rx Before: '%s'", prev.replace("\n", "|"))
+                    logger.debug("Rx Result: '%s'", fixed.replace("\n", "|"))
 
         return [r for r in [simplified(t) for t in fixed.split("\n")] if r]
