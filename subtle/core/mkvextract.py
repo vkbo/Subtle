@@ -55,6 +55,13 @@ class MkvExtract(QObject):
             logger.debug("Starting process %d", self._pid)
         return
 
+    def cancel(self) -> None:
+        """Cancel the process."""
+        if isinstance(self._process, QProcess):
+            logger.debug("Killing process %d", self._pid)
+            self._process.kill()
+        return
+
     ##
     #  Private Slots
     ##
