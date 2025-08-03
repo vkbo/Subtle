@@ -1,7 +1,10 @@
-# Code
+# Python
+.venv/
+.ruff_cache/
 *.pyc
 
 # Tests
 .pytest_cache
 .coverage
 coverage.*
+htmlcov/
