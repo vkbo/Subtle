@@ -23,14 +23,17 @@ from __future__ import annotations
 import logging
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from subtle.common import formatTS
 from subtle.formats.base import FrameBase, SubtitlesBase
 
 from PyQt6.QtCore import QMargins, QPoint, QRect, QSize
 from PyQt6.QtGui import QColor, QImage, QPainter, qRgba
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -172,7 +175,7 @@ class PGSFrame(FrameBase):
 
 class DisplaySet:
 
-    __slots__ = ("_pcs", "_wds", "_pds", "_ods", "_image")
+    __slots__ = ("_image", "_ods", "_pcs", "_pds", "_wds")
 
     def __init__(self, pcs: PresentationSegment) -> None:
         self._pcs: PresentationSegment = pcs
@@ -293,7 +296,7 @@ class DisplaySet:
 
                 frame = frame.united(QRect(offset, box))
                 painter.drawImage(offset, QImage(
-                    raw, box.width(), box.height(), QImage.Format.Format_ARGB32
+                    bytes(raw), box.width(), box.height(), QImage.Format.Format_ARGB32
                 ))
 
         painter.end()
@@ -307,7 +310,7 @@ class DisplaySet:
 
 class BaseSegment(ABC):
 
-    __slots__ = ("_ts", "_data", "_valid")
+    __slots__ = ("_data", "_ts", "_valid")
 
     def __init__(self, ts: int, data: bytes) -> None:
         self._ts = ts
@@ -453,7 +456,7 @@ class PaletteSegment(BaseSegment):
 
     This segment is used to define a palette for color conversion.
     """
-    __slots__ = ("_col")
+    __slots__ = ("_col",)
 
     def validate(self) -> None:
         """Length is 2 + n*5"""

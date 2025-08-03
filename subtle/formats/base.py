@@ -23,19 +23,22 @@ from __future__ import annotations
 import logging
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from subtle.common import formatTS
 
-from PyQt6.QtGui import QImage
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from pathlib import Path
+
+    from PyQt6.QtGui import QImage
 
 logger = logging.getLogger(__name__)
 
 
 class SubtitlesBase(ABC):
 
-    __slots__ = ("_path", "_frames")
+    __slots__ = ("_frames", "_path")
 
     def __init__(self) -> None:
         self._path: Path | None = None
@@ -119,7 +122,7 @@ class SubtitlesBase(ABC):
 
 class FrameBase(ABC):
 
-    __slots__ = ("_index", "_start", "_end", "_text")
+    __slots__ = ("_end", "_index", "_start", "_text")
 
     def __init__(self, index: int) -> None:
         self._index: int = index

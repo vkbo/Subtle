@@ -25,13 +25,16 @@ import re
 import subprocess
 import uuid
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from subtle import CONFIG
 from subtle.common import regexCleanup, simplified
 from subtle.ocr.base import OCRBase
 
-from PyQt6.QtGui import QImage
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from PyQt6.QtGui import QImage
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +91,7 @@ class TesseractOCR(OCRBase):
 
     def processImage(self, index: int, image: QImage, lang: list[str]) -> list[str]:
         """Perform OCR on a QImage."""
-        tmpFile = CONFIG.dumpPath / f"{str(uuid.uuid4())}.png"
+        tmpFile = CONFIG.dumpPath / f"{uuid.uuid4()!s}.png"
         image.save(str(tmpFile), quality=100)
         result = self._processText(self._callTesseract(tmpFile, lang), lang)
         tmpFile.unlink(missing_ok=True)

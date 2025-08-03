@@ -118,18 +118,18 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
 
     # Parse Options
     try:
-        inOpts, inRemain = getopt.getopt(sysArgs, shortOpt, longOpt)
+        inOpts, _ = getopt.getopt(sysArgs, shortOpt, longOpt)
     except getopt.GetoptError as exc:
         print(helpMsg)
-        print(f"ERROR: {str(exc)}")
+        print(f"ERROR: {exc!s}")
         sys.exit(2)
 
-    for inOpt, inArg in inOpts:
+    for inOpt, _ in inOpts:
         if inOpt in ("-h", "--help"):
             print(helpMsg)
             sys.exit(0)
         elif inOpt in ("-v", "--version"):
-            print("Subtle Version %s [%s]" % (__version__, __date__))
+            print(f"Subtle Version {__version__} [{__date__}]")
             sys.exit(0)
         elif inOpt in ("-i", "--info"):
             logLevel = logging.INFO

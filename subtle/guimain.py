@@ -23,6 +23,8 @@ from __future__ import annotations
 import logging
 import sys
 
+from typing import TYPE_CHECKING
+
 from subtle import CONFIG, SHARED
 from subtle.core.icons import GuiIcons
 from subtle.core.media import MediaData
@@ -36,8 +38,10 @@ from subtle.gui.toolspanel import GuiToolsPanel
 from subtle.ocr.tesseract import TesseractOCR
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import QMainWindow, QSplitter
+
+if TYPE_CHECKING:
+    from PyQt6.QtGui import QCloseEvent
 
 logger = logging.getLogger(__name__)
 

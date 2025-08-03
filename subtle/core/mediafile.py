@@ -24,12 +24,15 @@ import json
 import logging
 import subprocess
 
-from collections.abc import Iterable
 from enum import IntEnum
 from hashlib import sha1
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from subtle import CONFIG
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from pathlib import Path
 
 logger = logging.getLogger(__name__)
 

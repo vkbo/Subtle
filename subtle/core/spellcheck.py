@@ -23,12 +23,15 @@ from __future__ import annotations
 import json
 import logging
 
-from collections.abc import Iterator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from subtle import CONFIG
 
 from PyQt6.QtCore import QLocale
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 logger = logging.getLogger(__name__)
 

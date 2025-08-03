@@ -71,7 +71,7 @@ class GuiDocHighlighter(QSyntaxHighlighter):
 
 class TextBlockData(QTextBlockUserData):
 
-    __slots__ = ("_spellErrors")
+    __slots__ = ("_spellErrors",)
 
     def __init__(self) -> None:
         super().__init__()
