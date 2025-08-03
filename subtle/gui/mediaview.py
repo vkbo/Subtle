@@ -23,12 +23,11 @@ from __future__ import annotations
 import logging
 import shutil
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from subtle import CONFIG, SHARED
 from subtle.common import formatTS
 from subtle.constants import GuiLabels, MediaType, trConst
-from subtle.core.media import MediaTrack
 from subtle.core.mediafile import EXTRACTABLE, SUBTITLE_FILE
 from subtle.core.mkvextract import MkvExtract
 
@@ -37,6 +36,11 @@ from PyQt6.QtWidgets import (
     QHBoxLayout, QLabel, QProgressBar, QPushButton, QTreeWidget,
     QTreeWidgetItem, QVBoxLayout, QWidget
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from subtle.core.media import MediaTrack
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +61,7 @@ class GuiMediaView(QWidget):
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
+        self._extractWorker: MkvExtract | None = None
         self._extracted: dict[str, Path] = {}
         self._map: dict[str, QTreeWidgetItem] = {}
         self._emitTrack: str | None = None
@@ -85,11 +90,14 @@ class GuiMediaView(QWidget):
         # Controls
         self.extractButton = QPushButton(self.tr("Extract All"))
         self.extractButton.clicked.connect(self._extractTracks)
+        self.cancelButton = QPushButton(self.tr("Cancel"))
+        self.cancelButton.clicked.connect(self._cancelExtract)
 
         # Assemble
         self.controlsBox = QHBoxLayout()
         self.controlsBox.addWidget(self.progressBar, 1)
         self.controlsBox.addWidget(self.extractButton, 0)
+        self.controlsBox.addWidget(self.cancelButton, 0)
 
         self.outerBox = QVBoxLayout()
         self.outerBox.addWidget(self.tracksView)
@@ -120,6 +128,7 @@ class GuiMediaView(QWidget):
         """Process new media signal."""
         self._map.clear()
         self._extracted.clear()
+        self._extractWorker = None
         self.tracksView.clear()
         self.progressBar.setValue(0)
         self.progressText.setText(self.tr("Ready"))
@@ -138,14 +147,24 @@ class GuiMediaView(QWidget):
     def _extractTracks(self) -> None:
         """Extract subtitle tracks from file."""
         if file := SHARED.media.mediaFile:
+            self._extracted.clear()
             tracks = []
             for track in SHARED.media.iterTracks():
                 if track.trackType == MediaType.SUBS and (idx := track.trackID):
-                    if idx not in self._extracted:
-                        path = file.dumpFile(idx)
-                        tracks.append((idx, path))
-                        track.setTrackFile(path)
+                    path = file.dumpFile(idx)
+                    tracks.append((idx, path))
+                    track.setTrackFile(path)
             self._runTrackExtraction(file.filePath, tracks)
+        return
+
+    @pyqtSlot()
+    def _cancelExtract(self) -> None:
+        """Cancel the track extraction process, if any."""
+        if isinstance(self._extractWorker, MkvExtract):
+            self._extractWorker.cancel()
+            self.progressBar.setValue(0)
+            self._extracted.clear()
+            self._extractWorker = None
         return
 
     @pyqtSlot(QModelIndex)
@@ -173,12 +192,18 @@ class GuiMediaView(QWidget):
     def _extractFinished(self) -> None:
         """Process track extraction finished."""
         self.progressText.setText(self.tr("Reading tracks ..."))
+        print(self._extracted)
         for idx in self._extracted:
             if track := SHARED.media.getTrack(idx):
                 track.readTrackFile()
                 self._setTrackInfo(track)
 
-        self.progressText.setText(self.tr("Extraction complete"))
+        if self.progressBar.value() == 100:
+            self.progressText.setText(self.tr("Extraction complete"))
+        else:
+            self.progressText.setText(self.tr("Extraction cancelled"))
+        self._extractWorker = None
+
         if self._emitTrack:
             # Emit delayed new track signal
             SHARED.media.setCurrentTrack(self._emitTrack)
@@ -215,12 +240,11 @@ class GuiMediaView(QWidget):
         self.progressBar.setValue(0)
         self.progressText.setText(self.tr("Extracting {0} track(s) ...").format(len(tracks)))
 
-        extract = None
         if file.container in EXTRACTABLE:
-            extract = MkvExtract(self)
-            extract.processProgress.connect(self._extractProgress)
-            extract.processDone.connect(self._extractFinished)
-            extract.extract(path, tracks)
+            self._extractWorker = MkvExtract(self)
+            self._extractWorker.processProgress.connect(self._extractProgress)
+            self._extractWorker.processDone.connect(self._extractFinished)
+            self._extractWorker.extract(path, tracks)
             self._extracted.update(tracks)
         elif len(tracks) == 1 and file.container in SUBTITLE_FILE:
             idx, output = tracks[0]
