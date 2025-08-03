@@ -22,19 +22,23 @@ from __future__ import annotations
 
 import logging
 
-from collections.abc import Iterable
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from subtle import SHARED
 from subtle.common import decodeTS
 from subtle.constants import MediaType
 from subtle.core.mediafile import MediaFile
-from subtle.formats.base import FrameBase, SubtitlesBase
 from subtle.formats.pgssubs import PGSSubs
 from subtle.formats.srtsubs import SRTSubs
 from subtle.formats.ssasubs import SSASubs
 
 from PyQt6.QtCore import QObject, pyqtSignal
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from pathlib import Path
+
+    from subtle.formats.base import FrameBase, SubtitlesBase
 
 logger = logging.getLogger(__name__)
 

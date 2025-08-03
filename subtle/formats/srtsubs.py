@@ -22,12 +22,15 @@ from __future__ import annotations
 
 import logging
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from subtle.common import closeItalics, decodeTS, formatTS, textCleanup
 from subtle.formats.base import FrameBase, SubtitlesBase
 
-from PyQt6.QtGui import QImage
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from PyQt6.QtGui import QImage
 
 logger = logging.getLogger(__name__)
 

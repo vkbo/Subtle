@@ -1,0 +1,35 @@
+name: Linting
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  checkSyntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Python Setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3"
+          architecture: x64
+      - name: Checkout Source
+        uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Ruff Check
+        run: |
+          ruff --version
+          ruff check
+      - name: Pyright Check
+        run: |
+          pyright --version
+          pyright
+      - name: Isort Check
+        run: |
+          isort --version
+          isort --check .

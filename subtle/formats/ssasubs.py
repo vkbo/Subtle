@@ -23,13 +23,15 @@ from __future__ import annotations
 import logging
 import re
 
-from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from subtle.common import closeItalics, decodeTS, regexCleanup, simplified, textCleanup
 from subtle.formats.base import FrameBase, SubtitlesBase
 
-from PyQt6.QtGui import QImage
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from PyQt6.QtGui import QImage
 
 logger = logging.getLogger(__name__)
 

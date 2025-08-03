@@ -21,6 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 from __future__ import annotations
 
 from enum import Enum
+from typing import Final
 
 from PyQt6.QtCore import QT_TRANSLATE_NOOP, QCoreApplication
 
@@ -40,7 +41,7 @@ class MediaType(Enum):
 
 class GuiLabels:
 
-    MEDIA_TYPES = {
+    MEDIA_TYPES: Final[dict[MediaType, str]] = {
         MediaType.VIDEO: QT_TRANSLATE_NOOP("Constant", "Video"),
         MediaType.AUDIO: QT_TRANSLATE_NOOP("Constant", "Audio"),
         MediaType.SUBS:  QT_TRANSLATE_NOOP("Constant", "Subtitles"),

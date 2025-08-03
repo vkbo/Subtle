@@ -192,7 +192,6 @@ class GuiMediaView(QWidget):
     def _extractFinished(self) -> None:
         """Process track extraction finished."""
         self.progressText.setText(self.tr("Reading tracks ..."))
-        print(self._extracted)
         for idx in self._extracted:
             if track := SHARED.media.getTrack(idx):
                 track.readTrackFile()

@@ -22,9 +22,11 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    import re
 
 logger = logging.getLogger(__name__)
 
@@ -74,10 +76,10 @@ def textCleanup(text: str) -> str:
 def regexCleanup(text: str, patterns: list[tuple[re.Pattern, str]]) -> str:
     """Replaces all occurrences of match group 1 in patterns."""
     for regEx, value in patterns:
-        matches = []
-        for match in regEx.finditer(text):
-            if (s := match.start(1)) >= 0 and (e := match.end(1)) >= 0:
-                matches.append((s, e, value))
+        matches = [
+            (s, e, value) for match in regEx.finditer(text)
+            if (s := match.start(1)) >= 0 and (e := match.end(1)) >= 0
+        ]
         for s, e, value in reversed(matches):
             text = text[:s] + value + text[e:]
     return text
