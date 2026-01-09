@@ -50,13 +50,13 @@ class SRTSubs(SubtitlesBase):
             logger.error("Could not read SRT file: %s", self._path, exc_info=exc)
         return
 
-    def write(self, path: Path | None = None) -> None:
+    def write(self, path: Path | None = None, offset: float = 0.0) -> None:
         """Writer SRT data to file."""
         try:
             if path is None:
                 path = self._path
             if path:
-                self._writeData(path)
+                self._writeData(path, round(offset*1000.0))
         except Exception as exc:
             logger.error("Could not write SRT file: %s", self._path, exc_info=exc)
         return
@@ -83,7 +83,7 @@ class SRTSubs(SubtitlesBase):
                 self._parseFrame(block)
         return
 
-    def _writeData(self, path: Path) -> None:
+    def _writeData(self, path: Path, offset: int = 0) -> None:
         """Write SRT text to file."""
         with open(path, mode="w", encoding="utf-8") as fo:
             prev = -1.0
@@ -92,7 +92,9 @@ class SRTSubs(SubtitlesBase):
             for frame in self._frames:
                 if frame.start > prev and frame.text:
                     index += 1
-                    fo.write(f"{index}\n{formatTS(frame.start)} --> {formatTS(frame.end)}\n")
+                    start = frame.start + offset
+                    end = frame.end + offset
+                    fo.write(f"{index}\n{formatTS(start)} --> {formatTS(end)}\n")
                     fo.write("\n".join(frame.text))
                     fo.write("\n\n")
                     prev = frame.start
@@ -102,7 +104,7 @@ class SRTSubs(SubtitlesBase):
                     skipped += 1
             if skipped:
                 logger.warning("Skipping %d entries with no text", skipped)
-            logger.info("Saved %d subtitle entries to SRT file.", index)
+            logger.info("Saved %d subtitle entries to SRT file with %d ms offset.", index, offset)
         return
 
     def _parseFrame(self, block: list[str]) -> None:
