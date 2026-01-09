@@ -4,12 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "subtle"
-authors = [
-    {name = "Veronica Berglyd Olsen", email = "code@vkbo.net"},
-]
+authors = [{ name = "Veronica Berglyd Olsen", email = "code@vkbo.net" }]
 description = "A simple subtitle editor and converter"
-readme = {file = "README.md", content-type = "text/markdown"}
-license = {text = "GNU General Public License v3"}
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { text = "GNU General Public License v3" }
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
@@ -23,10 +21,7 @@ classifiers = [
     "Topic :: Multimedia",
 ]
 requires-python = ">=3.11"
-dependencies = [
-    "pyqt6>=6.4",
-    "pyenchant>=3.0.0",
-]
+dependencies = ["pyqt6>=6.4", "pyenchant>=3.0.0"]
 dynamic = ["version"]
 
 [project.urls]
@@ -38,13 +33,13 @@ Issues = "https://github.com/vkbo/subtle/issues"
 subtle = "subtle:main"
 
 [tool.setuptools.dynamic]
-version = {attr = "subtle.__version__"}
+version = { attr = "subtle.__init__.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["subtle*"]
 
 [tool.isort]
-py_version="311"
+py_version = "311"
 line_length = 99
 wrap_length = 79
 multi_line_output = 5
@@ -56,7 +51,7 @@ forced_separate = ["tests.*", "PyQt6.*"]
 line-length = 99
 
 [tool.ruff.lint]
-preview = true
+preview = false
 
 # Rules: https://docs.astral.sh/ruff/rules
 select = [

@@ -2,9 +2,13 @@
 .venv/
 .ruff_cache/
 *.pyc
+uv.lock
 
 # Tests
 .pytest_cache
 .coverage
 coverage.*
 htmlcov/
+
+# Package
+*.egg-info
