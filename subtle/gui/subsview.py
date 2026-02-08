@@ -124,13 +124,13 @@ class GuiSubtitleView(QWidget):
             self._updateItemText(item, frame.text)
         return
 
-    @pyqtSlot(Path)
-    def writeSrtFile(self, path: Path) -> None:
+    @pyqtSlot(Path, float)
+    def writeSrtFile(self, path: Path, offset: float = 0.0) -> None:
         """Save the processed subtitles to an SRT file."""
         if SHARED.media.currentTrack:
             writer = SRTSubs()
             SHARED.media.currentTrack.copyFrames(writer)
-            writer.write(path)
+            writer.write(path, offset)
         return
 
     @pyqtSlot(Path)

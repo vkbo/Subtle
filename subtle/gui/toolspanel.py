@@ -29,8 +29,8 @@ from subtle.constants import MediaType
 
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import (
-    QCheckBox, QFormLayout, QGroupBox, QHBoxLayout, QLineEdit, QListWidget,
-    QListWidgetItem, QPushButton, QVBoxLayout, QWidget
+    QCheckBox, QDoubleSpinBox, QFormLayout, QGroupBox, QHBoxLayout, QLineEdit,
+    QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
 )
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class GuiToolsPanel(QWidget):
 
     D_SUBS_PATH = Qt.ItemDataRole.UserRole
 
-    requestSrtSave = pyqtSignal(Path)
+    requestSrtSave = pyqtSignal(Path, float)
     requestSubsLoad = pyqtSignal(Path)
 
     def __init__(self, parent: QWidget) -> None:
@@ -91,6 +91,14 @@ class GuiToolsPanel(QWidget):
 
         self.srtFileName = QLineEdit(self)
         self.srtForm.addRow(self.tr("File Name"), self.srtFileName)
+
+        self.srtOffset = QDoubleSpinBox(self)
+        self.srtOffset.setDecimals(3)
+        self.srtOffset.setSingleStep(0.1)
+        self.srtOffset.setValue(0.0)
+        self.srtOffset.setMinimum(-499999.0)
+        self.srtOffset.setMaximum(499999.0)
+        self.srtForm.addRow(self.tr("Time Offset"), self.srtOffset)
 
         self.srtSubsDir = QCheckBox(self.tr("Use 'Subs' folder"), self)
         self.srtSubsDir.clicked.connect(self._updateTrackInfo)
@@ -176,7 +184,7 @@ class GuiToolsPanel(QWidget):
             folder = Path(self.srtSaveDir.text())
             folder.mkdir(exist_ok=True)
             if name := self.srtFileName.text().strip():
-                self.requestSrtSave.emit(folder / name)
+                self.requestSrtSave.emit(folder / name, self.srtOffset.value())
         except Exception as exc:
             logger.error("Failed to prepare subtitles folder", exc_info=exc)
         return
