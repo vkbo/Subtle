@@ -2,7 +2,11 @@
 .venv/
 .ruff_cache/
 *.pyc
-uv.lock
+
+# Build
+__pycache__/
+dist/
+build/
 
 # Tests
 .pytest_cache

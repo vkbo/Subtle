@@ -3,7 +3,7 @@ Subtle – GUI Main Window
 ========================
 
 This file is a part of Subtle
-Copyright 2024, Veronica Berglyd Olsen
+Copyright (C) Veronica Berglyd Olsen
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -38,7 +38,8 @@ from subtle.gui.toolspanel import GuiToolsPanel
 from subtle.ocr.tesseract import TesseractOCR
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QMainWindow, QSplitter
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QApplication, QMainWindow, QSplitter
 
 if TYPE_CHECKING:
     from PyQt6.QtGui import QCloseEvent
@@ -66,6 +67,11 @@ class GuiMain(QMainWindow):
 
         logger.debug("Ready: GUI")
         logger.info("Subtle is ready ...")
+
+        mIcon = CONFIG.assetPath("icons") / "subtle.svg"
+        self.nwIcon = QIcon(str(mIcon)) if mIcon.exists() else QIcon()
+        self.setWindowIcon(self.nwIcon)
+        QApplication.setWindowIcon(self.nwIcon)
 
         # Cached Data
         # ===========

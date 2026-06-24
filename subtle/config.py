@@ -3,7 +3,7 @@ Subtle – Main Config
 ====================
 
 This file is a part of Subtle
-Copyright 2024, Veronica Berglyd Olsen
+Copyright (C) Veronica Berglyd Olsen
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -164,6 +164,14 @@ class Config:
     def getSetting(self, key: str) -> str:
         """Get a generic string setting."""
         return str(self._data["Settings"].get(key, ""))
+
+    def assetPath(self, resource: str, kind: str | None = None) -> Path:
+        """Return the path to an asset."""
+        path = self._appPath / "assets"
+        if kind:
+            path /= kind
+        return path / resource
+
 
     ##
     #  Setters

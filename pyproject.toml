@@ -93,15 +93,11 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN", "SLF", "TC", "PLC2701"]
-"utils/*" = ["ANN", "SLF", "TC"]
 
 [tool.ruff.format]
 quote-style = "double"
 
 [tool.pyright]
 include = ["subtle"]
-exclude = ["**/__pycache__"]
-
 reportIncompatibleMethodOverride = false
-
 pythonVersion = "3.11"
