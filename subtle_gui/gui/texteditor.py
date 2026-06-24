@@ -22,9 +22,9 @@ from __future__ import annotations
 
 import logging
 
-from subtle import CONFIG, SHARED
-from subtle.formats.base import FrameBase
-from subtle.gui.highlighter import GuiDocHighlighter, TextBlockData
+from subtle_gui import CONFIG, SHARED
+from subtle_gui.formats.base import FrameBase
+from subtle_gui.gui.highlighter import GuiDocHighlighter, TextBlockData
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QShortcut, QTextBlock, QTextBlockFormat, QTextCharFormat, QTextCursor

@@ -27,10 +27,10 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import QLocale, QObject, pyqtSignal
 
 if TYPE_CHECKING:
-    from subtle.core.icons import GuiIcons
-    from subtle.core.media import MediaData, MediaTrack
-    from subtle.core.spellcheck import SpellEnchant
-    from subtle.ocr.base import OCRBase
+    from subtle_gui.core.icons import GuiIcons
+    from subtle_gui.core.media import MediaData, MediaTrack
+    from subtle_gui.core.spellcheck import SpellEnchant
+    from subtle_gui.ocr.base import OCRBase
 
 logger = logging.getLogger(__name__)
 

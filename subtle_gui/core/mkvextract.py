@@ -24,7 +24,7 @@ import logging
 
 from typing import TYPE_CHECKING
 
-from subtle.common import checkInt
+from subtle_gui.common import checkInt
 
 from PyQt6.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
 

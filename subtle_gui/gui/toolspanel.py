@@ -24,8 +24,8 @@ import logging
 
 from pathlib import Path
 
-from subtle import SHARED
-from subtle.constants import MediaType
+from subtle_gui import SHARED
+from subtle_gui.constants import MediaType
 
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import (

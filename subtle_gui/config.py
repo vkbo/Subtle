@@ -29,7 +29,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Literal
 
-from subtle.common import jsonEncode
+from subtle_gui.common import jsonEncode
 
 from PyQt6.QtCore import (
     PYQT_VERSION, PYQT_VERSION_STR, QT_VERSION, QT_VERSION_STR, QSize,

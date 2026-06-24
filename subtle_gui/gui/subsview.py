@@ -24,11 +24,11 @@ import logging
 
 from pathlib import Path
 
-from subtle import CONFIG, SHARED
-from subtle.common import formatTS
-from subtle.constants import MediaType
-from subtle.formats.base import FrameBase
-from subtle.formats.srtsubs import SRTSubs
+from subtle_gui import CONFIG, SHARED
+from subtle_gui.common import formatTS
+from subtle_gui.constants import MediaType
+from subtle_gui.formats.base import FrameBase
+from subtle_gui.formats.srtsubs import SRTSubs
 
 from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import QAbstractItemView, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget

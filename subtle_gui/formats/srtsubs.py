@@ -24,8 +24,8 @@ import logging
 
 from typing import TYPE_CHECKING
 
-from subtle.common import closeItalics, decodeTS, formatTS, textCleanup
-from subtle.formats.base import FrameBase, SubtitlesBase
+from subtle_gui.common import closeItalics, decodeTS, formatTS, textCleanup
+from subtle_gui.formats.base import FrameBase, SubtitlesBase
 
 if TYPE_CHECKING:
     from pathlib import Path

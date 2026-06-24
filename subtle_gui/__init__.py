@@ -27,13 +27,13 @@ import sys
 
 from typing import TYPE_CHECKING
 
-from subtle.config import Config
-from subtle.shared import SharedData
+from subtle_gui.config import Config
+from subtle_gui.shared import SharedData
 
 from PyQt6.QtWidgets import QApplication
 
 if TYPE_CHECKING:  # pragma: no cover
-    from subtle.guimain import GuiMain
+    from subtle_gui.guimain import GuiMain
 
 # Package Meta
 # ============
@@ -165,7 +165,7 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
     # Finish initialising config
     CONFIG.initialise()
 
-    from subtle.guimain import GuiMain
+    from subtle_gui.guimain import GuiMain
 
     app = QApplication([CONFIG.appName])
     app.setApplicationName(CONFIG.appName)

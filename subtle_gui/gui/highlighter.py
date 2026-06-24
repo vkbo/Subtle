@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import re
 
-from subtle import SHARED
+from subtle_gui import SHARED
 
 from PyQt6.QtGui import (
     QColor, QSyntaxHighlighter, QTextBlockUserData, QTextCharFormat,

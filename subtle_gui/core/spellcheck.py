@@ -26,7 +26,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from subtle import CONFIG
+from subtle_gui import CONFIG
 
 from PyQt6.QtCore import QLocale
 

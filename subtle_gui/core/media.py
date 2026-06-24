@@ -24,13 +24,13 @@ import logging
 
 from typing import TYPE_CHECKING
 
-from subtle import SHARED
-from subtle.common import decodeTS
-from subtle.constants import MediaType
-from subtle.core.mediafile import MediaFile
-from subtle.formats.pgssubs import PGSSubs
-from subtle.formats.srtsubs import SRTSubs
-from subtle.formats.ssasubs import SSASubs
+from subtle_gui import SHARED
+from subtle_gui.common import decodeTS
+from subtle_gui.constants import MediaType
+from subtle_gui.core.mediafile import MediaFile
+from subtle_gui.formats.pgssubs import PGSSubs
+from subtle_gui.formats.srtsubs import SRTSubs
+from subtle_gui.formats.ssasubs import SSASubs
 
 from PyQt6.QtCore import QObject, pyqtSignal
 
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from pathlib import Path
 
-    from subtle.formats.base import FrameBase, SubtitlesBase
+    from subtle_gui.formats.base import FrameBase, SubtitlesBase
 
 logger = logging.getLogger(__name__)
 

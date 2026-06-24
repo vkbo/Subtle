@@ -9,5 +9,5 @@ import sys
 os.curdir = os.path.abspath(os.path.dirname(__file__))
 
 if __name__ == "__main__":
-    import subtle
-    subtle.main(sys.argv[1:])
+    import subtle_gui
+    subtle_gui.main(sys.argv[1:])

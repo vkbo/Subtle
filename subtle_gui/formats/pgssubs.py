@@ -25,8 +25,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from subtle.common import formatTS
-from subtle.formats.base import FrameBase, SubtitlesBase
+from subtle_gui.common import formatTS
+from subtle_gui.formats.base import FrameBase, SubtitlesBase
 
 from PyQt6.QtCore import QMargins, QPoint, QRect, QSize
 from PyQt6.QtGui import QColor, QImage, QPainter, qRgba

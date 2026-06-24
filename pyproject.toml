@@ -30,16 +30,16 @@ Repository = "https://github.com/vkbo/subtle"
 Issues = "https://github.com/vkbo/subtle/issues"
 
 [project.gui-scripts]
-subtle = "subtle:main"
+subtle = "subtle_gui:main"
 
 [tool.setuptools.dynamic]
-version = { attr = "subtle.__init__.__version__" }
+version = { attr = "subtle_gui.__init__.__version__" }
 
 [tool.setuptools.packages.find]
-include = ["subtle*"]
+include = ["subtle_gui*"]
 
 [tool.setuptools.package-data]
-subtle = ["assets/*"]
+subtle_gui = ["assets/*"]
 
 [tool.isort]
 py_version = "311"

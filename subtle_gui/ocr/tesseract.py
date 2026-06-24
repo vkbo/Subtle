@@ -27,9 +27,9 @@ import uuid
 
 from typing import TYPE_CHECKING
 
-from subtle import CONFIG
-from subtle.common import regexCleanup, simplified
-from subtle.ocr.base import OCRBase
+from subtle_gui import CONFIG
+from subtle_gui.common import regexCleanup, simplified
+from subtle_gui.ocr.base import OCRBase
 
 if TYPE_CHECKING:
     from pathlib import Path
