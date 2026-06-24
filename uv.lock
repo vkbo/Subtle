@@ -72,7 +72,8 @@ wheels = [
 ]
 
 [[package]]
-name = "subtle"
+name = "subtle-gui"
+version = "0.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "pyenchant" },

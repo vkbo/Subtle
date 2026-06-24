@@ -3,6 +3,11 @@
 .ruff_cache/
 *.pyc
 
+# Build
+__pycache__/
+dist/
+build/
+
 # Tests
 .pytest_cache
 .coverage
