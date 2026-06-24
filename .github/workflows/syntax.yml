@@ -10,6 +10,7 @@ on:
 
 jobs:
   checkSyntax:
+    name: Linting and Type Checking
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
