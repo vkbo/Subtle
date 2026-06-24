@@ -3,7 +3,7 @@ Subtle – GUI Main Window
 ========================
 
 This file is a part of Subtle
-Copyright 2024, Veronica Berglyd Olsen
+Copyright (C) Veronica Berglyd Olsen
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

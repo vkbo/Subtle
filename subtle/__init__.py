@@ -3,7 +3,7 @@ Subtle – Init File
 ==================
 
 This file is a part of Subtle
-Copyright 2024, Veronica Berglyd Olsen
+Copyright (C) Veronica Berglyd Olsen
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -39,14 +39,14 @@ if TYPE_CHECKING:  # pragma: no cover
 # ============
 
 __package__    = "subtle"
-__copyright__  = "Copyright 2024, Veronica Berglyd Olsen"
+__copyright__  = "Copyright (C) Veronica Berglyd Olsen"
 __license__    = "GPLv3"
 __author__     = "Veronica Berglyd Olsen"
 __maintainer__ = "Veronica Berglyd Olsen"
 __email__      = "code@vkbo.net"
 __version__    = "0.1.0"
 __hexversion__ = "0x000100a0"
-__date__       = "2024-10-11"
+__date__       = "2026-06-24"
 
 logger = logging.getLogger(__name__)
 
