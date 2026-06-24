@@ -44,7 +44,7 @@ __license__    = "GPLv3"
 __author__     = "Veronica Berglyd Olsen"
 __maintainer__ = "Veronica Berglyd Olsen"
 __email__      = "code@vkbo.net"
-__version__    = "26.1.0"
+__version__    = "26.1.1"
 __date__       = "2026-06-24"
 
 logger = logging.getLogger(__name__)

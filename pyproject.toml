@@ -38,6 +38,9 @@ version = { attr = "subtle.__init__.__version__" }
 [tool.setuptools.packages.find]
 include = ["subtle*"]
 
+[tool.setuptools.package-data]
+subtle = ["assets/*"]
+
 [tool.isort]
 py_version = "311"
 line_length = 99
