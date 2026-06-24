@@ -24,6 +24,16 @@ requires-python = ">=3.11"
 dependencies = ["pyqt6>=6.4", "pyenchant>=3.0.0"]
 dynamic = ["version"]
 
+[dependency-groups]
+dev = [
+    { include-group = "build" },
+    { include-group = "test" },
+    { include-group = "lint" },
+]
+build = ["build", "setuptools>=77.0.3"]
+test = ["coverage>=7.2.0", "pytest-qt", "pytest-timeout", "pytest>=6.0.0"]
+lint = ["isort", "pyright", "ruff"]
+
 [project.urls]
 Homepage = "https://github.com/vkbo/subtle"
 Repository = "https://github.com/vkbo/subtle"
