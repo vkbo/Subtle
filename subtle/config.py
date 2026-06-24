@@ -165,6 +165,14 @@ class Config:
         """Get a generic string setting."""
         return str(self._data["Settings"].get(key, ""))
 
+    def assetPath(self, resource: str, kind: str | None = None) -> Path:
+        """Return the path to an asset."""
+        path = self._appPath / "assets"
+        if kind:
+            path /= kind
+        return path / resource
+
+
     ##
     #  Setters
     ##

@@ -2,7 +2,6 @@
 .venv/
 .ruff_cache/
 *.pyc
-uv.lock
 
 # Tests
 .pytest_cache
