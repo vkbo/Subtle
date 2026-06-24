@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "subtle"
+name = "subtle-gui"
 authors = [{ name = "Veronica Berglyd Olsen", email = "code@vkbo.net" }]
 description = "A simple subtitle editor and converter"
 readme = { file = "README.md", content-type = "text/markdown" }

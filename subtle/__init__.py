@@ -38,7 +38,7 @@ if TYPE_CHECKING:  # pragma: no cover
 # Package Meta
 # ============
 
-__package__    = "subtle"
+__package__    = "subtle-gui"
 __copyright__  = "Copyright (C) Veronica Berglyd Olsen"
 __license__    = "GPLv3"
 __author__     = "Veronica Berglyd Olsen"
