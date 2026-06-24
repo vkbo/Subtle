@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import json
@@ -129,6 +130,7 @@ class SpellEnchant:
         lang = []
         try:
             import enchant
+
             tags = [x for x, _ in enchant.list_dicts()]
             lang = [(x, f"{QLocale(x).nativeLanguageName().title()} [{x}]") for x in set(tags)]
         except Exception:
@@ -171,7 +173,6 @@ class FakeEnchant:
 
 
 class UserDictionary:
-
     def __init__(self) -> None:
         self._words = set()
         return

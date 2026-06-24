@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import getopt
@@ -38,14 +39,14 @@ if TYPE_CHECKING:  # pragma: no cover
 # Package Meta
 # ============
 
-__package__    = "subtle_gui"
-__copyright__  = "Copyright (C) Veronica Berglyd Olsen"
-__license__    = "GPLv3"
-__author__     = "Veronica Berglyd Olsen"
+__package__ = "subtle_gui"
+__copyright__ = "Copyright (C) Veronica Berglyd Olsen"
+__license__ = "GPLv3"
+__author__ = "Veronica Berglyd Olsen"
 __maintainer__ = "Veronica Berglyd Olsen"
-__email__      = "code@vkbo.net"
-__version__    = "26.1.1"
-__date__       = "2026-06-24"
+__email__ = "code@vkbo.net"
+__version__ = "26.1.1"
+__date__ = "2026-06-24"
 
 logger = logging.getLogger(__name__)
 
@@ -58,12 +59,12 @@ CONFIG = Config()
 SHARED = SharedData()
 
 # ANSI Colours
-RED    = "\033[91m"
-GREEN  = "\033[92m"
+RED = "\033[91m"
+GREEN = "\033[92m"
 YELLOW = "\033[93m"
-BLUE   = "\033[94m"
-WHITE  = "\033[97m"
-END    = "\033[0m"
+BLUE = "\033[94m"
+WHITE = "\033[97m"
+END = "\033[0m"
 
 # Log Format Components
 TIME = "[{asctime:}]"
@@ -75,7 +76,7 @@ TEXT = "{message:}"
 
 # Read Environment
 FORCE_COLOR = bool(os.environ.get("FORCE_COLOR"))
-NO_COLOR    = bool(os.environ.get("NO_COLOR"))
+NO_COLOR = bool(os.environ.get("NO_COLOR"))
 
 
 def main(sysArgs: list | None = None) -> GuiMain | None:
@@ -113,7 +114,7 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
     # Defaults
     logLevel = logging.WARN
     fmtColor = FORCE_COLOR
-    fmtLong  = False
+    fmtLong = False
 
     # Parse Options
     try:
@@ -141,10 +142,10 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
     if fmtColor:
         # This will overwrite the default level names, and also ensure that
         # they can be converted back to integer levels
-        logging.addLevelName(logging.DEBUG,    f"{BLUE}DEBUG{END}")
-        logging.addLevelName(logging.INFO,     f"{GREEN}INFO{END}")
-        logging.addLevelName(logging.WARNING,  f"{YELLOW}WARNING{END}")
-        logging.addLevelName(logging.ERROR,    f"{RED}ERROR{END}")
+        logging.addLevelName(logging.DEBUG, f"{BLUE}DEBUG{END}")
+        logging.addLevelName(logging.INFO, f"{GREEN}INFO{END}")
+        logging.addLevelName(logging.WARNING, f"{YELLOW}WARNING{END}")
+        logging.addLevelName(logging.ERROR, f"{RED}ERROR{END}")
         logging.addLevelName(logging.CRITICAL, f"{RED}CRITICAL{END}")
 
     logTxt = f"{LVLC}  {TEXT}" if fmtColor else f"{LVLP}  {TEXT}"

@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -43,7 +44,6 @@ RX_REPLACE = [
 
 
 class EventFormat(NamedTuple):
-
     length: int
     start: int
     end: int
@@ -51,7 +51,6 @@ class EventFormat(NamedTuple):
 
 
 class SSASubs(SubtitlesBase):
-
     def __init__(self) -> None:
         super().__init__()
         self._format: EventFormat | None = None
@@ -98,12 +97,7 @@ class SSASubs(SubtitlesBase):
         """Parse dialogue format."""
         parts = [f.strip() for f in line.split(",")]
         try:
-            self._format = EventFormat(
-                len(parts),
-                parts.index("Start"),
-                parts.index("End"),
-                parts.index("Text")
-            )
+            self._format = EventFormat(len(parts), parts.index("Start"), parts.index("End"), parts.index("Text"))
         except ValueError:
             logger.error("Invalid events format string")
         return
@@ -116,12 +110,14 @@ class SSASubs(SubtitlesBase):
         fmt = self._format
         bits = line.split(",", fmt.length - 1)
         if len(bits) == fmt.length:
-            self._frames.append(SSAFrame(
-                len(self._frames),
-                decodeTS(bits[fmt.start], fmt="SSA"),
-                decodeTS(bits[fmt.end], fmt="SSA"),
-                self._processText(bits[fmt.text]),
-            ))
+            self._frames.append(
+                SSAFrame(
+                    len(self._frames),
+                    decodeTS(bits[fmt.start], fmt="SSA"),
+                    decodeTS(bits[fmt.end], fmt="SSA"),
+                    self._processText(bits[fmt.text]),
+                )
+            )
         else:
             logger.error("Dialogue entry is malformed on line %d", self._line)
         return
@@ -143,7 +139,6 @@ class SSASubs(SubtitlesBase):
 
 
 class SSAFrame(FrameBase):
-
     def __init__(self, index: int, start: int, end: int, text: list[str]) -> None:
         super().__init__(index=index)
         self._start = start

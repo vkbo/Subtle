@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -53,14 +54,11 @@ RX_REPLACE = {
         (re.compile(r"^(-\s)[\w]", re.UNICODE), "-"),
         (re.compile(r"^(\.{2})[\s\w]", re.UNICODE), "..."),
         (re.compile(r"^(\.{3}\s)\w", re.UNICODE), "..."),
-
         # Wrong capitalisation in the middle of words
         (re.compile(r"[a-z]+(S)", re.UNICODE), "s"),
         (re.compile(r"[a-z]+(O)", re.UNICODE), "o"),
-
         # Slash for I in italics
         (re.compile(r"(?:^|\s)(\/)\s", re.UNICODE), "I"),
-
         # Notes
         (re.compile(r"(?:^|\s|\[|\()(J|f)(?:$|\s|\]|\))", re.UNICODE), "\u266a"),
     ],
@@ -68,23 +66,20 @@ RX_REPLACE = {
         # Misinterpreted words
         (re.compile(r"\b(tt)\b", re.UNICODE), "it"),
         (re.compile(r"\b(fo)\b", re.UNICODE), "to"),
-
         # Wrong capitalisation at the start of words
         (re.compile(r"(?<![.!?\)\]-])\s(K)now", re.UNICODE), "k"),
         (re.compile(r"(?<![.!?\)\]-])\s(I)t+", re.UNICODE), "i"),
         (re.compile(r"(?<![.!?\)\]-])\s(S)o+", re.UNICODE), "s"),
-
         # Missing apostrophe
         (re.compile(r"\b[D|d]id(nt)\b", re.UNICODE), "n't"),
         (re.compile(r"\b[T|t]hey(re)\b", re.UNICODE), "'re"),
         (re.compile(r"\b[Y|y]ou(ll)\b", re.UNICODE), "'ll"),
         (re.compile(r"\b(l'll)\b", re.UNICODE), "I'll"),
-    ]
+    ],
 }
 
 
 class TesseractOCR(OCRBase):
-
     def __init__(self) -> None:
         super().__init__()
         return

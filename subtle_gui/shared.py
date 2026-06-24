@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -36,7 +37,6 @@ logger = logging.getLogger(__name__)
 
 
 class SharedData(QObject):
-
     spellLanguageChanged = pyqtSignal(str)
 
     def __init__(self) -> None:
@@ -75,13 +75,7 @@ class SharedData(QObject):
             return self._icons
         raise RuntimeError("Shared data object not yet initialised.")
 
-    def initSharedData(
-        self,
-        media: MediaData,
-        ocr: OCRBase,
-        spell: SpellEnchant,
-        icons: GuiIcons
-    ) -> None:
+    def initSharedData(self, media: MediaData, ocr: OCRBase, spell: SpellEnchant, icons: GuiIcons) -> None:
         """Init the shared data object. This must be called right after
         the GUI is created.
         """

@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -28,15 +29,12 @@ from subtle_gui.gui.highlighter import GuiDocHighlighter, TextBlockData
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QShortcut, QTextBlock, QTextBlockFormat, QTextCharFormat, QTextCursor
-from PyQt6.QtWidgets import (
-    QComboBox, QMenu, QTextEdit, QToolBar, QToolButton, QVBoxLayout, QWidget
-)
+from PyQt6.QtWidgets import QComboBox, QMenu, QTextEdit, QToolBar, QToolButton, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
 
 
 class GuiTextEditor(QWidget):
-
     newTextForFrame = pyqtSignal(FrameBase)
     requestNewFrame = pyqtSignal(int)
 
@@ -244,17 +242,13 @@ class GuiTextEditor(QWidget):
             block = pCursor.block()
             sCursor = self.textEdit.textCursor()
             sCursor.setPosition(block.position() + cPos)
-            sCursor.movePosition(
-                QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, cLen
-            )
+            sCursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, cLen)
             if suggest:
                 ctxMenu.addSeparator()
                 ctxMenu.addAction(self.tr("Spelling Suggestion(s)"))
                 for option in suggest[:15]:
                     if action := ctxMenu.addAction(option):
-                        action.triggered.connect(
-                            lambda _, option=option: self._correctWord(sCursor, option)
-                        )
+                        action.triggered.connect(lambda _, option=option: self._correctWord(sCursor, option))
             else:
                 ctxMenu.addAction(self.tr("No Suggestions"))
 

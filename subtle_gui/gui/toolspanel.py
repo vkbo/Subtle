@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -29,15 +30,23 @@ from subtle_gui.constants import MediaType
 
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import (
-    QCheckBox, QDoubleSpinBox, QFormLayout, QGroupBox, QHBoxLayout, QLineEdit,
-    QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
+    QCheckBox,
+    QDoubleSpinBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class GuiToolsPanel(QWidget):
-
     D_SUBS_PATH = Qt.ItemDataRole.UserRole
 
     requestSrtSave = pyqtSignal(Path, float)
@@ -242,11 +251,7 @@ class GuiToolsPanel(QWidget):
             for folder in folders:
                 try:
                     for entry in folder.iterdir():
-                        if (
-                            entry.is_file()
-                            and entry.suffix == ".srt"
-                            and entry.stem.lower().startswith(prefix)
-                        ):
+                        if entry.is_file() and entry.suffix == ".srt" and entry.stem.lower().startswith(prefix):
                             item = QListWidgetItem()
                             item.setText(str(entry.relative_to(root)))
                             item.setData(self.D_SUBS_PATH, entry)

@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import json
@@ -77,8 +78,7 @@ def regexCleanup(text: str, patterns: list[tuple[re.Pattern, str]]) -> str:
     """Replaces all occurrences of match group 1 in patterns."""
     for regEx, value in patterns:
         matches = [
-            (s, e, value) for match in regEx.finditer(text)
-            if (s := match.start(1)) >= 0 and (e := match.end(1)) >= 0
+            (s, e, value) for match in regEx.finditer(text) if (s := match.start(1)) >= 0 and (e := match.end(1)) >= 0
         ]
         for s, e, value in reversed(matches):
             text = text[:s] + value + text[e:]
@@ -120,7 +120,7 @@ def jsonEncode(data: dict | list | tuple, n: int = 0, nmax: int = 0) -> str:
 
         elif first in ("{", "["):
             n += 1
-            indent = "\n"+"  "*n
+            indent = "\n" + "  " * n
             if n > nmax and nmax > 0:
                 buffer.append(chunk)
             else:
@@ -128,7 +128,7 @@ def jsonEncode(data: dict | list | tuple, n: int = 0, nmax: int = 0) -> str:
 
         elif first in ("}", "]"):
             n -= 1
-            indent = "\n"+"  "*n
+            indent = "\n" + "  " * n
             if n >= nmax and nmax > 0:
                 buffer.append(chunk)
             else:
@@ -148,8 +148,8 @@ def jsonEncode(data: dict | list | tuple, n: int = 0, nmax: int = 0) -> str:
 
 def formatTS(value: int) -> str:
     """Format millisecond integer as HH:MM:SS,uuu timestamp."""
-    i, f = value//1000, value%1000
-    return f"{i//3600:02d}:{i%3600//60:02d}:{i%60:02d},{f:03d}"
+    i, f = value // 1000, value % 1000
+    return f"{i // 3600:02d}:{i % 3600 // 60:02d}:{i % 60:02d},{f:03d}"
 
 
 def decodeTS(value: str | None, default: int = 0, fmt: T_Subs = "SRT") -> int:
@@ -158,21 +158,13 @@ def decodeTS(value: str | None, default: int = 0, fmt: T_Subs = "SRT") -> int:
         if fmt == "SRT" and len(value) >= 12:
             if value[2] == ":" and value[5] == ":" and value[8] in ".,":
                 try:
-                    return (
-                        3600000*int(value[0:2])
-                        + 60000*int(value[3:5])
-                        + int(value[6:8] + value[9:12])
-                    )
+                    return 3600000 * int(value[0:2]) + 60000 * int(value[3:5]) + int(value[6:8] + value[9:12])
                 except Exception:
                     pass
         elif fmt == "SSA" and len(value) == 10:
             if value[1] == ":" and value[4] == ":" and value[7] in ":.,":
                 try:
-                    return (
-                        3600000*int(value[0])
-                        + 60000*int(value[2:4])
-                        + 10*int(value[5:7] + value[8:10])
-                    )
+                    return 3600000 * int(value[0]) + 60000 * int(value[2:4]) + 10 * int(value[5:7] + value[8:10])
                 except Exception:
                     pass
     return default

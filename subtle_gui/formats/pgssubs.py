@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -38,10 +39,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 COMP_NORMAL = 0x00
-COMP_ACQ    = 0x40
-COMP_EPOCH  = 0x80
+COMP_ACQ = 0x40
+COMP_EPOCH = 0x80
 
-IMAGE_FILL = 0xff242424
+IMAGE_FILL = 0xFF242424
 CROP_MARGINS = QMargins(20, 20, 20, 20)
 
 
@@ -146,7 +147,6 @@ class PGSSubs(SubtitlesBase):
 
 
 class PGSFrame(FrameBase):
-
     def __init__(self, index: int, ds: DisplaySet) -> None:
         super().__init__(index=index)
         self._ds = ds
@@ -174,7 +174,6 @@ class PGSFrame(FrameBase):
 
 
 class DisplaySet:
-
     __slots__ = ("_image", "_ods", "_pcs", "_pds", "_wds")
 
     def __init__(self, pcs: PresentationSegment) -> None:
@@ -281,23 +280,21 @@ class DisplaySet:
                     if (b1 := data[p]) > 0x00:
                         raw += palette[b1]
                         p += 1
-                    elif (b2 := data[p+1]) <= 0x3f:
+                    elif (b2 := data[p + 1]) <= 0x3F:
                         raw += palette[0] * b2
                         p += 2
-                    elif b2 <= 0x7f:
-                        raw += palette[0] * ((b2 & 0x3f)*256 + data[p+2])
+                    elif b2 <= 0x7F:
+                        raw += palette[0] * ((b2 & 0x3F) * 256 + data[p + 2])
                         p += 3
-                    elif b2 <= 0xbf:
-                        raw += palette[data[p+2]] * (b2 & 0x3f)
+                    elif b2 <= 0xBF:
+                        raw += palette[data[p + 2]] * (b2 & 0x3F)
                         p += 3
                     else:
-                        raw += palette[data[p+3]] * ((b2 & 0x3f)*256 + data[p+2])
+                        raw += palette[data[p + 3]] * ((b2 & 0x3F) * 256 + data[p + 2])
                         p += 4
 
                 frame = frame.united(QRect(offset, box))
-                painter.drawImage(offset, QImage(
-                    bytes(raw), box.width(), box.height(), QImage.Format.Format_ARGB32
-                ))
+                painter.drawImage(offset, QImage(bytes(raw), box.width(), box.height(), QImage.Format.Format_ARGB32))
 
         painter.end()
         if crop:
@@ -309,7 +306,6 @@ class DisplaySet:
 
 
 class BaseSegment(ABC):
-
     __slots__ = ("_data", "_ts", "_valid")
 
     def __init__(self, ts: int, data: bytes) -> None:
@@ -320,10 +316,7 @@ class BaseSegment(ABC):
         return
 
     def __repr__(self) -> str:
-        return (
-            f"<{self.__class__.__name__}: t={self._ts/90000:.3f} "
-            f"size={len(self._data)} valid={self._valid}>"
-        )
+        return f"<{self.__class__.__name__}: t={self._ts / 90000:.3f} size={len(self._data)} valid={self._valid}>"
 
     @property
     def valid(self) -> bool:
@@ -348,7 +341,7 @@ class PresentationSegment(BaseSegment):
     def validate(self) -> None:
         """Length is 11 + n*8"""
         size = len(self._data)
-        self._valid = (size >= 11 and size % 8 == 3)
+        self._valid = size >= 11 and size % 8 == 3
         return
 
     @property
@@ -410,12 +403,12 @@ class PresentationSegment(BaseSegment):
         pos = 11
         size = len(self._data)
         while pos < size:
-            o = int.from_bytes(self._data[pos:pos+2])    # Object ID
-            w = int.from_bytes(self._data[pos+2:pos+3])  # Window ID
-            f = int.from_bytes(self._data[pos+3:pos+4])  # Crop flag, only used for offset
-            x = int.from_bytes(self._data[pos+4:pos+6])  # Horizontal position
-            y = int.from_bytes(self._data[pos+6:pos+8])  # Vertical position
-            pos += (16 if f == 0x40 else 8)
+            o = int.from_bytes(self._data[pos : pos + 2])  # Object ID
+            w = int.from_bytes(self._data[pos + 2 : pos + 3])  # Window ID
+            f = int.from_bytes(self._data[pos + 3 : pos + 4])  # Crop flag, only used for offset
+            x = int.from_bytes(self._data[pos + 4 : pos + 6])  # Horizontal position
+            y = int.from_bytes(self._data[pos + 6 : pos + 8])  # Vertical position
+            pos += 16 if f == 0x40 else 8
             yield o, w, QPoint(x, y)
         return
 
@@ -432,7 +425,7 @@ class WindowSegment(BaseSegment):
 
     def validate(self) -> None:
         """Length is 1 + n*9"""
-        self._valid = (len(self._data) % 9 == 1)
+        self._valid = len(self._data) % 9 == 1
         return
 
     @property
@@ -442,11 +435,14 @@ class WindowSegment(BaseSegment):
     def windows(self) -> Iterable[tuple[int, QRect]]:
         """Iterate over windows defined in the segment."""
         for pos in range(1, len(self._data), 9):
-            yield int.from_bytes(self._data[pos:pos+1]), QRect(
-                int.from_bytes(self._data[pos+1:pos+3]),
-                int.from_bytes(self._data[pos+3:pos+5]),
-                int.from_bytes(self._data[pos+5:pos+7]),
-                int.from_bytes(self._data[pos+7:pos+9]),
+            yield (
+                int.from_bytes(self._data[pos : pos + 1]),
+                QRect(
+                    int.from_bytes(self._data[pos + 1 : pos + 3]),
+                    int.from_bytes(self._data[pos + 3 : pos + 5]),
+                    int.from_bytes(self._data[pos + 5 : pos + 7]),
+                    int.from_bytes(self._data[pos + 7 : pos + 9]),
+                ),
             )
         return
 
@@ -456,12 +452,13 @@ class PaletteSegment(BaseSegment):
 
     This segment is used to define a palette for color conversion.
     """
+
     __slots__ = ("_col",)
 
     def validate(self) -> None:
         """Length is 2 + n*5"""
         size = len(self._data)
-        self._valid = (size >= 7 and size % 5 == 2)
+        self._valid = size >= 7 and size % 5 == 2
         self._col: dict[int, QColor] = {}
         return
 
@@ -482,13 +479,13 @@ class PaletteSegment(BaseSegment):
         """
         palette = [IMAGE_FILL.to_bytes(4, "little")] * 256
         for pos in range(2, len(self._data), 5):
-            if a := self._data[pos+4]:  # We ignore transparent colours
-                y = self._data[pos+1] - 16
-                cr = self._data[pos+2] - 128
-                cb = self._data[pos+3] - 128
-                r = round(1.164*y + 1.793*cr)
-                g = round(1.164*y - 0.213*cb - 0.533*cr)
-                b = round(1.164*y + 2.112*cb)
+            if a := self._data[pos + 4]:  # We ignore transparent colours
+                y = self._data[pos + 1] - 16
+                cr = self._data[pos + 2] - 128
+                cb = self._data[pos + 3] - 128
+                r = round(1.164 * y + 1.793 * cr)
+                g = round(1.164 * y - 0.213 * cb - 0.533 * cr)
+                b = round(1.164 * y + 2.112 * cb)
                 palette[self._data[pos]] = qRgba(r, g, b, a).to_bytes(4, "little")
         return palette
 

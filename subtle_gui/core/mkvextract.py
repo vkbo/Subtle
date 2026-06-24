@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -35,7 +36,6 @@ logger = logging.getLogger(__name__)
 
 
 class MkvExtract(QObject):
-
     processProgress = pyqtSignal(int)
     processDone = pyqtSignal(int)
 

@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -34,7 +35,6 @@ logger = logging.getLogger(__name__)
 
 
 class GuiFileTree(QTreeView):
-
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
@@ -62,9 +62,7 @@ class GuiFileTree(QTreeView):
 
     def saveSettings(self) -> None:
         """Save widget settings."""
-        CONFIG.setSizes("fileTreeColumns", [
-            self.columnWidth(i) for i in range(self._model.columnCount())
-        ])
+        CONFIG.setSizes("fileTreeColumns", [self.columnWidth(i) for i in range(self._model.columnCount())])
         return
 
     ##

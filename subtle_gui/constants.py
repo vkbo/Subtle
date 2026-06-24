@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 from enum import Enum
@@ -32,18 +33,16 @@ def trConst(text: str) -> str:
 
 
 class MediaType(Enum):
-
     VIDEO = 0
     AUDIO = 1
-    SUBS  = 2
+    SUBS = 2
     OTHER = 4
 
 
 class GuiLabels:
-
     MEDIA_TYPES: Final[dict[MediaType, str]] = {
         MediaType.VIDEO: QT_TRANSLATE_NOOP("Constant", "Video"),
         MediaType.AUDIO: QT_TRANSLATE_NOOP("Constant", "Audio"),
-        MediaType.SUBS:  QT_TRANSLATE_NOOP("Constant", "Subtitles"),
+        MediaType.SUBS: QT_TRANSLATE_NOOP("Constant", "Subtitles"),
         MediaType.OTHER: QT_TRANSLATE_NOOP("Constant", "Other"),
     }

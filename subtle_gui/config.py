@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import json
@@ -31,10 +32,7 @@ from typing import Literal
 
 from subtle_gui.common import jsonEncode
 
-from PyQt6.QtCore import (
-    PYQT_VERSION, PYQT_VERSION_STR, QT_VERSION, QT_VERSION_STR, QSize,
-    QStandardPaths, QSysInfo
-)
+from PyQt6.QtCore import PYQT_VERSION, PYQT_VERSION_STR, QT_VERSION, QT_VERSION_STR, QSize, QStandardPaths, QSysInfo
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication
 
@@ -58,28 +56,23 @@ DEFAULTS: dict = {
         "guiFont": "",
         "fixedFont": "",
         "subsFont": "",
-    }
+    },
 }
 
 T_Fonts = Literal["gui"] | Literal["fixed"] | Literal["subs"]
 
 
 class Config:
-
     def __init__(self) -> None:
 
         self._data: dict[str, dict] = deepcopy(DEFAULTS)
 
-        self.appName   = "Subtle"
+        self.appName = "Subtle"
         self.appHandle = "subtle"
 
         # Set Paths
-        confRoot = Path(QStandardPaths.writableLocation(
-            QStandardPaths.StandardLocation.ConfigLocation)
-        )
-        cacheRoot = Path(QStandardPaths.writableLocation(
-            QStandardPaths.StandardLocation.CacheLocation)
-        )
+        confRoot = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.ConfigLocation))
+        cacheRoot = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation))
         self._confPath = confRoot.absolute() / self.appHandle  # The user config location
         self._cachePath = cacheRoot.absolute() / self.appHandle  # The user cache location
         self._homePath = Path.home().absolute()  # The user's home directory
@@ -95,19 +88,19 @@ class Config:
         self.subsFont = QFont()
 
         # Check Qt6 Versions
-        self.verQtString   = QT_VERSION_STR
-        self.verQtValue    = QT_VERSION
+        self.verQtString = QT_VERSION_STR
+        self.verQtValue = QT_VERSION
         self.verPyQtString = PYQT_VERSION_STR
-        self.verPyQtValue  = PYQT_VERSION
+        self.verPyQtValue = PYQT_VERSION
 
         # Check Python Version
         self.verPyString = sys.version.split()[0]
 
         # Check OS Type
-        self.osType    = sys.platform
-        self.osLinux   = False
+        self.osType = sys.platform
+        self.osLinux = False
         self.osWindows = False
-        self.osDarwin  = False
+        self.osDarwin = False
         self.osUnknown = False
         if self.osType.startswith("linux"):
             self.osLinux = True
@@ -119,7 +112,7 @@ class Config:
             self.osUnknown = True
 
         # Other System Info
-        self.hostName  = QSysInfo.machineHostName()
+        self.hostName = QSysInfo.machineHostName()
         self.kernelVer = QSysInfo.kernelVersion()
 
         return
@@ -172,7 +165,6 @@ class Config:
             path /= kind
         return path / resource
 
-
     ##
     #  Setters
     ##
@@ -193,7 +185,7 @@ class Config:
         return
 
     def setFontSpec(self, target: T_Fonts, font: QFont | str) -> None:
-        """Set the font """
+        """Set the font"""
         if isinstance(font, str):
             temp = QFont()
             temp.fromString(font)
@@ -249,7 +241,7 @@ class Config:
             self.setFontSpec("subs", font)
         else:
             temp = app.font()
-            temp.setPointSizeF(3.0*temp.pointSizeF())
+            temp.setPointSizeF(3.0 * temp.pointSizeF())
             self.setFontSpec("subs", temp)
         return
 

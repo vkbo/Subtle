@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -36,7 +37,6 @@ logger = logging.getLogger(__name__)
 
 
 class SRTSubs(SubtitlesBase):
-
     def __init__(self) -> None:
         super().__init__()
         return
@@ -56,7 +56,7 @@ class SRTSubs(SubtitlesBase):
             if path is None:
                 path = self._path
             if path:
-                self._writeData(path, round(offset*1000.0))
+                self._writeData(path, round(offset * 1000.0))
         except Exception as exc:
             logger.error("Could not write SRT file: %s", self._path, exc_info=exc)
         return
@@ -123,7 +123,6 @@ class SRTSubs(SubtitlesBase):
 
 
 class SRTFrame(FrameBase):
-
     def __init__(self, index: int, start: int, end: int, text: list[str]) -> None:
         super().__init__(index)
         self._start = start

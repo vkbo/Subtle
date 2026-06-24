@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -25,10 +26,7 @@ import re
 
 from subtle_gui import SHARED
 
-from PyQt6.QtGui import (
-    QColor, QSyntaxHighlighter, QTextBlockUserData, QTextCharFormat,
-    QTextDocument
-)
+from PyQt6.QtGui import QColor, QSyntaxHighlighter, QTextBlockUserData, QTextCharFormat, QTextDocument
 from PyQt6.QtWidgets import QApplication
 
 logger = logging.getLogger(__name__)
@@ -40,7 +38,6 @@ IGNORE_PATTERNS = [
 
 
 class GuiDocHighlighter(QSyntaxHighlighter):
-
     def __init__(self, document: QTextDocument) -> None:
         super().__init__(document)
 
@@ -70,7 +67,6 @@ class GuiDocHighlighter(QSyntaxHighlighter):
 
 
 class TextBlockData(QTextBlockUserData):
-
     __slots__ = ("_spellErrors",)
 
     def __init__(self) -> None:
@@ -93,12 +89,9 @@ class TextBlockData(QTextBlockUserData):
         for rX in IGNORE_PATTERNS:
             for match in rX.finditer(text):
                 if (s := match.start(0)) >= 0 and (e := match.end(0)) >= 0:
-                    text = text[:s] + " "*(e - s) + text[e:]
+                    text = text[:s] + " " * (e - s) + text[e:]
 
         for match in re.finditer(SPELL_RX, text.replace("_", " ")):
-            if (
-                (word := match.group(0))
-                and not (word.isnumeric() or word.isupper() or checker.checkWord(word))
-            ):
+            if (word := match.group(0)) and not (word.isnumeric() or word.isupper() or checker.checkWord(word)):
                 self._spellErrors.append((match.start(0), match.end(0)))
         return self._spellErrors

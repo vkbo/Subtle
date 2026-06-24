@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -44,7 +45,6 @@ logger = logging.getLogger(__name__)
 
 
 class MediaData(QObject):
-
     mediaDataCleared = pyqtSignal()
     newMediaLoaded = pyqtSignal()
     newTrackSelected = pyqtSignal()
@@ -110,7 +110,6 @@ class MediaData(QObject):
 
 
 class MediaTrack:
-
     def __init__(self, media: MediaData, info: dict) -> None:
         self._media = media
         self._info = {}

@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -37,7 +38,6 @@ logger = logging.getLogger(__name__)
 
 
 class SubtitlesBase(ABC):
-
     __slots__ = ("_frames", "_path")
 
     def __init__(self) -> None:
@@ -65,7 +65,7 @@ class SubtitlesBase(ABC):
     def checkFrames(self) -> None:
         """Check all frames to ensure that time stamps make sense."""
         for i in range(len(self._frames) - 1):
-            cf, nf = self._frames[i:i+2]
+            cf, nf = self._frames[i : i + 2]
             if cf.end < cf.start:
                 te = cf.end
                 ts = cf.start
@@ -73,7 +73,10 @@ class SubtitlesBase(ABC):
                 cf.setRange(end=max(ts + 90, tn))
                 logger.warning(
                     "Correcting end time for frame %d to %s (%+.3fs from %+.3fs)",
-                    i+1, formatTS(tn), (tn-ts)/1000.0, (te-ts)/1000.0
+                    i + 1,
+                    formatTS(tn),
+                    (tn - ts) / 1000.0,
+                    (te - ts) / 1000.0,
                 )
         return
 
@@ -114,14 +117,11 @@ class SubtitlesBase(ABC):
         subclasses by passing its own FrameBase implementation as
         frameType.
         """
-        self._frames = [
-            frameType.fromFrame(n, frame) for n, frame in enumerate(other.iterFrames())
-        ]
+        self._frames = [frameType.fromFrame(n, frame) for n, frame in enumerate(other.iterFrames())]
         return
 
 
 class FrameBase(ABC):
-
     __slots__ = ("_end", "_index", "_start", "_text")
 
     def __init__(self, index: int) -> None:

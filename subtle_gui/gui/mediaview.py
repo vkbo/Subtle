@@ -18,6 +18,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
+
 from __future__ import annotations
 
 import logging
@@ -33,8 +34,14 @@ from subtle_gui.core.mkvextract import MkvExtract
 
 from PyQt6.QtCore import QModelIndex, pyqtSlot
 from PyQt6.QtWidgets import (
-    QHBoxLayout, QLabel, QProgressBar, QPushButton, QTreeWidget,
-    QTreeWidgetItem, QVBoxLayout, QWidget
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QPushButton,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
 
 if TYPE_CHECKING:
@@ -46,17 +53,16 @@ logger = logging.getLogger(__name__)
 
 
 class GuiMediaView(QWidget):
-
-    C_TRACK   = 0
-    C_TYPE    = 1
-    C_CODEC   = 2
-    C_LANG    = 3
-    C_LENGTH  = 4
-    C_FRAMES  = 5
-    C_LABEL   = 6
+    C_TRACK = 0
+    C_TYPE = 1
+    C_CODEC = 2
+    C_LANG = 3
+    C_LENGTH = 4
+    C_FRAMES = 5
+    C_LABEL = 6
     C_ENABLED = 7
     C_DEFAULT = 8
-    C_FORCED  = 9
+    C_FORCED = 9
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
@@ -71,11 +77,20 @@ class GuiMediaView(QWidget):
 
         self.tracksView = QTreeWidget(self)
         self.tracksView.setIndentation(0)
-        self.tracksView.setHeaderLabels([
-            "#", self.tr("Type"), self.tr("Codec"), self.tr("Lang"), self.tr("Length"),
-            self.tr("Frames"), self.tr("Label"), self.tr("Enabled"), self.tr("Default"),
-            self.tr("Forced"),
-        ])
+        self.tracksView.setHeaderLabels(
+            [
+                "#",
+                self.tr("Type"),
+                self.tr("Codec"),
+                self.tr("Lang"),
+                self.tr("Length"),
+                self.tr("Frames"),
+                self.tr("Label"),
+                self.tr("Enabled"),
+                self.tr("Default"),
+                self.tr("Forced"),
+            ]
+        )
         self.tracksView.doubleClicked.connect(self._itemDoubleClicked)
 
         columns = self.tracksView.columnCount()
@@ -114,9 +129,9 @@ class GuiMediaView(QWidget):
 
     def saveSettings(self) -> None:
         """Save widget settings."""
-        CONFIG.setSizes("mediaViewColumns", [
-            self.tracksView.columnWidth(i) for i in range(self.tracksView.columnCount())
-        ])
+        CONFIG.setSizes(
+            "mediaViewColumns", [self.tracksView.columnWidth(i) for i in range(self.tracksView.columnCount())]
+        )
         return
 
     ##
