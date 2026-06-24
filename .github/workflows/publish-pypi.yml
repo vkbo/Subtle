@@ -25,3 +25,11 @@ jobs:
 
       - name: Publish Package
         run: uv publish
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: Subtle-PyPI
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
