@@ -38,7 +38,7 @@ if TYPE_CHECKING:  # pragma: no cover
 # Package Meta
 # ============
 
-__package__    = "subtle-gui"
+__package__    = "subtle_gui"
 __copyright__  = "Copyright (C) Veronica Berglyd Olsen"
 __license__    = "GPLv3"
 __author__     = "Veronica Berglyd Olsen"
@@ -100,7 +100,7 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
         "This program is distributed in the hope that it will be useful,\n"
         "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
         "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the\n"
-        "GNU General Public Licence for more details.\n"
+        "GNU General Public License for more details.\n"
         "\n"
         "Usage:\n"
         " -h, --help     Print this message.\n"
@@ -160,7 +160,7 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
         cHandle.setFormatter(logging.Formatter(fmt=logFmt, style="{"))
         pkgLogger.addHandler(cHandle)
 
-    logger.info("Starting Subtle %s (%s)", __version__, __date__)
+    logger.info("Starting Subtle %s [%s]", __version__, __date__)
 
     # Finish initialising config
     CONFIG.initialise()
