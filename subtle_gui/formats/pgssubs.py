@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -38,10 +39,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 COMP_NORMAL = 0x00
-COMP_ACQ    = 0x40
-COMP_EPOCH  = 0x80
+COMP_ACQ = 0x40
+COMP_EPOCH = 0x80
 
-IMAGE_FILL = 0xff242424
+IMAGE_FILL = 0xFF242424
 CROP_MARGINS = QMargins(20, 20, 20, 20)
 
 
@@ -54,7 +55,6 @@ class PGSSubs(SubtitlesBase):
 
     def __init__(self) -> None:
         super().__init__()
-        return
 
     def read(self, path: Path) -> None:
         """Read a PGS file."""
@@ -63,13 +63,13 @@ class PGSSubs(SubtitlesBase):
             self._path = path
         except Exception as e:
             logger.error("Failed to read file data", exc_info=e)
-        return
 
     def write(self, path: Path | None = None) -> None:
         """Write a PGS file."""
         raise NotImplementedError("Cannot write PGS files.")
 
     def copyFrames(self, other: SubtitlesBase) -> None:
+        """Copy frames from another subtitle object."""
         return super()._copyFrames(PGSFrame, other)
 
     ##
@@ -142,16 +142,14 @@ class PGSSubs(SubtitlesBase):
 
         self._frames = frames
 
-        return
-
 
 class PGSFrame(FrameBase):
+    """PGS Subtitle Frame Class."""
 
     def __init__(self, index: int, ds: DisplaySet) -> None:
         super().__init__(index=index)
         self._ds = ds
         self._start = int(ds.timestamp / 90.0)
-        return
 
     @classmethod
     def fromFrame(cls, index: int, other: FrameBase) -> FrameBase:
@@ -160,13 +158,13 @@ class PGSFrame(FrameBase):
 
     @property
     def imageBased(self) -> bool:
-        """This class is image based."""
+        """Check if the frame is image based."""
+        # A PGS frame is always image-based, as it is a bitmap subtitle format
         return True
 
     def closeFrame(self, ds: DisplaySet) -> None:
         """Extract timestamp from display set used to close frame."""
         self._end = int(ds.timestamp / 90.0)
-        return
 
     def getImage(self) -> QImage:
         """Return the rendered image."""
@@ -174,6 +172,7 @@ class PGSFrame(FrameBase):
 
 
 class DisplaySet:
+    """PGS Display Set Class."""
 
     __slots__ = ("_image", "_ods", "_pcs", "_pds", "_wds")
 
@@ -183,9 +182,9 @@ class DisplaySet:
         self._pds: dict[int, PaletteSegment] = {}
         self._ods: dict[int, list[ObjectSegment]] = {}
         self._image: QImage | None = None
-        return
 
     def __repr__(self) -> str:
+        """Return a string representation of the display set."""
         return (
             f"<{self.__class__.__name__}: "
             f"composition={self._pcs.compNumber} "
@@ -198,10 +197,12 @@ class DisplaySet:
 
     @property
     def pcs(self) -> PresentationSegment:
+        """Return the presentation segment."""
         return self._pcs
 
     @property
     def timestamp(self) -> float:
+        """Return the timestamp of the display set."""
         return self._pcs.timestamp
 
     def addWDS(self, wds: WindowSegment, pos: int) -> None:
@@ -211,7 +212,6 @@ class DisplaySet:
                 self._wds[idx] = rect
         else:
             logger.warning("Skipping invalid WindowSegment at pos %d", pos)
-        return
 
     def addPDS(self, pds: PaletteSegment, pos: int) -> None:
         """Save the segment mapped to its id."""
@@ -219,7 +219,6 @@ class DisplaySet:
             self._pds[pds.id] = pds
         else:
             logger.warning("Skipping invalid PaletteSegment at pos %d", pos)
-        return
 
     def addODS(self, ods: ObjectSegment, pos: int) -> None:
         """Save the segment mapped to its id."""
@@ -230,12 +229,13 @@ class DisplaySet:
                 self._ods[oid].append(ods)
         else:
             logger.warning("Skipping invalid ObjectSegment at pos %d", pos)
-        return
 
     def isValid(self) -> bool:
+        """Check if the display set is valid."""
         return self._pcs is not None and self._pcs.valid
 
     def isClearFrame(self) -> bool:
+        """Check if the display set is a clear frame."""
         return self._pcs.compState == COMP_NORMAL and self._pcs.compObjectCount == 0
 
     def render(self, crop: bool = True) -> QImage:
@@ -281,23 +281,21 @@ class DisplaySet:
                     if (b1 := data[p]) > 0x00:
                         raw += palette[b1]
                         p += 1
-                    elif (b2 := data[p+1]) <= 0x3f:
+                    elif (b2 := data[p + 1]) <= 0x3F:
                         raw += palette[0] * b2
                         p += 2
-                    elif b2 <= 0x7f:
-                        raw += palette[0] * ((b2 & 0x3f)*256 + data[p+2])
+                    elif b2 <= 0x7F:
+                        raw += palette[0] * ((b2 & 0x3F) * 256 + data[p + 2])
                         p += 3
-                    elif b2 <= 0xbf:
-                        raw += palette[data[p+2]] * (b2 & 0x3f)
+                    elif b2 <= 0xBF:
+                        raw += palette[data[p + 2]] * (b2 & 0x3F)
                         p += 3
                     else:
-                        raw += palette[data[p+3]] * ((b2 & 0x3f)*256 + data[p+2])
+                        raw += palette[data[p + 3]] * ((b2 & 0x3F) * 256 + data[p + 2])
                         p += 4
 
                 frame = frame.united(QRect(offset, box))
-                painter.drawImage(offset, QImage(
-                    bytes(raw), box.width(), box.height(), QImage.Format.Format_ARGB32
-                ))
+                painter.drawImage(offset, QImage(bytes(raw), box.width(), box.height(), QImage.Format.Format_ARGB32))
 
         painter.end()
         if crop:
@@ -308,7 +306,8 @@ class DisplaySet:
         return self._image
 
 
-class BaseSegment(ABC):
+class SegmentBase(ABC):
+    """Base class for PGS segments."""
 
     __slots__ = ("_data", "_ts", "_valid")
 
@@ -317,39 +316,39 @@ class BaseSegment(ABC):
         self._data = data
         self._valid = False
         self.validate()
-        return
 
     def __repr__(self) -> str:
-        return (
-            f"<{self.__class__.__name__}: t={self._ts/90000:.3f} "
-            f"size={len(self._data)} valid={self._valid}>"
-        )
+        """Return a string representation of the segment."""
+        return f"<{self.__class__.__name__}: t={self._ts / 90000:.3f} size={len(self._data)} valid={self._valid}>"
 
     @property
     def valid(self) -> bool:
+        """Check if the segment is valid."""
         return self._valid
 
     @property
     def timestamp(self) -> float:
+        """Return the timestamp of the segment."""
         return self._ts
 
     @abstractmethod
     def validate(self) -> None:
+        """Validate the segment data."""
         raise NotImplementedError
 
 
-class PresentationSegment(BaseSegment):
-    """Presentation Composition Segment
+class PresentationSegment(SegmentBase):
+    """Presentation Composition Segment.
 
     The Presentation Composition Segment is used for composing a sub
     picture.
     """
 
     def validate(self) -> None:
-        """Length is 11 + n*8"""
+        """Validate the segment data."""
+        # Length is 11 + n*8
         size = len(self._data)
-        self._valid = (size >= 11 and size % 8 == 3)
-        return
+        self._valid = size >= 11 and size % 8 == 3
 
     @property
     def size(self) -> QSize:
@@ -368,7 +367,9 @@ class PresentationSegment(BaseSegment):
 
     @property
     def compState(self) -> int:
-        """Type of this composition. Allowed values are:
+        """Return the type of this composition.
+
+        Allowed values are:
         0x00: Normal
         0x40: Acquisition Point
         0x80: Epoch Start
@@ -377,8 +378,9 @@ class PresentationSegment(BaseSegment):
 
     @property
     def paletteUpdate(self) -> bool:
-        """Indicates if this PCS describes a Palette only Display
-        Update. Allowed values are:
+        """Returns True if this composition is a Palette only Display Update.
+
+        Allowed values are:
         0x00: False
         0x80: True
         """
@@ -397,7 +399,9 @@ class PresentationSegment(BaseSegment):
         return int.from_bytes(self._data[10:11])
 
     def compObjects(self) -> Iterable[tuple[int, int, QPoint]]:
-        """The composition objects, also known as window information
+        """Return an iterator over the composition objects defined in this segment.
+
+        The composition objects, also known as window information
         objects, define the position on the screen of every image that
         will be shown.
 
@@ -410,18 +414,18 @@ class PresentationSegment(BaseSegment):
         pos = 11
         size = len(self._data)
         while pos < size:
-            o = int.from_bytes(self._data[pos:pos+2])    # Object ID
-            w = int.from_bytes(self._data[pos+2:pos+3])  # Window ID
-            f = int.from_bytes(self._data[pos+3:pos+4])  # Crop flag, only used for offset
-            x = int.from_bytes(self._data[pos+4:pos+6])  # Horizontal position
-            y = int.from_bytes(self._data[pos+6:pos+8])  # Vertical position
-            pos += (16 if f == 0x40 else 8)
+            o = int.from_bytes(self._data[pos : pos + 2])  # Object ID
+            w = int.from_bytes(self._data[pos + 2 : pos + 3])  # Window ID
+            f = int.from_bytes(self._data[pos + 3 : pos + 4])  # Crop flag, only used for offset
+            x = int.from_bytes(self._data[pos + 4 : pos + 6])  # Horizontal position
+            y = int.from_bytes(self._data[pos + 6 : pos + 8])  # Vertical position
+            pos += 16 if f == 0x40 else 8
             yield o, w, QPoint(x, y)
         return
 
 
-class WindowSegment(BaseSegment):
-    """Window Definition Segment
+class WindowSegment(SegmentBase):
+    """Window Definition Segment.
 
     This segment is used to define the rectangular area on the screen
     where the sub picture will be shown. This rectangular area is called
@@ -431,39 +435,44 @@ class WindowSegment(BaseSegment):
     """
 
     def validate(self) -> None:
-        """Length is 1 + n*9"""
-        self._valid = (len(self._data) % 9 == 1)
-        return
+        """Validate the segment data."""
+        # Length is 1 + n*9
+        self._valid = len(self._data) % 9 == 1
 
     @property
     def count(self) -> int:
+        """Return the number of windows defined in the segment."""
         return int.from_bytes(self._data[0:1])
 
     def windows(self) -> Iterable[tuple[int, QRect]]:
         """Iterate over windows defined in the segment."""
         for pos in range(1, len(self._data), 9):
-            yield int.from_bytes(self._data[pos:pos+1]), QRect(
-                int.from_bytes(self._data[pos+1:pos+3]),
-                int.from_bytes(self._data[pos+3:pos+5]),
-                int.from_bytes(self._data[pos+5:pos+7]),
-                int.from_bytes(self._data[pos+7:pos+9]),
+            yield (
+                int.from_bytes(self._data[pos : pos + 1]),
+                QRect(
+                    int.from_bytes(self._data[pos + 1 : pos + 3]),
+                    int.from_bytes(self._data[pos + 3 : pos + 5]),
+                    int.from_bytes(self._data[pos + 5 : pos + 7]),
+                    int.from_bytes(self._data[pos + 7 : pos + 9]),
+                ),
             )
         return
 
 
-class PaletteSegment(BaseSegment):
-    """Palette Definition Segment
+class PaletteSegment(SegmentBase):
+    """Palette Definition Segment.
 
     This segment is used to define a palette for color conversion.
     """
+
     __slots__ = ("_col",)
 
     def validate(self) -> None:
-        """Length is 2 + n*5"""
+        """Validate the segment data."""
+        # Length is 2 + n*5
         size = len(self._data)
-        self._valid = (size >= 7 and size % 5 == 2)
+        self._valid = size >= 7 and size % 5 == 2
         self._col: dict[int, QColor] = {}
-        return
 
     @property
     def id(self) -> int:
@@ -482,28 +491,28 @@ class PaletteSegment(BaseSegment):
         """
         palette = [IMAGE_FILL.to_bytes(4, "little")] * 256
         for pos in range(2, len(self._data), 5):
-            if a := self._data[pos+4]:  # We ignore transparent colours
-                y = self._data[pos+1] - 16
-                cr = self._data[pos+2] - 128
-                cb = self._data[pos+3] - 128
-                r = round(1.164*y + 1.793*cr)
-                g = round(1.164*y - 0.213*cb - 0.533*cr)
-                b = round(1.164*y + 2.112*cb)
+            if a := self._data[pos + 4]:  # We ignore transparent colours
+                y = self._data[pos + 1] - 16
+                cr = self._data[pos + 2] - 128
+                cb = self._data[pos + 3] - 128
+                r = round(1.164 * y + 1.793 * cr)
+                g = round(1.164 * y - 0.213 * cb - 0.533 * cr)
+                b = round(1.164 * y + 2.112 * cb)
                 palette[self._data[pos]] = qRgba(r, g, b, a).to_bytes(4, "little")
         return palette
 
 
-class ObjectSegment(BaseSegment):
-    """Object Definition Segment
+class ObjectSegment(SegmentBase):
+    """Object Definition Segment.
 
     This segment defines the graphics object. These are images with
     rendered text on a transparent background.
     """
 
     def validate(self) -> None:
-        """The header is 11 bytes, followed by the raw image data."""
+        """Validate the segment data."""
+        # The header is 11 bytes, followed by the raw image data.
         self._valid = len(self._data) >= 11
-        return
 
     @property
     def id(self) -> int:
@@ -517,7 +526,9 @@ class ObjectSegment(BaseSegment):
 
     @property
     def sequence(self) -> int:
-        """If the image is split into a series of consecutive fragments,
+        """Return the sequence flag of this object.
+
+        If the image is split into a series of consecutive fragments,
         the last fragment has this flag set. Possible values:
         0x40: Last in sequence
         0x80: First in sequence
@@ -544,7 +555,7 @@ class ObjectSegment(BaseSegment):
 
     @property
     def rle(self) -> bytes:
-        """This is the image data compressed using Run-length Encoding (RLE).
+        """Return the image data compressed using Run-length Encoding (RLE).
         The size of the data is defined in the Object Data Length field.
         """
         pos = 4 if self.sequence == 0x40 else 11

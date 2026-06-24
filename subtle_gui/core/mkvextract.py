@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -35,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 class MkvExtract(QObject):
+    """Wrapper for mkvextract process."""
 
     processProgress = pyqtSignal(int)
     processDone = pyqtSignal(int)
@@ -43,7 +45,6 @@ class MkvExtract(QObject):
         super().__init__(parent=parent)
         self._process = None
         self._pid = 0
-        return
 
     def extract(self, file: Path, tracks: list[tuple[str, Path]]) -> None:
         """Start a subprocess running mkvextract."""
@@ -56,14 +57,12 @@ class MkvExtract(QObject):
             self._process.start("mkvextract", args)
             self._pid = self._process.processId()
             logger.debug("Starting process %d", self._pid)
-        return
 
     def cancel(self) -> None:
         """Cancel the process."""
         if isinstance(self._process, QProcess):
             logger.debug("Killing process %d", self._pid)
             self._process.kill()
-        return
 
     ##
     #  Private Slots
@@ -76,7 +75,6 @@ class MkvExtract(QObject):
             text = self._process.readAllStandardOutput().data().decode("utf-8").strip()
             if text.startswith("#GUI#progress"):
                 self.processProgress.emit(checkInt(text[13:].strip().removesuffix("%"), 0))
-        return
 
     @pyqtSlot()
     def _processFinished(self) -> None:
@@ -86,4 +84,3 @@ class MkvExtract(QObject):
             logger.debug("Process %d exited with return code %d", self._pid, code)
             self.processDone.emit(code)
             self._process = None
-        return

@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -32,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 class GuiImageViewer(QWidget):
+    """GUI Image Viewer."""
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
@@ -49,8 +51,6 @@ class GuiImageViewer(QWidget):
 
         self.setLayout(self.outerBox)
 
-        return
-
     ##
     #  Public Slots
     ##
@@ -66,7 +66,6 @@ class GuiImageViewer(QWidget):
             scene.setSceneRect(QRectF(self._imageSize))
             self.imageView.setScene(scene)
             self._updateSizes()
-        return
 
     ##
     #  Event
@@ -76,7 +75,6 @@ class GuiImageViewer(QWidget):
         """Capture resize to update image scaling."""
         super().resizeEvent(event)
         self._updateSizes()
-        return
 
     ##
     #  Internal Functions
@@ -86,4 +84,3 @@ class GuiImageViewer(QWidget):
         """Scale down the image if it does not fit."""
         if not self.imageView.rect().contains(self._imageSize):
             self.imageView.fitInView(QRectF(self._imageSize), Qt.AspectRatioMode.KeepAspectRatio)
-        return

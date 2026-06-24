@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import json
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class SpellEnchant:
-    """Core: Enchant Spell Checking Wrapper
+    """Core: Enchant Spell Checking Wrapper.
 
     This is a wrapper class for Enchant to keep the API consistent
     between spell check tools.
@@ -48,7 +49,6 @@ class SpellEnchant:
         self._userDict = UserDictionary()
         self._language = None
         self._broker = None
-        return
 
     ##
     #  Properties
@@ -56,6 +56,7 @@ class SpellEnchant:
 
     @property
     def spellLanguage(self) -> str | None:
+        """Get the currently loaded spell checking language."""
         return self._language
 
     ##
@@ -93,21 +94,19 @@ class SpellEnchant:
             for word in self._userDict:
                 self._enchant.add_to_session(word)
 
-        return
-
     ##
     #  Methods
     ##
 
     def checkWord(self, word: str) -> bool:
-        """Wrapper function for pyenchant."""
+        """Wrap pyenchant check."""
         try:
             return bool(self._enchant.check(word))
         except Exception:
             return True
 
     def suggestWords(self, word: str) -> list[str]:
-        """Wrapper function for pyenchant."""
+        """Wrap pyenchant suggestions."""
         try:
             return self._enchant.suggest(word)
         except Exception:
@@ -129,6 +128,7 @@ class SpellEnchant:
         lang = []
         try:
             import enchant
+
             tags = [x for x, _ in enchant.list_dicts()]
             lang = [(x, f"{QLocale(x).nativeLanguageName().title()} [{x}]") for x in set(tags)]
         except Exception:
@@ -158,28 +158,31 @@ class FakeEnchant:
         self.tag = ""
         self.provider = FakeProvider()
 
-        return
-
     def check(self, word: str) -> bool:
+        """Wrap pyenchant check."""
         return True
 
     def suggest(self, word: str) -> list[str]:
+        """Wrap pyenchant suggestions."""
         return []
 
     def add_to_session(self, word: str) -> None:
+        """Wrap pyenchant add_to_session."""
         return
 
 
 class UserDictionary:
+    """A simple user dictionary that is saved to a JSON file."""
 
     def __init__(self) -> None:
         self._words = set()
-        return
 
     def __contains__(self, word: str) -> bool:
+        """Check if a word is in the dictionary."""
         return word in self._words
 
     def __iter__(self) -> Iterator[str]:
+        """Iterate over the words in the dictionary."""
         return iter(self._words)
 
     def add(self, word: str) -> bool:
@@ -204,7 +207,6 @@ class UserDictionary:
                 logger.info("Loaded user dictionary")
             except Exception as exc:
                 logger.error("Failed to load user dictionary", exc_info=exc)
-        return
 
     def save(self) -> None:
         """Save the user's dictionary."""
@@ -216,4 +218,3 @@ class UserDictionary:
                     json.dump(data, fObj, indent=2)
             except Exception as exc:
                 logger.error("Failed to save user dictionary", exc_info=exc)
-        return

@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import json
@@ -31,10 +32,7 @@ from typing import Literal
 
 from subtle_gui.common import jsonEncode
 
-from PyQt6.QtCore import (
-    PYQT_VERSION, PYQT_VERSION_STR, QT_VERSION, QT_VERSION_STR, QSize,
-    QStandardPaths, QSysInfo
-)
+from PyQt6.QtCore import PYQT_VERSION, PYQT_VERSION_STR, QT_VERSION, QT_VERSION_STR, QSize, QStandardPaths, QSysInfo
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication
 
@@ -58,28 +56,25 @@ DEFAULTS: dict = {
         "guiFont": "",
         "fixedFont": "",
         "subsFont": "",
-    }
+    },
 }
 
 T_Fonts = Literal["gui"] | Literal["fixed"] | Literal["subs"]
 
 
 class Config:
+    """Main Config Class."""
 
     def __init__(self) -> None:
 
         self._data: dict[str, dict] = deepcopy(DEFAULTS)
 
-        self.appName   = "Subtle"
+        self.appName = "Subtle"
         self.appHandle = "subtle"
 
         # Set Paths
-        confRoot = Path(QStandardPaths.writableLocation(
-            QStandardPaths.StandardLocation.ConfigLocation)
-        )
-        cacheRoot = Path(QStandardPaths.writableLocation(
-            QStandardPaths.StandardLocation.CacheLocation)
-        )
+        confRoot = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.ConfigLocation))
+        cacheRoot = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation))
         self._confPath = confRoot.absolute() / self.appHandle  # The user config location
         self._cachePath = cacheRoot.absolute() / self.appHandle  # The user cache location
         self._homePath = Path.home().absolute()  # The user's home directory
@@ -95,19 +90,19 @@ class Config:
         self.subsFont = QFont()
 
         # Check Qt6 Versions
-        self.verQtString   = QT_VERSION_STR
-        self.verQtValue    = QT_VERSION
+        self.verQtString = QT_VERSION_STR
+        self.verQtValue = QT_VERSION
         self.verPyQtString = PYQT_VERSION_STR
-        self.verPyQtValue  = PYQT_VERSION
+        self.verPyQtValue = PYQT_VERSION
 
         # Check Python Version
         self.verPyString = sys.version.split()[0]
 
         # Check OS Type
-        self.osType    = sys.platform
-        self.osLinux   = False
+        self.osType = sys.platform
+        self.osLinux = False
         self.osWindows = False
-        self.osDarwin  = False
+        self.osDarwin = False
         self.osUnknown = False
         if self.osType.startswith("linux"):
             self.osLinux = True
@@ -119,10 +114,8 @@ class Config:
             self.osUnknown = True
 
         # Other System Info
-        self.hostName  = QSysInfo.machineHostName()
+        self.hostName = QSysInfo.machineHostName()
         self.kernelVer = QSysInfo.kernelVersion()
-
-        return
 
     ##
     #  Properties
@@ -172,7 +165,6 @@ class Config:
             path /= kind
         return path / resource
 
-
     ##
     #  Setters
     ##
@@ -181,7 +173,6 @@ class Config:
         """Set a size in config."""
         if isinstance(value, QSize):
             self._data["Sizes"][key] = [value.width(), value.height()]
-        return
 
     def setSizes(self, key: str, value: list[int]) -> None:
         """Set a size in config."""
@@ -190,10 +181,9 @@ class Config:
                 self._data["Sizes"][key] = [int(x) for x in value]
             except Exception as e:
                 logger.error("Problem when saving sizes list", exc_info=e)
-        return
 
     def setFontSpec(self, target: T_Fonts, font: QFont | str) -> None:
-        """Set the font """
+        """Set a font in config."""
         if isinstance(font, str):
             temp = QFont()
             temp.fromString(font)
@@ -210,8 +200,6 @@ class Config:
             self.subsFont = font
             self._data["Fonts"]["subsFont"] = font.toString()
 
-        return
-
     ##
     #  Methods
     ##
@@ -220,17 +208,16 @@ class Config:
         """Initialise the config."""
         self._confPath.mkdir(exist_ok=True)
         self._cachePath.mkdir(exist_ok=True)
-        return
 
     def cleanup(self) -> None:
-        """Called before exit to clean up cache."""
+        """Clean up cache. Called before exit."""
         path = self._cachePath / "dump"
         if path.exists():
             logger.debug("Clearing session cache")
             shutil.rmtree(path)
-        return
 
     def localisation(self, app: QApplication) -> None:
+        """Set up localisation."""
         return
 
     def fonts(self, app: QApplication) -> None:
@@ -249,9 +236,8 @@ class Config:
             self.setFontSpec("subs", font)
         else:
             temp = app.font()
-            temp.setPointSizeF(3.0*temp.pointSizeF())
+            temp.setPointSizeF(3.0 * temp.pointSizeF())
             self.setFontSpec("subs", temp)
-        return
 
     def load(self) -> None:
         """Load the app config."""
@@ -265,7 +251,6 @@ class Config:
                 self._storeConfigGroup(data, "Fonts")
             except Exception as e:
                 logger.error("Could not load config", exc_info=e)
-        return
 
     def save(self) -> None:
         """Save the app config."""
@@ -275,7 +260,6 @@ class Config:
                 fo.write(jsonEncode(self._data, nmax=2))
         except Exception:
             logger.error("Could not save config")
-        return
 
     ##
     #  Internal Functions
@@ -288,4 +272,3 @@ class Config:
             default = DEFAULTS.get(group, {})
             values = {k: v for k, v in loaded.items() if k in default}
             self._data[group].update(values)
-        return

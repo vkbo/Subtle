@@ -28,14 +28,10 @@ jobs:
       - name: Ruff Check
         run: |
           uv run ruff --version
+          uv run ruff format --check
           uv run ruff check
 
       - name: Pyright Check
         run: |
           uv run pyright --version
           uv run pyright
-
-      - name: Isort Check
-        run: |
-          uv run isort --version
-          uv run isort --check .

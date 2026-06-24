@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -37,12 +38,13 @@ logger = logging.getLogger(__name__)
 
 
 class GuiSubtitleView(QWidget):
+    """GUI Subtitle View."""
 
-    C_DATA   = 0
-    C_ID     = 0
-    C_TIME   = 1
+    C_DATA = 0
+    C_ID = 0
+    C_TIME = 1
     C_LENGTH = 2
-    C_TEXT   = 3
+    C_TEXT = 3
 
     D_INDEX = Qt.ItemDataRole.UserRole
 
@@ -56,9 +58,7 @@ class GuiSubtitleView(QWidget):
         # Entries View
         self.subEntries = QTreeWidget(self)
         self.subEntries.setIndentation(0)
-        self.subEntries.setHeaderLabels([
-            "#", self.tr("Time Stamp"), self.tr("Length"), self.tr("Text")
-        ])
+        self.subEntries.setHeaderLabels(["#", self.tr("Time Stamp"), self.tr("Length"), self.tr("Text")])
         self.subEntries.clicked.connect(self._itemClicked)
 
         columns = self.subEntries.columnCount()
@@ -72,18 +72,15 @@ class GuiSubtitleView(QWidget):
 
         self.setLayout(self.outerBox)
 
-        return
-
     ##
     #  Methods
     ##
 
     def saveSettings(self) -> None:
         """Save widget settings."""
-        CONFIG.setSizes("subsViewColumns", [
-            self.subEntries.columnWidth(i) for i in range(self.subEntries.columnCount() - 1)
-        ])
-        return
+        CONFIG.setSizes(
+            "subsViewColumns", [self.subEntries.columnWidth(i) for i in range(self.subEntries.columnCount() - 1)]
+        )
 
     ##
     #  Public Slots
@@ -94,7 +91,6 @@ class GuiSubtitleView(QWidget):
         """Clear previous content."""
         self._map = {}
         self.subEntries.clear()
-        return
 
     @pyqtSlot()
     def processNewTrackLoaded(self) -> None:
@@ -107,7 +103,7 @@ class GuiSubtitleView(QWidget):
                 item = QTreeWidgetItem()
                 item.setText(self.C_ID, str(self.subEntries.topLevelItemCount()))
                 item.setText(self.C_TIME, formatTS(frame.start))
-                item.setText(self.C_LENGTH, f"{frame.length/1000.0:.3f} s")
+                item.setText(self.C_LENGTH, f"{frame.length / 1000.0:.3f} s")
                 item.setData(self.C_DATA, self.D_INDEX, frame.index)
                 item.setFont(self.C_ID, font)
                 item.setFont(self.C_TIME, font)
@@ -115,14 +111,12 @@ class GuiSubtitleView(QWidget):
                 self._map[frame.index] = item
                 self._updateItemText(item, frame.text)
                 self.subEntries.addTopLevelItem(item)
-        return
 
     @pyqtSlot(FrameBase)
     def updateText(self, frame: FrameBase) -> None:
         """Update text for a specific frame."""
         if item := self._map.get(frame.index):
             self._updateItemText(item, frame.text)
-        return
 
     @pyqtSlot(Path, float)
     def writeSrtFile(self, path: Path, offset: float = 0.0) -> None:
@@ -131,7 +125,6 @@ class GuiSubtitleView(QWidget):
             writer = SRTSubs()
             SHARED.media.currentTrack.copyFrames(writer)
             writer.write(path, offset)
-        return
 
     @pyqtSlot(Path)
     def readSubsFile(self, path: Path) -> None:
@@ -143,7 +136,6 @@ class GuiSubtitleView(QWidget):
             for frame in track.iterFrames():
                 if item := self._map.get(frame.index):
                     self._updateItemText(item, frame.text)
-        return
 
     @pyqtSlot(int)
     def selectNearby(self, step: int) -> None:
@@ -153,12 +145,10 @@ class GuiSubtitleView(QWidget):
             if item := self.subEntries.topLevelItem(index):
                 self.subEntries.clearSelection()
                 self.subEntries.scrollTo(
-                    self.subEntries.indexFromItem(item, 0),
-                    QAbstractItemView.ScrollHint.PositionAtCenter
+                    self.subEntries.indexFromItem(item, 0), QAbstractItemView.ScrollHint.PositionAtCenter
                 )
                 item.setSelected(True)
                 self._itemClicked(self.subEntries.indexFromItem(item))
-        return
 
     ##
     #  Private Slots
@@ -176,7 +166,6 @@ class GuiSubtitleView(QWidget):
                         frame.setText(text)
                     self.updateText(frame)
                 self.subsFrameUpdated.emit(frame)
-        return
 
     ##
     #  Internal Functions
@@ -185,4 +174,3 @@ class GuiSubtitleView(QWidget):
     def _updateItemText(self, item: QTreeWidgetItem, text: list[str]) -> None:
         """Update the subtitle text for a given item."""
         item.setText(self.C_TEXT, "\u21b2".join(text))
-        return

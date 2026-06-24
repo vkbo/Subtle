@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -44,6 +45,7 @@ logger = logging.getLogger(__name__)
 
 
 class MediaData(QObject):
+    """Shared data object for media files and tracks."""
 
     mediaDataCleared = pyqtSignal()
     newMediaLoaded = pyqtSignal()
@@ -54,7 +56,6 @@ class MediaData(QObject):
         self._tracks: dict[str, MediaTrack] = {}
         self._track: MediaTrack | None = None
         self._file: MediaFile | None = None
-        return
 
     @property
     def hasMedia(self) -> bool:
@@ -77,7 +78,6 @@ class MediaData(QObject):
         self._track = None
         self._file = None
         self.mediaDataCleared.emit()
-        return
 
     def loadMediaFile(self, path: Path) -> None:
         """Load a media file into the data store."""
@@ -90,7 +90,6 @@ class MediaData(QObject):
                 if idx := track.trackID:
                     self._tracks[idx] = track
             self.newMediaLoaded.emit()
-        return
 
     def setCurrentTrack(self, trackID: str) -> None:
         """Set the current active track."""
@@ -98,7 +97,6 @@ class MediaData(QObject):
             self._track = track
             SHARED.setSpellLanguage(track)
             self.newTrackSelected.emit()
-        return
 
     def iterTracks(self) -> Iterable[MediaTrack]:
         """Iterate through all tracks."""
@@ -110,6 +108,7 @@ class MediaData(QObject):
 
 
 class MediaTrack:
+    """Represents a media track within a media file."""
 
     def __init__(self, media: MediaData, info: dict) -> None:
         self._media = media
@@ -144,8 +143,6 @@ class MediaTrack:
                 self._wrapper = SSASubs()
             else:
                 logger.info("Unsupported subtitle format: %s", codec_id or codec_nm)
-
-        return
 
     ##
     #  Properties
@@ -220,14 +217,12 @@ class MediaTrack:
     def setTrackFile(self, path: Path) -> None:
         """Set the extraction location of the track file."""
         self._path = path
-        return
 
     def readTrackFile(self) -> None:
         """Read the content of the track file."""
         if self._path and self._wrapper:
             self._wrapper.read(self._path)
             self._wrapper.checkFrames()
-        return
 
     def getFrame(self, index: int) -> FrameBase | None:
         """Return a subtitles frame."""
@@ -245,10 +240,8 @@ class MediaTrack:
         """Copy all frames from current track to target."""
         if self._wrapper:
             target.copyFrames(self._wrapper)
-        return
 
     def copyText(self, source: SubtitlesBase) -> None:
         """Copy all text from source to current track."""
         if self._wrapper:
             self._wrapper.copyText(source)
-        return

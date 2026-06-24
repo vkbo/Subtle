@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -36,10 +37,10 @@ logger = logging.getLogger(__name__)
 
 
 class SRTSubs(SubtitlesBase):
+    """SRT Subtitles."""
 
     def __init__(self) -> None:
         super().__init__()
-        return
 
     def read(self, path: Path) -> None:
         """Read SRT info from file."""
@@ -48,7 +49,6 @@ class SRTSubs(SubtitlesBase):
             self._path = path
         except Exception as exc:
             logger.error("Could not read SRT file: %s", self._path, exc_info=exc)
-        return
 
     def write(self, path: Path | None = None, offset: float = 0.0) -> None:
         """Writer SRT data to file."""
@@ -56,12 +56,12 @@ class SRTSubs(SubtitlesBase):
             if path is None:
                 path = self._path
             if path:
-                self._writeData(path, round(offset*1000.0))
+                self._writeData(path, round(offset * 1000.0))
         except Exception as exc:
             logger.error("Could not write SRT file: %s", self._path, exc_info=exc)
-        return
 
     def copyFrames(self, other: SubtitlesBase) -> None:
+        """Copy frames from another subtitle object."""
         return super()._copyFrames(SRTFrame, other)
 
     ##
@@ -81,7 +81,6 @@ class SRTSubs(SubtitlesBase):
                     block = []
             if block:
                 self._parseFrame(block)
-        return
 
     def _writeData(self, path: Path, offset: int = 0) -> None:
         """Write SRT text to file."""
@@ -105,7 +104,6 @@ class SRTSubs(SubtitlesBase):
             if skipped:
                 logger.warning("Skipping %d entries with no text", skipped)
             logger.info("Saved %d subtitle entries to SRT file with %d ms offset.", index, offset)
-        return
 
     def _parseFrame(self, block: list[str]) -> None:
         """Add a new frame to internal data."""
@@ -119,17 +117,16 @@ class SRTSubs(SubtitlesBase):
                     closeItalics([textCleanup(t) for t in block[2:]]),
                 )
             )
-        return
 
 
 class SRTFrame(FrameBase):
+    """SRT Subtitle Frame."""
 
     def __init__(self, index: int, start: int, end: int, text: list[str]) -> None:
         super().__init__(index)
         self._start = start
         self._end = end
         self._text = text
-        return
 
     @classmethod
     def fromFrame(cls, index: int, other: FrameBase) -> FrameBase:

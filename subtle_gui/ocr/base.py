@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -32,10 +33,12 @@ logger = logging.getLogger(__name__)
 
 
 class OCRBase(ABC):
+    """Base class for OCR implementations."""
 
     def __init__(self) -> None:
         return
 
     @abstractmethod
     def processImage(self, index: int, image: QImage, lang: list[str]) -> list[str]:
+        """Process an image and return the recognized text."""
         raise NotImplementedError

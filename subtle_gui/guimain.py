@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -48,6 +49,7 @@ logger = logging.getLogger(__name__)
 
 
 class GuiMain(QMainWindow):
+    """Main GUI Window."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -129,8 +131,6 @@ class GuiMain(QMainWindow):
         self.setCentralWidget(self.splitMain)
         self.resize(CONFIG.getSize("mainWindow"))
 
-        return
-
     ##
     #  Events
     ##
@@ -150,4 +150,3 @@ class GuiMain(QMainWindow):
         CONFIG.save()
         CONFIG.cleanup()
         event.accept()
-        return

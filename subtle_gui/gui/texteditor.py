@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -28,14 +29,13 @@ from subtle_gui.gui.highlighter import GuiDocHighlighter, TextBlockData
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QShortcut, QTextBlock, QTextBlockFormat, QTextCharFormat, QTextCursor
-from PyQt6.QtWidgets import (
-    QComboBox, QMenu, QTextEdit, QToolBar, QToolButton, QVBoxLayout, QWidget
-)
+from PyQt6.QtWidgets import QComboBox, QMenu, QTextEdit, QToolBar, QToolButton, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
 
 
 class GuiTextEditor(QWidget):
+    """GUI Text Editor."""
 
     newTextForFrame = pyqtSignal(FrameBase)
     requestNewFrame = pyqtSignal(int)
@@ -112,8 +112,6 @@ class GuiTextEditor(QWidget):
         self.keyContext.setContext(Qt.ShortcutContext.WidgetShortcut)
         self.keyContext.activated.connect(self._openContextFromCursor)
 
-        return
-
     ##
     #  Public Slots
     ##
@@ -141,8 +139,6 @@ class GuiTextEditor(QWidget):
 
         self._block = False
 
-        return
-
     @pyqtSlot(str)
     def updateSpellLanguage(self, language: str) -> None:
         """Update the spell check language box."""
@@ -152,7 +148,6 @@ class GuiTextEditor(QWidget):
         else:
             self.spellLang.setCurrentIndex(0)
         self.spellLang.blockSignals(False)
-        return
 
     ##
     #  Private Slots
@@ -164,26 +159,22 @@ class GuiTextEditor(QWidget):
         if self._frame and not self._block:
             self._frame.setText(self._getText())
             self.newTextForFrame.emit(self._frame)
-        return
 
     @pyqtSlot(int)
     def _spellLangChanged(self, index: int) -> None:
         """Process change in spell check language."""
         SHARED.spelling.setLanguage(self.spellLang.currentData())
         self.highlight.rehighlight()
-        return
 
     @pyqtSlot()
     def _requestPrevious(self) -> None:
         """Process Page Up key press."""
         self.requestNewFrame.emit(-1)
-        return
 
     @pyqtSlot()
     def _requestNext(self) -> None:
         """Process Page Down key press."""
         self.requestNewFrame.emit(1)
-        return
 
     @pyqtSlot()
     def _formatItalic(self) -> None:
@@ -214,20 +205,16 @@ class GuiTextEditor(QWidget):
 
             self.textEdit.setTextCursor(cursor)
 
-        return
-
     @pyqtSlot()
     def _insertNoteSymbol(self) -> None:
         """Process Ctrl+J key press."""
         cursor = self.textEdit.textCursor()
         cursor.insertText("\u266a")
-        return
 
     @pyqtSlot()
     def _openContextFromCursor(self) -> None:
         """Open the spell check context menu at the cursor."""
         self._openContextMenu(self.textEdit.cursorRect().center())
-        return
 
     @pyqtSlot("QPoint")
     def _openContextMenu(self, pos: QPoint) -> None:
@@ -244,17 +231,13 @@ class GuiTextEditor(QWidget):
             block = pCursor.block()
             sCursor = self.textEdit.textCursor()
             sCursor.setPosition(block.position() + cPos)
-            sCursor.movePosition(
-                QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, cLen
-            )
+            sCursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, cLen)
             if suggest:
                 ctxMenu.addSeparator()
                 ctxMenu.addAction(self.tr("Spelling Suggestion(s)"))
                 for option in suggest[:15]:
                     if action := ctxMenu.addAction(option):
-                        action.triggered.connect(
-                            lambda _, option=option: self._correctWord(sCursor, option)
-                        )
+                        action.triggered.connect(lambda _, option=option: self._correctWord(sCursor, option))
             else:
                 ctxMenu.addAction(self.tr("No Suggestions"))
 
@@ -268,8 +251,6 @@ class GuiTextEditor(QWidget):
         if viewport := self.textEdit.viewport():
             ctxMenu.exec(viewport.mapToGlobal(pos))
             ctxMenu.deleteLater()
-
-        return
 
     ##
     #  Internal Functions
@@ -307,7 +288,6 @@ class GuiTextEditor(QWidget):
         cursor.endEditBlock()
         cursor.setPosition(pos)
         self.textEdit.setTextCursor(cursor)
-        return
 
     def _addWord(self, word: str, block: QTextBlock, save: bool) -> None:
         """Slot for the spell check context menu triggered when the user
@@ -317,7 +297,6 @@ class GuiTextEditor(QWidget):
         logger.debug("Added '%s' to session dictionary, saved = %s", word, str(save))
         SHARED.spelling.addWord(word, save=save)
         self.highlight.rehighlightBlock(block)
-        return
 
     def _spellErrorAtPos(self, pos: int) -> tuple[str, int, int, list[str]]:
         """Check if there is a misspelled word at a given position in

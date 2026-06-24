@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 from enum import Enum
@@ -27,23 +28,25 @@ from PyQt6.QtCore import QT_TRANSLATE_NOOP, QCoreApplication
 
 
 def trConst(text: str) -> str:
-    """Wrapper function for locally translating constants."""
+    """Wrap locally translating constants."""
     return QCoreApplication.translate("Constant", text)
 
 
 class MediaType(Enum):
+    """Media types."""
 
     VIDEO = 0
     AUDIO = 1
-    SUBS  = 2
+    SUBS = 2
     OTHER = 4
 
 
 class GuiLabels:
+    """GUI labels."""
 
     MEDIA_TYPES: Final[dict[MediaType, str]] = {
         MediaType.VIDEO: QT_TRANSLATE_NOOP("Constant", "Video"),
         MediaType.AUDIO: QT_TRANSLATE_NOOP("Constant", "Audio"),
-        MediaType.SUBS:  QT_TRANSLATE_NOOP("Constant", "Subtitles"),
+        MediaType.SUBS: QT_TRANSLATE_NOOP("Constant", "Subtitles"),
         MediaType.OTHER: QT_TRANSLATE_NOOP("Constant", "Other"),
     }

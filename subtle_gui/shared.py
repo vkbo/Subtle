@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 class SharedData(QObject):
+    """Shared Data Object."""
 
     spellLanguageChanged = pyqtSignal(str)
 
@@ -45,7 +47,6 @@ class SharedData(QObject):
         self._ocr: OCRBase | None = None
         self._spell: SpellEnchant | None = None
         self._icons: GuiIcons | None = None
-        return
 
     @property
     def media(self) -> MediaData:
@@ -75,13 +76,7 @@ class SharedData(QObject):
             return self._icons
         raise RuntimeError("Shared data object not yet initialised.")
 
-    def initSharedData(
-        self,
-        media: MediaData,
-        ocr: OCRBase,
-        spell: SpellEnchant,
-        icons: GuiIcons
-    ) -> None:
+    def initSharedData(self, media: MediaData, ocr: OCRBase, spell: SpellEnchant, icons: GuiIcons) -> None:
         """Init the shared data object. This must be called right after
         the GUI is created.
         """
@@ -89,7 +84,6 @@ class SharedData(QObject):
         self._ocr = ocr
         self._spell = spell
         self._icons = icons
-        return
 
     def setSpellLanguage(self, track: MediaTrack | None) -> None:
         """Set the current spell checking language."""
@@ -100,4 +94,3 @@ class SharedData(QObject):
         else:
             self.spelling.setLanguage(None)
             self.spellLanguageChanged.emit("None")
-        return

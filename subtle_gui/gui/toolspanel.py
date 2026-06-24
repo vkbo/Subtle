@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -29,14 +30,24 @@ from subtle_gui.constants import MediaType
 
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import (
-    QCheckBox, QDoubleSpinBox, QFormLayout, QGroupBox, QHBoxLayout, QLineEdit,
-    QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
+    QCheckBox,
+    QDoubleSpinBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class GuiToolsPanel(QWidget):
+    """GUI Tools Panel."""
 
     D_SUBS_PATH = Qt.ItemDataRole.UserRole
 
@@ -147,8 +158,6 @@ class GuiToolsPanel(QWidget):
 
         self.setLayout(self.outerBox)
 
-        return
-
     ##
     #  Public Slots
     ##
@@ -162,7 +171,6 @@ class GuiToolsPanel(QWidget):
             self.mediaFile.setText(path.name)
             self._scanForSubs(path)
         self._updateTrackInfo()
-        return
 
     @pyqtSlot()
     def processNewTrackLoaded(self) -> None:
@@ -171,7 +179,6 @@ class GuiToolsPanel(QWidget):
             self.srtForced.setChecked(track.forced)
             self.srtSDH.setChecked(track.sdh)
             self._updateTrackInfo()
-        return
 
     ##
     #  Private Slots
@@ -187,7 +194,6 @@ class GuiToolsPanel(QWidget):
                 self.requestSrtSave.emit(folder / name, self.srtOffset.value())
         except Exception as exc:
             logger.error("Failed to prepare subtitles folder", exc_info=exc)
-        return
 
     @pyqtSlot()
     def _clickedLoadSubs(self) -> None:
@@ -195,7 +201,6 @@ class GuiToolsPanel(QWidget):
         if items := self.subsList.selectedItems():
             if (path := Path(items[0].data(self.D_SUBS_PATH))).is_file():
                 self.requestSubsLoad.emit(path)
-        return
 
     @pyqtSlot()
     def _updateTrackInfo(self) -> None:
@@ -219,8 +224,6 @@ class GuiToolsPanel(QWidget):
             self.srtSaveDir.setText(str(folder))
             self.srtFileName.setText(".".join(bits))
 
-        return
-
     ##
     #  Internal Functions
     ##
@@ -242,11 +245,7 @@ class GuiToolsPanel(QWidget):
             for folder in folders:
                 try:
                     for entry in folder.iterdir():
-                        if (
-                            entry.is_file()
-                            and entry.suffix == ".srt"
-                            and entry.stem.lower().startswith(prefix)
-                        ):
+                        if entry.is_file() and entry.suffix == ".srt" and entry.stem.lower().startswith(prefix):
                             item = QListWidgetItem()
                             item.setText(str(entry.relative_to(root)))
                             item.setData(self.D_SUBS_PATH, entry)
@@ -256,5 +255,3 @@ class GuiToolsPanel(QWidget):
 
         except Exception as exc:
             logger.error("Could not scan path: %s", root, exc_info=exc)
-
-        return

@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -25,10 +26,7 @@ import re
 
 from subtle_gui import SHARED
 
-from PyQt6.QtGui import (
-    QColor, QSyntaxHighlighter, QTextBlockUserData, QTextCharFormat,
-    QTextDocument
-)
+from PyQt6.QtGui import QColor, QSyntaxHighlighter, QTextBlockUserData, QTextCharFormat, QTextDocument
 from PyQt6.QtWidgets import QApplication
 
 logger = logging.getLogger(__name__)
@@ -40,6 +38,7 @@ IGNORE_PATTERNS = [
 
 
 class GuiDocHighlighter(QSyntaxHighlighter):
+    """GUI Document Syntax Highlighter."""
 
     def __init__(self, document: QTextDocument) -> None:
         super().__init__(document)
@@ -50,8 +49,6 @@ class GuiDocHighlighter(QSyntaxHighlighter):
 
         self._syntaxCol = QTextCharFormat()
         self._syntaxCol.setForeground(QApplication.palette().highlight().color())
-
-        return
 
     def highlightBlock(self, text: str) -> None:
         """Highlight a single block."""
@@ -66,17 +63,15 @@ class GuiDocHighlighter(QSyntaxHighlighter):
                 cFmt.merge(self._spellErr)
                 self.setFormat(x, 1, cFmt)
 
-        return
-
 
 class TextBlockData(QTextBlockUserData):
+    """Text Block User Data."""
 
     __slots__ = ("_spellErrors",)
 
     def __init__(self) -> None:
         super().__init__()
         self._spellErrors: list[tuple[int, int]] = []
-        return
 
     @property
     def spellErrors(self) -> list[tuple[int, int]]:
@@ -93,12 +88,9 @@ class TextBlockData(QTextBlockUserData):
         for rX in IGNORE_PATTERNS:
             for match in rX.finditer(text):
                 if (s := match.start(0)) >= 0 and (e := match.end(0)) >= 0:
-                    text = text[:s] + " "*(e - s) + text[e:]
+                    text = text[:s] + " " * (e - s) + text[e:]
 
         for match in re.finditer(SPELL_RX, text.replace("_", " ")):
-            if (
-                (word := match.group(0))
-                and not (word.isnumeric() or word.isupper() or checker.checkWord(word))
-            ):
+            if (word := match.group(0)) and not (word.isnumeric() or word.isupper() or checker.checkWord(word)):
                 self._spellErrors.append((match.start(0), match.end(0)))
         return self._spellErrors

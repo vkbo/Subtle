@@ -17,7 +17,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
 import logging
@@ -34,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class GuiFileTree(QTreeView):
+    """GUI File Tree."""
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
@@ -54,18 +56,13 @@ class GuiFileTree(QTreeView):
 
         self.doubleClicked.connect(self._itemDoubleClicked)
 
-        return
-
     ##
     #  Methods
     ##
 
     def saveSettings(self) -> None:
         """Save widget settings."""
-        CONFIG.setSizes("fileTreeColumns", [
-            self.columnWidth(i) for i in range(self._model.columnCount())
-        ])
-        return
+        CONFIG.setSizes("fileTreeColumns", [self.columnWidth(i) for i in range(self._model.columnCount())])
 
     ##
     #  Private Slots
@@ -78,11 +75,9 @@ class GuiFileTree(QTreeView):
             if path != self._current:
                 SHARED.media.loadMediaFile(path)
                 self._current = path
-        return
 
     @pyqtSlot(str)
     def _directoryLoaded(self, path: str) -> None:
         """Process model finished loading directory."""
         if path == "/":
             self.expand(self._model.index(path))
-        return

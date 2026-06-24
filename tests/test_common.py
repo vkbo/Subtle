@@ -17,21 +17,22 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
+
 from __future__ import annotations
 
-from subtle.common import closeItalics
+from subtle_gui.common import closeItalics
 
 
 def testCommon_closeItalics():
     """Test the closeItalics function."""
-    assert closeItalics(["<i>Foo", "Bar</i>"]) == [
-        "<i>Foo</i>", "<i>Bar</i>"
-    ]
+    assert closeItalics(["<i>Foo", "Bar</i>"]) == ["<i>Foo</i>", "<i>Bar</i>"]
     assert closeItalics(["<i>Foo", "Bar", "Baz</i>"]) == [
-        "<i>Foo</i>", "<i>Bar</i>", "<i>Baz</i>",
+        "<i>Foo</i>",
+        "<i>Bar</i>",
+        "<i>Baz</i>",
     ]
     assert closeItalics(["<i>Foo</i> foo <i>foo", "Bar</i>"]) == [
-        "<i>Foo</i> foo <i>foo</i>", "<i>Bar</i>",
+        "<i>Foo</i> foo <i>foo</i>",
+        "<i>Bar</i>",
     ]
-    return
