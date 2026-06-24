@@ -28,7 +28,7 @@ from enum import IntEnum
 from hashlib import sha1
 from typing import TYPE_CHECKING
 
-from subtle import CONFIG
+from subtle_gui import CONFIG
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

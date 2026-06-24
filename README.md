@@ -20,21 +20,27 @@ The app is developed on Debian Linux, and I have no idea if it runs on other sys
 browser certainly assumes that file system root is `/`, so it probably doesn't work on Windows
 without modification.
 
-## Usage
+## Installation
 
-Install the PyQt6 and enchant dependencies, either from distro repo or in a Python virtual env
-using the `requirements.txt` file.
+Install with:
 
-Install MkvToolNix and Tesseract. For Debian, this is:
+```bash
+pipx install subtle-gui
+```
+
+Launch with:
+
+```bash
+subtle
+```
+
+### Prerequisites
+
+Subtle relies on MkvToolNix and Tesseract OCR for processing the media files and performing the OCR
+scanning.
+
+For Debian Linux, they can be installed with:
 
 ```bash
 sudo apt install mkvtoolnix tesseract-ocr
 ```
-
-Launch the Subtle start script from the root of the source:
-
-```bash
-./subtle.py
-```
-
-Add `--info` or `--debug` for more log output.

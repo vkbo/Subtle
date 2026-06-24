@@ -25,8 +25,8 @@ import re
 
 from typing import TYPE_CHECKING, NamedTuple
 
-from subtle.common import closeItalics, decodeTS, regexCleanup, simplified, textCleanup
-from subtle.formats.base import FrameBase, SubtitlesBase
+from subtle_gui.common import closeItalics, decodeTS, regexCleanup, simplified, textCleanup
+from subtle_gui.formats.base import FrameBase, SubtitlesBase
 
 if TYPE_CHECKING:
     from pathlib import Path

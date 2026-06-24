@@ -27,24 +27,24 @@ import sys
 
 from typing import TYPE_CHECKING
 
-from subtle.config import Config
-from subtle.shared import SharedData
+from subtle_gui.config import Config
+from subtle_gui.shared import SharedData
 
 from PyQt6.QtWidgets import QApplication
 
 if TYPE_CHECKING:  # pragma: no cover
-    from subtle.guimain import GuiMain
+    from subtle_gui.guimain import GuiMain
 
 # Package Meta
 # ============
 
-__package__    = "subtle-gui"
+__package__    = "subtle_gui"
 __copyright__  = "Copyright (C) Veronica Berglyd Olsen"
 __license__    = "GPLv3"
 __author__     = "Veronica Berglyd Olsen"
 __maintainer__ = "Veronica Berglyd Olsen"
 __email__      = "code@vkbo.net"
-__version__    = "26.1.0"
+__version__    = "26.1.1"
 __date__       = "2026-06-24"
 
 logger = logging.getLogger(__name__)
@@ -100,7 +100,7 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
         "This program is distributed in the hope that it will be useful,\n"
         "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
         "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the\n"
-        "GNU General Public Licence for more details.\n"
+        "GNU General Public License for more details.\n"
         "\n"
         "Usage:\n"
         " -h, --help     Print this message.\n"
@@ -160,12 +160,12 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
         cHandle.setFormatter(logging.Formatter(fmt=logFmt, style="{"))
         pkgLogger.addHandler(cHandle)
 
-    logger.info("Starting Subtle %s (%s)", __version__, __date__)
+    logger.info("Starting Subtle %s [%s]", __version__, __date__)
 
     # Finish initialising config
     CONFIG.initialise()
 
-    from subtle.guimain import GuiMain
+    from subtle_gui.guimain import GuiMain
 
     app = QApplication([CONFIG.appName])
     app.setApplicationName(CONFIG.appName)

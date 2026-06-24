@@ -1,10 +1,24 @@
 # Subtle Changelog
 
-## Version 0.1.0 [2024-10-11]
+## Version 26.1.1 [2026-06-24]
 
 ### Release Notes
 
-First test version of the app with basic functionality. It can read media files, and extract SRT,
+Small bugfix release that renames the root package to `subtle_gui` since a project named `subtle`
+already exists.
+
+### Detailed Changelog
+
+* Renames the installed package to `subtle_gui`.
+* Updates main readme with PyPI info.
+
+----
+
+## Version 26.1 [2026-06-24]
+
+### Release Notes
+
+Initial release of the app with basic functionality. It can read media files, and extract SRT,
 PGS and SSA subtitles. PGS subtitles can be OCR scanned to extract the text, which can then be
 edited and spell checked. Italics is the only supported formatting.
 

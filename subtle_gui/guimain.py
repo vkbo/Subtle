@@ -25,17 +25,17 @@ import sys
 
 from typing import TYPE_CHECKING
 
-from subtle import CONFIG, SHARED
-from subtle.core.icons import GuiIcons
-from subtle.core.media import MediaData
-from subtle.core.spellcheck import SpellEnchant
-from subtle.gui.filetree import GuiFileTree
-from subtle.gui.imageviewer import GuiImageViewer
-from subtle.gui.mediaview import GuiMediaView
-from subtle.gui.subsview import GuiSubtitleView
-from subtle.gui.texteditor import GuiTextEditor
-from subtle.gui.toolspanel import GuiToolsPanel
-from subtle.ocr.tesseract import TesseractOCR
+from subtle_gui import CONFIG, SHARED
+from subtle_gui.core.icons import GuiIcons
+from subtle_gui.core.media import MediaData
+from subtle_gui.core.spellcheck import SpellEnchant
+from subtle_gui.gui.filetree import GuiFileTree
+from subtle_gui.gui.imageviewer import GuiImageViewer
+from subtle_gui.gui.mediaview import GuiMediaView
+from subtle_gui.gui.subsview import GuiSubtitleView
+from subtle_gui.gui.texteditor import GuiTextEditor
+from subtle_gui.gui.toolspanel import GuiToolsPanel
+from subtle_gui.ocr.tesseract import TesseractOCR
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon

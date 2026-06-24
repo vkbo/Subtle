@@ -25,7 +25,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from subtle.common import formatTS
+from subtle_gui.common import formatTS
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

@@ -25,11 +25,11 @@ import shutil
 
 from typing import TYPE_CHECKING
 
-from subtle import CONFIG, SHARED
-from subtle.common import formatTS
-from subtle.constants import GuiLabels, MediaType, trConst
-from subtle.core.mediafile import EXTRACTABLE, SUBTITLE_FILE
-from subtle.core.mkvextract import MkvExtract
+from subtle_gui import CONFIG, SHARED
+from subtle_gui.common import formatTS
+from subtle_gui.constants import GuiLabels, MediaType, trConst
+from subtle_gui.core.mediafile import EXTRACTABLE, SUBTITLE_FILE
+from subtle_gui.core.mkvextract import MkvExtract
 
 from PyQt6.QtCore import QModelIndex, pyqtSlot
 from PyQt6.QtWidgets import (
@@ -40,7 +40,7 @@ from PyQt6.QtWidgets import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from subtle.core.media import MediaTrack
+    from subtle_gui.core.media import MediaTrack
 
 logger = logging.getLogger(__name__)
 

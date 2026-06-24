@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 
-from subtle.formats.base import FrameBase
+from subtle_gui.formats.base import FrameBase
 
 from PyQt6.QtCore import QRect, QRectF, Qt, pyqtSlot
 from PyQt6.QtGui import QPixmap, QResizeEvent

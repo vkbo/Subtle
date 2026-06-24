@@ -24,7 +24,7 @@ import logging
 
 from pathlib import Path
 
-from subtle import CONFIG, SHARED
+from subtle_gui import CONFIG, SHARED
 
 from PyQt6.QtCore import QModelIndex, pyqtSlot
 from PyQt6.QtGui import QFileSystemModel
