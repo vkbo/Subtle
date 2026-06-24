@@ -12,29 +12,29 @@ jobs:
   checkSyntax:
     runs-on: ubuntu-latest
     steps:
-      - name: Python Setup
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3"
-          architecture: x64
-
       - name: Checkout Source
         uses: actions/checkout@v7
 
+      - name: Install UV and Python
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          python-version: "3.13"
+          enable-cache: true
+
       - name: Install Dependencies
-        run: pip install -r requirements.txt -r requirements-dev.txt
+        run: uv sync --locked
 
       - name: Ruff Check
         run: |
-          ruff --version
-          ruff check
+          uv run ruff --version
+          uv run ruff check
 
       - name: Pyright Check
         run: |
-          pyright --version
-          pyright
+          uv run pyright --version
+          uv run pyright
 
       - name: Isort Check
         run: |
-          isort --version
-          isort --check .
+          uv run isort --version
+          uv run isort --check .
