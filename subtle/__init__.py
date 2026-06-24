@@ -44,8 +44,7 @@ __license__    = "GPLv3"
 __author__     = "Veronica Berglyd Olsen"
 __maintainer__ = "Veronica Berglyd Olsen"
 __email__      = "code@vkbo.net"
-__version__    = "0.1.0"
-__hexversion__ = "0x000100a0"
+__version__    = "26.1"
 __date__       = "2026-06-24"
 
 logger = logging.getLogger(__name__)
@@ -161,7 +160,7 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
         cHandle.setFormatter(logging.Formatter(fmt=logFmt, style="{"))
         pkgLogger.addHandler(cHandle)
 
-    logger.info("Starting Subtle %s (%s) %s", __version__, __hexversion__, __date__)
+    logger.info("Starting Subtle %s (%s)", __version__, __date__)
 
     # Finish initialising config
     CONFIG.initialise()
