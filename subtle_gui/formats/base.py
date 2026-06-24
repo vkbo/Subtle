@@ -17,7 +17,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
 
 from __future__ import annotations
 
@@ -38,14 +38,16 @@ logger = logging.getLogger(__name__)
 
 
 class SubtitlesBase(ABC):
+    """Base class for subtitle formats."""
+
     __slots__ = ("_frames", "_path")
 
     def __init__(self) -> None:
         self._path: Path | None = None
         self._frames: list[FrameBase] = []
-        return
 
     def __repr__(self) -> str:
+        """Return a string representation of the subtitle object."""
         return f"<{self.__class__.__name__}: id={id(self)}>"
 
     def frameCount(self) -> int:
@@ -78,18 +80,20 @@ class SubtitlesBase(ABC):
                     (tn - ts) / 1000.0,
                     (te - ts) / 1000.0,
                 )
-        return
 
     @abstractmethod
     def read(self, path: Path) -> None:
+        """Read subtitles from a file."""
         raise NotImplementedError
 
     @abstractmethod
     def write(self, path: Path | None = None) -> None:
+        """Write subtitles to a file."""
         raise NotImplementedError
 
     @abstractmethod
     def copyFrames(self, other: SubtitlesBase) -> None:
+        """Copy frames from another subtitle object."""
         raise NotImplementedError
 
     def copyText(self, other: SubtitlesBase) -> None:
@@ -110,18 +114,17 @@ class SubtitlesBase(ABC):
                     if (pos := frame.start + offset) in frames:
                         frames[pos].setText(frame.text)
 
-        return
-
     def _copyFrames(self, frameType: type[FrameBase], other: SubtitlesBase) -> None:
         """Copy frame content from other class. Must be implemented in
         subclasses by passing its own FrameBase implementation as
         frameType.
         """
         self._frames = [frameType.fromFrame(n, frame) for n, frame in enumerate(other.iterFrames())]
-        return
 
 
 class FrameBase(ABC):
+    """Base class for subtitle frames."""
+
     __slots__ = ("_end", "_index", "_start", "_text")
 
     def __init__(self, index: int) -> None:
@@ -129,7 +132,6 @@ class FrameBase(ABC):
         self._start: int = -1
         self._end: int = -1
         self._text: list[str] = []
-        return
 
     @classmethod
     @abstractmethod
@@ -171,7 +173,6 @@ class FrameBase(ABC):
     def setText(self, text: list[str]) -> None:
         """Set the frame's text."""
         self._text = [t.strip() for t in text if t.strip()]
-        return
 
     def setRange(self, *, start: int | None = None, end: int | None = None) -> None:
         """Update the start and end times."""
@@ -179,7 +180,6 @@ class FrameBase(ABC):
             self._start = start
         if end:
             self._end = end
-        return
 
     @abstractmethod
     def getImage(self) -> QImage:

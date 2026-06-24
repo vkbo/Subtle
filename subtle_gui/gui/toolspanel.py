@@ -17,7 +17,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
 
 from __future__ import annotations
 
@@ -47,6 +47,8 @@ logger = logging.getLogger(__name__)
 
 
 class GuiToolsPanel(QWidget):
+    """GUI Tools Panel."""
+
     D_SUBS_PATH = Qt.ItemDataRole.UserRole
 
     requestSrtSave = pyqtSignal(Path, float)
@@ -156,8 +158,6 @@ class GuiToolsPanel(QWidget):
 
         self.setLayout(self.outerBox)
 
-        return
-
     ##
     #  Public Slots
     ##
@@ -171,7 +171,6 @@ class GuiToolsPanel(QWidget):
             self.mediaFile.setText(path.name)
             self._scanForSubs(path)
         self._updateTrackInfo()
-        return
 
     @pyqtSlot()
     def processNewTrackLoaded(self) -> None:
@@ -180,7 +179,6 @@ class GuiToolsPanel(QWidget):
             self.srtForced.setChecked(track.forced)
             self.srtSDH.setChecked(track.sdh)
             self._updateTrackInfo()
-        return
 
     ##
     #  Private Slots
@@ -196,7 +194,6 @@ class GuiToolsPanel(QWidget):
                 self.requestSrtSave.emit(folder / name, self.srtOffset.value())
         except Exception as exc:
             logger.error("Failed to prepare subtitles folder", exc_info=exc)
-        return
 
     @pyqtSlot()
     def _clickedLoadSubs(self) -> None:
@@ -204,7 +201,6 @@ class GuiToolsPanel(QWidget):
         if items := self.subsList.selectedItems():
             if (path := Path(items[0].data(self.D_SUBS_PATH))).is_file():
                 self.requestSubsLoad.emit(path)
-        return
 
     @pyqtSlot()
     def _updateTrackInfo(self) -> None:
@@ -227,8 +223,6 @@ class GuiToolsPanel(QWidget):
 
             self.srtSaveDir.setText(str(folder))
             self.srtFileName.setText(".".join(bits))
-
-        return
 
     ##
     #  Internal Functions
@@ -261,5 +255,3 @@ class GuiToolsPanel(QWidget):
 
         except Exception as exc:
             logger.error("Could not scan path: %s", root, exc_info=exc)
-
-        return

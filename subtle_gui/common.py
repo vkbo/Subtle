@@ -17,7 +17,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
 
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ def checkInt(value: Any, default: int) -> int:
 
 
 def formatInt(value: int) -> str:
-    """Formats an integer with k, M, G etc."""
+    """Format an integer with k, M, G etc."""
     if not isinstance(value, int):
         return "ERR"
 
@@ -75,7 +75,7 @@ def textCleanup(text: str) -> str:
 
 
 def regexCleanup(text: str, patterns: list[tuple[re.Pattern, str]]) -> str:
-    """Replaces all occurrences of match group 1 in patterns."""
+    """Replace all occurrences of match group 1 in patterns."""
     for regEx, value in patterns:
         matches = [
             (s, e, value) for match in regEx.finditer(text) if (s := match.start(1)) >= 0 and (e := match.end(1)) >= 0
@@ -121,7 +121,7 @@ def jsonEncode(data: dict | list | tuple, n: int = 0, nmax: int = 0) -> str:
         elif first in ("{", "["):
             n += 1
             indent = "\n" + "  " * n
-            if n > nmax and nmax > 0:
+            if n > nmax > 0:
                 buffer.append(chunk)
             else:
                 buffer.append(chunk[0] + indent + chunk[1:])
@@ -129,13 +129,13 @@ def jsonEncode(data: dict | list | tuple, n: int = 0, nmax: int = 0) -> str:
         elif first in ("}", "]"):
             n -= 1
             indent = "\n" + "  " * n
-            if n >= nmax and nmax > 0:
+            if n >= nmax > 0:
                 buffer.append(chunk)
             else:
                 buffer.append(indent + chunk)
 
         elif first == ",":
-            if n > nmax and nmax > 0:
+            if n > nmax > 0:
                 buffer.append(chunk)
             else:
                 buffer.append(chunk[0] + indent + chunk[1:].lstrip())

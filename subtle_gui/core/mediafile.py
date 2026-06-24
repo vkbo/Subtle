@@ -17,7 +17,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
 
 from __future__ import annotations
 
@@ -39,6 +39,8 @@ logger = logging.getLogger(__name__)
 
 
 class ContainerType(IntEnum):
+    """Container Type Enum."""
+
     UNKNOWN = 0
     AVI = 5
     MATROSKA = 17
@@ -77,7 +79,6 @@ class MediaFile:
         self._id = sha1(bytes(file), usedforsecurity=False).hexdigest()
         self._info = {}
         self._process()
-        return
 
     @property
     def filePath(self) -> Path:
@@ -145,4 +146,3 @@ class MediaFile:
         except Exception as e:
             logger.error("Failed to load media file info", exc_info=e)
             self._info = {}
-        return

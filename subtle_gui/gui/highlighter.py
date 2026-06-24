@@ -17,7 +17,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
 
 from __future__ import annotations
 
@@ -38,6 +38,8 @@ IGNORE_PATTERNS = [
 
 
 class GuiDocHighlighter(QSyntaxHighlighter):
+    """GUI Document Syntax Highlighter."""
+
     def __init__(self, document: QTextDocument) -> None:
         super().__init__(document)
 
@@ -47,8 +49,6 @@ class GuiDocHighlighter(QSyntaxHighlighter):
 
         self._syntaxCol = QTextCharFormat()
         self._syntaxCol.setForeground(QApplication.palette().highlight().color())
-
-        return
 
     def highlightBlock(self, text: str) -> None:
         """Highlight a single block."""
@@ -63,16 +63,15 @@ class GuiDocHighlighter(QSyntaxHighlighter):
                 cFmt.merge(self._spellErr)
                 self.setFormat(x, 1, cFmt)
 
-        return
-
 
 class TextBlockData(QTextBlockUserData):
+    """Text Block User Data."""
+
     __slots__ = ("_spellErrors",)
 
     def __init__(self) -> None:
         super().__init__()
         self._spellErrors: list[tuple[int, int]] = []
-        return
 
     @property
     def spellErrors(self) -> list[tuple[int, int]]:

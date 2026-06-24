@@ -17,7 +17,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
 
 from __future__ import annotations
 
@@ -53,6 +53,8 @@ logger = logging.getLogger(__name__)
 
 
 class GuiMediaView(QWidget):
+    """GUI Media View."""
+
     C_TRACK = 0
     C_TYPE = 1
     C_CODEC = 2
@@ -121,8 +123,6 @@ class GuiMediaView(QWidget):
 
         self.setLayout(self.outerBox)
 
-        return
-
     ##
     #  Methods
     ##
@@ -132,7 +132,6 @@ class GuiMediaView(QWidget):
         CONFIG.setSizes(
             "mediaViewColumns", [self.tracksView.columnWidth(i) for i in range(self.tracksView.columnCount())]
         )
-        return
 
     ##
     #  Public Slots
@@ -152,7 +151,6 @@ class GuiMediaView(QWidget):
             self._setTrackInfo(track, item)
             self.tracksView.addTopLevelItem(item)
             self._map[track.trackID] = item
-        return
 
     ##
     #  Private Slots
@@ -170,7 +168,6 @@ class GuiMediaView(QWidget):
                     tracks.append((idx, path))
                     track.setTrackFile(path)
             self._runTrackExtraction(file.filePath, tracks)
-        return
 
     @pyqtSlot()
     def _cancelExtract(self) -> None:
@@ -180,7 +177,6 @@ class GuiMediaView(QWidget):
             self.progressBar.setValue(0)
             self._extracted.clear()
             self._extractWorker = None
-        return
 
     @pyqtSlot(QModelIndex)
     def _itemDoubleClicked(self, index: QModelIndex) -> None:
@@ -195,13 +191,11 @@ class GuiMediaView(QWidget):
                     self._emitTrack = idx
             if idx in self._extracted and not self._emitTrack:
                 SHARED.media.setCurrentTrack(idx)
-        return
 
     @pyqtSlot(int)
     def _extractProgress(self, value: int) -> None:
         """Process track extraction progress count."""
         self.progressBar.setValue(value)
-        return
 
     @pyqtSlot()
     def _extractFinished(self) -> None:
@@ -223,8 +217,6 @@ class GuiMediaView(QWidget):
             SHARED.media.setCurrentTrack(self._emitTrack)
             self._emitTrack = None
 
-        return
-
     ##
     #  Internal Functions
     ##
@@ -244,7 +236,6 @@ class GuiMediaView(QWidget):
             item.setText(self.C_ENABLED, self._trYes if track.enabled else "")
             item.setText(self.C_DEFAULT, self._trYes if track.default else "")
             item.setText(self.C_FORCED, self._trYes if track.forced else "")
-        return
 
     def _runTrackExtraction(self, path: Path, tracks: list[tuple[str, Path]]) -> None:
         """Call for extraction for a set of tracks."""

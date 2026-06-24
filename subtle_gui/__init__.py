@@ -17,7 +17,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
 
 from __future__ import annotations
 
@@ -39,14 +39,16 @@ if TYPE_CHECKING:  # pragma: no cover
 # Package Meta
 # ============
 
-__package__ = "subtle_gui"
-__copyright__ = "Copyright (C) Veronica Berglyd Olsen"
-__license__ = "GPLv3"
-__author__ = "Veronica Berglyd Olsen"
+# fmt: off
+__package__    = "subtle_gui"
+__copyright__  = "Copyright (C) Veronica Berglyd Olsen"
+__license__    = "GPLv3"
+__author__     = "Veronica Berglyd Olsen"
 __maintainer__ = "Veronica Berglyd Olsen"
-__email__ = "code@vkbo.net"
-__version__ = "26.1.1"
-__date__ = "2026-06-24"
+__email__      = "code@vkbo.net"
+__version__    = "26.1.1"
+__date__       = "2026-06-24"
+# fmt: on
 
 logger = logging.getLogger(__name__)
 

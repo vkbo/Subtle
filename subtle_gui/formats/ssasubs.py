@@ -17,7 +17,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
 
 from __future__ import annotations
 
@@ -44,6 +44,8 @@ RX_REPLACE = [
 
 
 class EventFormat(NamedTuple):
+    """Format of an SSA event."""
+
     length: int
     start: int
     end: int
@@ -51,11 +53,12 @@ class EventFormat(NamedTuple):
 
 
 class SSASubs(SubtitlesBase):
+    """SubStation Alpha Subtitles."""
+
     def __init__(self) -> None:
         super().__init__()
         self._format: EventFormat | None = None
         self._line = -1
-        return
 
     def read(self, path: Path) -> None:
         """Read a PGS file."""
@@ -64,13 +67,13 @@ class SSASubs(SubtitlesBase):
             self._path = path
         except Exception as e:
             logger.error("Failed to read file data", exc_info=e)
-        return
 
     def write(self, path: Path | None = None) -> None:
         """Write a PGS file."""
         raise NotImplementedError("Cannot write PGS files.")
 
     def copyFrames(self, other: SubtitlesBase) -> None:
+        """Copy frames from another subtitle object."""
         return super()._copyFrames(SSAFrame, other)
 
     ##
@@ -91,7 +94,6 @@ class SSASubs(SubtitlesBase):
                         self._parseDialogue(line[9:])
                     elif line.startswith("Format:"):
                         self._parseFormat(line[7:])
-        return
 
     def _parseFormat(self, line: str) -> None:
         """Parse dialogue format."""
@@ -100,7 +102,6 @@ class SSASubs(SubtitlesBase):
             self._format = EventFormat(len(parts), parts.index("Start"), parts.index("End"), parts.index("Text"))
         except ValueError:
             logger.error("Invalid events format string")
-        return
 
     def _parseDialogue(self, line: str) -> None:
         """Parse a dialogue entry."""
@@ -139,12 +140,13 @@ class SSASubs(SubtitlesBase):
 
 
 class SSAFrame(FrameBase):
+    """SubStation Alpha Subtitle Frame."""
+
     def __init__(self, index: int, start: int, end: int, text: list[str]) -> None:
         super().__init__(index=index)
         self._start = start
         self._end = end
         self._text = text
-        return
 
     @classmethod
     def fromFrame(cls, index: int, other: FrameBase) -> FrameBase:

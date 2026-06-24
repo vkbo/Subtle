@@ -17,7 +17,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-"""
+"""  # noqa
 
 from __future__ import annotations
 
@@ -65,11 +65,12 @@ BASE = (
 
 
 class GuiIcons:
+    """GUI Icons."""
+
     def __init__(self) -> None:
         palette = QApplication.palette()
         self._cache: dict[str, QIcon] = {}
         self._color = palette.buttonText().color().name(QColor.NameFormat.HexRgb).encode()
-        return
 
     def icon(self, key: str) -> QIcon:
         """Return an icon, either from the cache or generate it."""
@@ -84,7 +85,6 @@ class _IconEngine(QIconEngine):
     def __init__(self, data: bytes) -> None:
         super().__init__()
         self._data = data
-        return
 
     def clone(self) -> QIconEngine | None:
         """Clone the icon engine."""
@@ -103,4 +103,3 @@ class _IconEngine(QIconEngine):
         """SVG icon painter."""
         renderer = QSvgRenderer(self._data)
         renderer.render(painter, QRectF(rect))
-        return
