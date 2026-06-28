@@ -49,7 +49,7 @@ version = { attr = "subtle_gui.__init__.__version__" }
 include = ["subtle_gui*"]
 
 [tool.setuptools.package-data]
-subtle_gui = ["assets/*"]
+subtle_gui = ["assets/**"]
 
 [tool.ruff]
 line-length = 120
@@ -118,6 +118,14 @@ forced-separate = ["tests"]
 quote-style = "double"
 
 [tool.pyright]
-include = ["subtle"]
+include = ["subtle_gui"]
 reportIncompatibleMethodOverride = false
 pythonVersion = "3.11"
+
+[tool.coverage.run]
+branch = false
+source = ["subtle_gui"]
+
+[tool.coverage.report]
+precision = 2
+exclude_also = ["if TYPE_CHECKING:"]
