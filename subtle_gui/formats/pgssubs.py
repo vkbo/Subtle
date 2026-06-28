@@ -26,11 +26,11 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from subtle_gui.common import formatTS
-from subtle_gui.formats.base import FrameBase, SubtitlesBase
-
 from PyQt6.QtCore import QMargins, QPoint, QRect, QSize
 from PyQt6.QtGui import QColor, QImage, QPainter, qRgba
+
+from subtle_gui.common import formatTS
+from subtle_gui.formats.base import FrameBase, SubtitlesBase
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

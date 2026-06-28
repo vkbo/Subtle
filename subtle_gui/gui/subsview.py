@@ -25,14 +25,14 @@ import logging
 
 from pathlib import Path
 
+from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
+from PyQt6.QtWidgets import QAbstractItemView, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+
 from subtle_gui import CONFIG, SHARED
 from subtle_gui.common import formatTS
 from subtle_gui.constants import MediaType
 from subtle_gui.formats.base import FrameBase
 from subtle_gui.formats.srtsubs import SRTSubs
-
-from PyQt6.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
-from PyQt6.QtWidgets import QAbstractItemView, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
 
@@ -157,15 +157,18 @@ class GuiSubtitleView(QWidget):
     @pyqtSlot(QModelIndex)
     def _itemClicked(self, index: QModelIndex) -> None:
         """Process item click in the subtitles list."""
-        if (track := SHARED.media.currentTrack) and (item := self.subEntries.itemFromIndex(index)):
-            if frame := SHARED.media.currentTrack.getFrame(item.data(self.C_DATA, self.D_INDEX)):
-                if frame.imageBased:
-                    image = frame.getImage()
-                    if (ocrTool := SHARED.ocr) and not (text := frame.text):
-                        text = ocrTool.processImage(frame.index, image, [track.language])
-                        frame.setText(text)
-                    self.updateText(frame)
-                self.subsFrameUpdated.emit(frame)
+        if (
+            (track := SHARED.media.currentTrack)
+            and (item := self.subEntries.itemFromIndex(index))
+            and (frame := SHARED.media.currentTrack.getFrame(item.data(self.C_DATA, self.D_INDEX)))
+        ):
+            if frame.imageBased:
+                image = frame.getImage()
+                if (ocrTool := SHARED.ocr) and not (text := frame.text):
+                    text = ocrTool.processImage(frame.index, image, [track.language])
+                    frame.setText(text)
+                self.updateText(frame)
+            self.subsFrameUpdated.emit(frame)
 
     ##
     #  Internal Functions

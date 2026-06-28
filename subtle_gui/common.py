@@ -161,10 +161,9 @@ def decodeTS(value: str | None, default: int = 0, fmt: T_Subs = "SRT") -> int:
                     return 3600000 * int(value[0:2]) + 60000 * int(value[3:5]) + int(value[6:8] + value[9:12])
                 except Exception:
                     pass
-        elif fmt == "SSA" and len(value) == 10:
-            if value[1] == ":" and value[4] == ":" and value[7] in ":.,":
-                try:
-                    return 3600000 * int(value[0]) + 60000 * int(value[2:4]) + 10 * int(value[5:7] + value[8:10])
-                except Exception:
-                    pass
+        elif fmt == "SSA" and len(value) == 10 and value[1] == ":" and value[4] == ":" and value[7] in ":.,":
+            try:
+                return 3600000 * int(value[0]) + 60000 * int(value[2:4]) + 10 * int(value[5:7] + value[8:10])
+            except Exception:
+                pass
     return default

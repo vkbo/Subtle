@@ -25,9 +25,9 @@ import logging
 
 from typing import TYPE_CHECKING
 
-from subtle_gui.common import checkInt
-
 from PyQt6.QtCore import QObject, QProcess, pyqtSignal, pyqtSlot
+
+from subtle_gui.common import checkInt
 
 if TYPE_CHECKING:
     from pathlib import Path

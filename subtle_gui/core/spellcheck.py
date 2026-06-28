@@ -27,9 +27,9 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from subtle_gui import CONFIG
-
 from PyQt6.QtCore import QLocale
+
+from subtle_gui import CONFIG
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

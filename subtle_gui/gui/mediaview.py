@@ -26,12 +26,6 @@ import shutil
 
 from typing import TYPE_CHECKING
 
-from subtle_gui import CONFIG, SHARED
-from subtle_gui.common import formatTS
-from subtle_gui.constants import GuiLabels, MediaType, trConst
-from subtle_gui.core.mediafile import EXTRACTABLE, SUBTITLE_FILE
-from subtle_gui.core.mkvextract import MkvExtract
-
 from PyQt6.QtCore import QModelIndex, pyqtSlot
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -43,6 +37,12 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from subtle_gui import CONFIG, SHARED
+from subtle_gui.common import formatTS
+from subtle_gui.constants import GuiLabels, MediaType, trConst
+from subtle_gui.core.mediafile import EXTRACTABLE, SUBTITLE_FILE
+from subtle_gui.core.mkvextract import MkvExtract
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -183,12 +183,15 @@ class GuiMediaView(QWidget):
         """Process track double click in the media view."""
         if (file := SHARED.media.mediaFile) and (item := self.tracksView.itemFromIndex(index)):
             idx = item.text(self.C_TRACK)
-            if idx not in self._extracted:
-                if (track := SHARED.media.getTrack(idx)) and track.trackType == MediaType.SUBS:
-                    path = file.dumpFile(idx)
-                    track.setTrackFile(path)
-                    self._runTrackExtraction(file.filePath, [(idx, path)])
-                    self._emitTrack = idx
+            if (
+                idx not in self._extracted
+                and (track := SHARED.media.getTrack(idx))
+                and track.trackType == MediaType.SUBS
+            ):
+                path = file.dumpFile(idx)
+                track.setTrackFile(path)
+                self._runTrackExtraction(file.filePath, [(idx, path)])
+                self._emitTrack = idx
             if idx in self._extracted and not self._emitTrack:
                 SHARED.media.setCurrentTrack(idx)
 

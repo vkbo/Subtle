@@ -23,13 +23,13 @@ from __future__ import annotations
 
 import logging
 
-from subtle_gui import CONFIG, SHARED
-from subtle_gui.formats.base import FrameBase
-from subtle_gui.gui.highlighter import GuiDocHighlighter, TextBlockData
-
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QShortcut, QTextBlock, QTextBlockFormat, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import QComboBox, QMenu, QTextEdit, QToolBar, QToolButton, QVBoxLayout, QWidget
+
+from subtle_gui import CONFIG, SHARED
+from subtle_gui.formats.base import FrameBase
+from subtle_gui.gui.highlighter import GuiDocHighlighter, TextBlockData
 
 logger = logging.getLogger(__name__)
 

@@ -30,11 +30,11 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Literal
 
-from subtle_gui.common import jsonEncode
-
 from PyQt6.QtCore import PYQT_VERSION, PYQT_VERSION_STR, QT_VERSION, QT_VERSION_STR, QSize, QStandardPaths, QSysInfo
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication
+
+from subtle_gui.common import jsonEncode
 
 logger = logging.getLogger(__name__)
 
