@@ -332,7 +332,7 @@ class SegmentBase(ABC):
         return self._ts
 
     @abstractmethod
-    def validate(self) -> None:
+    def validate(self) -> None:  # pragma: no cover
         """Validate the segment data."""
         raise NotImplementedError
 
