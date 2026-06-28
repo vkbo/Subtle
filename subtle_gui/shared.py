@@ -50,28 +50,28 @@ class SharedData(QObject):
 
     @property
     def media(self) -> MediaData:
-        """Return the media data object."""
+        """The media data object."""
         if self._media is not None:
             return self._media
         raise RuntimeError("Shared data object not yet initialised.")
 
     @property
     def ocr(self) -> OCRBase:
-        """Return the ocr object."""
+        """The OCR object."""
         if self._ocr is not None:
             return self._ocr
         raise RuntimeError("Shared data object not yet initialised.")
 
     @property
     def spelling(self) -> SpellEnchant:
-        """Return the spell checker object."""
+        """The spell checker object."""
         if self._spell is not None:
             return self._spell
         raise RuntimeError("Shared data object not yet initialised.")
 
     @property
     def icons(self) -> GuiIcons:
-        """Return the spell checker object."""
+        """The GUI icons object."""
         if self._icons is not None:
             return self._icons
         raise RuntimeError("Shared data object not yet initialised.")

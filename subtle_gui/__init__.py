@@ -28,10 +28,10 @@ import sys
 
 from typing import TYPE_CHECKING
 
+from PyQt6.QtWidgets import QApplication
+
 from subtle_gui.config import Config
 from subtle_gui.shared import SharedData
-
-from PyQt6.QtWidgets import QApplication
 
 if TYPE_CHECKING:  # pragma: no cover
     from subtle_gui.guimain import GuiMain
@@ -40,14 +40,14 @@ if TYPE_CHECKING:  # pragma: no cover
 # ============
 
 # fmt: off
-__package__    = "subtle_gui"
-__copyright__  = "Copyright (C) Veronica Berglyd Olsen"
-__license__    = "GPLv3"
-__author__     = "Veronica Berglyd Olsen"
+__package__ = "subtle_gui"
+__copyright__ = "Copyright (C) Veronica Berglyd Olsen"
+__license__ = "GPLv3"
+__author__ = "Veronica Berglyd Olsen"
 __maintainer__ = "Veronica Berglyd Olsen"
-__email__      = "code@vkbo.net"
-__version__    = "26.1.1"
-__date__       = "2026-06-24"
+__email__ = "code@vkbo.net"
+__version__ = "26.1.1"
+__date__ = "2026-06-24"
 # fmt: on
 
 logger = logging.getLogger(__name__)
@@ -114,7 +114,7 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
     )
 
     # Defaults
-    logLevel = logging.WARN
+    logLevel = logging.WARNING
     fmtColor = FORCE_COLOR
     fmtLong = False
 

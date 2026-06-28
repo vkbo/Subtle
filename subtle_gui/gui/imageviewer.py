@@ -23,11 +23,11 @@ from __future__ import annotations
 
 import logging
 
-from subtle_gui.formats.base import FrameBase
-
 from PyQt6.QtCore import QRect, QRectF, Qt, pyqtSlot
 from PyQt6.QtGui import QPixmap, QResizeEvent
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView, QHBoxLayout, QWidget
+
+from subtle_gui.formats.base import FrameBase
 
 logger = logging.getLogger(__name__)
 

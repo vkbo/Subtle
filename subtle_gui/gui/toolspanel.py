@@ -25,9 +25,6 @@ import logging
 
 from pathlib import Path
 
-from subtle_gui import SHARED
-from subtle_gui.constants import MediaType
-
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -42,6 +39,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from subtle_gui import SHARED
+from subtle_gui.constants import MediaType
 
 logger = logging.getLogger(__name__)
 
@@ -198,9 +198,8 @@ class GuiToolsPanel(QWidget):
     @pyqtSlot()
     def _clickedLoadSubs(self) -> None:
         """Process load subs button click."""
-        if items := self.subsList.selectedItems():
-            if (path := Path(items[0].data(self.D_SUBS_PATH))).is_file():
-                self.requestSubsLoad.emit(path)
+        if (items := self.subsList.selectedItems()) and (path := Path(items[0].data(self.D_SUBS_PATH))).is_file():
+            self.requestSubsLoad.emit(path)
 
     @pyqtSlot()
     def _updateTrackInfo(self) -> None:

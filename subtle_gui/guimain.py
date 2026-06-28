@@ -26,6 +26,10 @@ import sys
 
 from typing import TYPE_CHECKING
 
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QApplication, QMainWindow, QSplitter
+
 from subtle_gui import CONFIG, SHARED
 from subtle_gui.core.icons import GuiIcons
 from subtle_gui.core.media import MediaData
@@ -37,10 +41,6 @@ from subtle_gui.gui.subsview import GuiSubtitleView
 from subtle_gui.gui.texteditor import GuiTextEditor
 from subtle_gui.gui.toolspanel import GuiToolsPanel
 from subtle_gui.ocr.tesseract import TesseractOCR
-
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QApplication, QMainWindow, QSplitter
 
 if TYPE_CHECKING:
     from PyQt6.QtGui import QCloseEvent

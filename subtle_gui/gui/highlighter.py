@@ -24,10 +24,10 @@ from __future__ import annotations
 import logging
 import re
 
-from subtle_gui import SHARED
-
 from PyQt6.QtGui import QColor, QSyntaxHighlighter, QTextBlockUserData, QTextCharFormat, QTextDocument
 from PyQt6.QtWidgets import QApplication
+
+from subtle_gui import SHARED
 
 logger = logging.getLogger(__name__)
 
