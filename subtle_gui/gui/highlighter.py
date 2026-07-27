@@ -31,7 +31,7 @@ from subtle_gui import SHARED
 
 logger = logging.getLogger(__name__)
 
-SPELL_RX = re.compile(r"\b[^\s\-–—\/<>]+\b", re.UNICODE)
+SPELL_RX = re.compile(r"\b[^\s\-–—\/<>]+\b", re.UNICODE)  # noqa: RUF001
 IGNORE_PATTERNS = [
     re.compile(r"[0-9][0-9,\.:]+[0-9]", re.UNICODE),
 ]
