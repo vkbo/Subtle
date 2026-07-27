@@ -40,14 +40,14 @@ if TYPE_CHECKING:  # pragma: no cover
 # ============
 
 # fmt: off
-__package__ = "subtle_gui"
-__copyright__ = "Copyright (C) Veronica Berglyd Olsen"
-__license__ = "GPLv3"
-__author__ = "Veronica Berglyd Olsen"
+__package__    = "subtle_gui"
+__copyright__  = "Copyright (C) Veronica Berglyd Olsen"
+__license__    = "GPLv3"
+__author__     = "Veronica Berglyd Olsen"
 __maintainer__ = "Veronica Berglyd Olsen"
-__email__ = "code@vkbo.net"
-__version__ = "26.1.1"
-__date__ = "2026-06-24"
+__email__      = "code@vkbo.net"
+__version__    = "26.1.1"
+__date__       = "2026-06-24"
 # fmt: on
 
 logger = logging.getLogger(__name__)
@@ -173,7 +173,6 @@ def main(sysArgs: list | None = None) -> GuiMain | None:
     app = QApplication([CONFIG.appName])
     app.setApplicationName(CONFIG.appName)
     app.setApplicationVersion(__version__)
-    app.setDesktopFileName(CONFIG.appName)
 
     # Run Config steps that require the QApplication
     CONFIG.load()
