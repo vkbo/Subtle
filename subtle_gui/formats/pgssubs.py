@@ -146,6 +146,8 @@ class PGSSubs(SubtitlesBase):
 class PGSFrame(FrameBase):
     """PGS Subtitle Frame Class."""
 
+    __slots__ = ("_ds",)
+
     def __init__(self, index: int, ds: DisplaySet) -> None:
         super().__init__(index=index)
         self._ds = ds

@@ -65,6 +65,7 @@ SUBTITLE_FILE = (
     ContainerType.SRT,
     ContainerType.SSA_ASS,
     ContainerType.PGSSUP,
+    ContainerType.VOBSUB,
 )
 
 
@@ -104,7 +105,7 @@ class MediaFile:
     def supported(self) -> bool:
         """True if the format is supported."""
         try:
-            return self._info["container"]["supported"]
+            return bool(self._info["container"]["supported"])
         except Exception:
             pass
         return False
