@@ -294,7 +294,7 @@ class GuiTextEditor(QWidget):
         wants to add a word to the user dictionary, or ignore it for the
         current session.
         """
-        logger.debug("Added '%s' to session dictionary, saved = %s", word, str(save))
+        logger.debug("Added '%s' to session dictionary, saved = %s", word, save)
         SHARED.spelling.addWord(word, save=save)
         self.highlight.rehighlightBlock(block)
 

@@ -13,6 +13,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
     "Development Status :: 3 - Alpha",
     "Operating System :: OS Independent",
@@ -53,6 +54,7 @@ subtle_gui = ["assets/*"]
 
 [tool.ruff]
 line-length = 120
+preview = false
 
 [tool.ruff.lint]
 # Rules: https://docs.astral.sh/ruff/rules
@@ -99,7 +101,6 @@ ignore = [
     "PLW0717", # too-many-statements-in-try-clause
     "PLW2901", # redefined-loop-name
     "RET505",  # superfluous-else-return
-    "RUF001",  # ambiguous-unicode-character-string
     "RUF015",  # unnecessary-iterable-allocation-for-first-element
     "RUF067",  # non-empty-init-module
     "SIM108",  # if-else-block-instead-of-if-exp
@@ -110,14 +111,40 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN", "D101", "D102", "D105", "PLC2701", "RUF069", "SLF", "TC"]
 
+[tool.ruff.lint.pydocstyle]
+ignore-decorators = [
+    "abc.abstractmethod",
+    "property",
+    "PyQt6.QtCore.pyqtProperty",
+    "typing.overload",
+    "pytest.fixture",
+]
+
 [tool.ruff.lint.isort]
 lines-between-types = 1
 forced-separate = ["tests"]
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.pylint]
+max-nested-blocks = 10
 
 [tool.ruff.format]
 quote-style = "double"
 
 [tool.pyright]
-include = ["subtle"]
+include = ["subtle_gui"]
 reportIncompatibleMethodOverride = false
 pythonVersion = "3.11"
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+testpaths = ["tests"]
+log_level = "DEBUG"
+qt_api = "pyqt6"
+
+[tool.coverage.run]
+branch = true
+source = ["subtle_gui"]
+
+[tool.coverage.report]
+precision = 2
