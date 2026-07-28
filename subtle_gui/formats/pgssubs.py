@@ -1,6 +1,6 @@
 """
-Subtle – Core PGS Reader
-========================
+Subtle - PGS Reader
+===================
 
 This file is a part of Subtle
 Copyright (C) Veronica Berglyd Olsen
