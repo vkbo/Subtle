@@ -43,8 +43,12 @@ copies or substantial portions of the Software.
 from __future__ import annotations
 
 import logging
+import os
 
+from itertools import pairwise
 from typing import TYPE_CHECKING, NamedTuple
+
+from PyQt6.QtGui import QImage
 
 from subtle_gui.common import decodeTS
 from subtle_gui.formats.base import FrameBase, SubtitlesBase
@@ -52,7 +56,6 @@ from subtle_gui.formats.base import FrameBase, SubtitlesBase
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from PyQt6.QtGui import QImage
 
 logger = logging.getLogger(__name__)
 
@@ -122,10 +125,38 @@ class VobSubs(SubtitlesBase):
     def _readSubData(self, path: Path) -> None:
         """Read SUB data from file."""
         with open(path, mode="rb") as fo:
-            for entry in self._idx[:10]:
-                fo.seek(entry.filepos)
+            fo.seek(0, os.SEEK_END)
+            self._idx.append(IdxEntry(timestamp=-1, filepos=fo.tell()))
+            for i, (cEntry, nEntry) in enumerate(pairwise(self._idx)):
+                position = cEntry.filepos
+                fo.seek(position)
                 buffer = fo.read(0x0800)
-                vsp = VobSubPack(buffer, entry)  # noqa: F841
+
+                vsp = VobSubPack(buffer)
+                frame = VobSubFrame(index=i, idx=cEntry, vsp=vsp)
+                self._frames.append(frame)
+
+                position += 0x800
+                currentId = vsp.pes.subPictureStreamId if vsp.pes else None
+                while position < nEntry.filepos:
+                    fo.seek(position)
+                    buffer = fo.read(0x0800)
+
+                    vsp = VobSubPack(buffer)
+                    if vsp.pes and vsp.pes.subPictureStreamId == currentId:
+                        frame.appendPack(vsp)
+                        position += 0x800
+                    else:
+                        logger.warning(
+                            "Found new stream ID %s at position %d, expected %s. Stopping frame read.",
+                            vsp.pes.subPictureStreamId if vsp.pes else None,
+                            position,
+                            currentId,
+                        )
+                        break
+
+                if i < 10:
+                    frame.debug()
 
 
 def isMpeg2PackHeader(data: bytes) -> bool:
@@ -170,35 +201,56 @@ def isSubtitlePack(data: bytes) -> bool:
 class VobSubFrame(FrameBase):
     """VobSub Subtitle Frame."""
 
-    def __init__(self, index: int, start: int, end: int, text: list[str]) -> None:
+    __slots__ = ("_idx", "_packs")
+
+    def __init__(self, index: int, idx: IdxEntry, vsp: VobSubPack) -> None:
         super().__init__(index=index)
-        self._start = start
-        self._end = end
-        self._text = text
+        self._idx = idx
+        self._packs = [vsp]
+
+        vspTs = vsp.pes.presentationTimestamp if vsp.pes else -1
+        idxTs = idx.timestamp
+        if vspTs != idxTs:
+            logger.warning("VobSub frame timestamp mismatch: IDX=%d, PES=%s", idxTs, vspTs)
+
+        self._start = vspTs or idxTs
+        self._end = self._start + 2000
+
+    def debug(self) -> None:
+        """Print a debug string for the frame."""
+        print(">", self._idx)
+        for pack in self._packs:
+            print(" ", pack.mpeg2)
+            print(" ", pack.pes)
+            if pes := pack.pes:
+                print(f"  PES Data: {int.from_bytes(pes.data[:8]):016X}... ({len(pes.data)} bytes)")
 
     @classmethod
     def fromFrame(cls, index: int, other: FrameBase) -> FrameBase:
-        """Populate from another frame."""
-        return cls(index, other.start, other.end, other.text)
+        """Not implemented."""
+        raise NotImplementedError
 
     @property
     def imageBased(self) -> bool:
-        """VobSub frames are images."""
+        """Check if the frame is image based."""
         return True
 
+    def appendPack(self, vsp: VobSubPack) -> None:
+        """Append a VobSub pack to the frame."""
+        self._packs.append(vsp)
+
     def getImage(self) -> QImage:
-        """There is no image."""
-        raise NotImplementedError
+        """Return the rendered image."""
+        return QImage()
 
 
 class VobSubPack:
     """A VobSub pack in a SUB file."""
 
-    __slots__ = ("_buffer", "_idx", "_mpeg2", "_pes")
+    __slots__ = ("_buffer", "_mpeg2", "_pes")
 
-    def __init__(self, buffer: bytes, idxEntry: IdxEntry) -> None:
+    def __init__(self, buffer: bytes) -> None:
         self._buffer = buffer
-        self._idx: IdxEntry = idxEntry
         self._pes: PacketizedElementaryStream | None = None
         self._mpeg2: Mpeg2Header | None = None
 
@@ -208,11 +260,15 @@ class VobSubPack:
         elif isPrivateStream1(buffer, 0):
             self._pes = PacketizedElementaryStream(buffer, 0)
 
-        print(">", self._idx)
-        print(" ", self._mpeg2)
-        print(" ", self._pes)
-        if pes := self._pes:
-            print(f" PES Data: {int.from_bytes(pes.data[:8]):016X}... ({len(pes.data)} bytes)")
+    @property
+    def mpeg2(self) -> Mpeg2Header | None:
+        """Return the Mpeg2 header."""
+        return self._mpeg2
+
+    @property
+    def pes(self) -> PacketizedElementaryStream | None:
+        """Return the PES."""
+        return self._pes
 
 
 class PacketizedElementaryStream:
@@ -277,6 +333,16 @@ class PacketizedElementaryStream:
             f"HeaderDataLength={self._headerDataLength} SubPictureStreamId={self._subPictureStreamId}, "
             f"PresentationTimestamp={self._presentationTimestamp}, DecodeTimestamp={self._decodeTimestamp}>"
         )
+
+    @property
+    def subPictureStreamId(self) -> int | None:
+        """Return the sub-picture stream ID."""
+        return self._subPictureStreamId
+
+    @property
+    def presentationTimestamp(self) -> int:
+        """Return the presentation timestamp."""
+        return (self._presentationTimestamp or -90) // 90
 
     @property
     def data(self) -> bytes:
