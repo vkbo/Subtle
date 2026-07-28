@@ -1,5 +1,5 @@
 """
-Subtle – GUI Main Window
+Subtle - GUI Main Window
 ========================
 
 This file is a part of Subtle
