@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-T_Subs = Literal["SRT"] | Literal["SSA"]
+T_Subs = Literal["SRT", "SSA", "IDX"]
 
 
 def simplified(text: str) -> str:
@@ -155,8 +155,8 @@ def formatTS(value: int) -> str:
 def decodeTS(value: str | None, default: int = 0, fmt: T_Subs = "SRT") -> int:
     """Decode a SRT time stamp to milliseconds."""
     if isinstance(value, str):
-        if fmt == "SRT" and len(value) >= 12:
-            if value[2] == ":" and value[5] == ":" and value[8] in ".,":
+        if fmt in ("SRT", "IDX") and len(value) >= 12:
+            if value[2] == ":" and value[5] == ":" and value[8] in ":.,":
                 try:
                     return 3600000 * int(value[0:2]) + 60000 * int(value[3:5]) + int(value[6:8] + value[9:12])
                 except Exception:

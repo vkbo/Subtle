@@ -34,6 +34,7 @@ from subtle_gui.core.mediafile import MediaFile
 from subtle_gui.formats.pgssubs import PGSSubs
 from subtle_gui.formats.srtsubs import SRTSubs
 from subtle_gui.formats.ssasubs import SSASubs
+from subtle_gui.formats.vobsub import VobSubs
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -141,8 +142,10 @@ class MediaTrack:
                 self._wrapper = SRTSubs()
             elif codec_id == "S_TEXT/ASS" or codec_nm == "SubStationAlpha":
                 self._wrapper = SSASubs()
+            elif codec_id == "S_VOBSUB" or codec_nm == "VobSub":
+                self._wrapper = VobSubs()
             else:
-                logger.info("Unsupported subtitle format: %s", codec_id or codec_nm)
+                logger.info("Unsupported subtitle format: %s (%s)", codec_nm, codec_id)
 
     ##
     #  Properties

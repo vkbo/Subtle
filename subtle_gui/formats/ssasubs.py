@@ -1,5 +1,5 @@
 """
-Subtle – SSA File Object
+Subtle - SSA File Reader
 ========================
 
 This file is a part of Subtle

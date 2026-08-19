@@ -1,5 +1,5 @@
 """
-Subtle – Subtitles Base
+Subtle - Subtitles Base
 =======================
 
 This file is a part of Subtle

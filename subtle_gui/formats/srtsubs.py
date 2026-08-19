@@ -1,6 +1,6 @@
 """
-Subtle – SRT File Object
-========================
+Subtle - SRT File Reader/Writer
+===============================
 
 This file is a part of Subtle
 Copyright (C) Veronica Berglyd Olsen

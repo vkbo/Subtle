@@ -1,6 +1,6 @@
 """
-Subtle – Core PGS Reader
-========================
+Subtle - PGS Reader
+===================
 
 This file is a part of Subtle
 Copyright (C) Veronica Berglyd Olsen
@@ -147,6 +147,8 @@ class PGSSubs(SubtitlesBase):
 
 class PGSFrame(FrameBase):
     """PGS Subtitle Frame Class."""
+
+    __slots__ = ("_ds",)
 
     def __init__(self, index: int, ds: DisplaySet) -> None:
         super().__init__(index=index)
