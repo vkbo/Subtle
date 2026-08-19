@@ -1,5 +1,12 @@
 # Subtle Changelog
 
+## Version 26.1.2 [2026-08-19]
+
+Small bugfix release that accepts PGS Acquisition frames when there are no other open frames. I
+came across a Bluray that sometimes use these even when they are not on mid-frame markers.
+
+----
+
 ## Version 26.1.1 [2026-06-24]
 
 ### Release Notes
