@@ -122,8 +122,10 @@ class PGSSubs(SubtitlesBase):
         frames = []
         for ds in data:
             state = ds.pcs.compState
-            if state == COMP_EPOCH:
+            if state == COMP_EPOCH or (state == COMP_ACQ and not frame):
                 # Start of a new subtitles frame.
+                # We assume that acquisition frames after closed frames are also valid subtitles.
+                # These sometimes occur, and I'm not really sure why.
                 frame = PGSFrame(len(frames), ds)
                 frames.append(frame)
             elif ds.isClearFrame() and frame:
