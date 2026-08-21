@@ -116,6 +116,12 @@ class GuiTextEditor(QWidget):
     #  Public Slots
     ##
 
+    @pyqtSlot()
+    def processNewMediaLoaded(self) -> None:
+        """Clear previous content."""
+        self._frame = None
+        self.textEdit.clear()
+
     @pyqtSlot(FrameBase)
     def setEditorText(self, frame: FrameBase) -> None:
         """Set the editor text."""

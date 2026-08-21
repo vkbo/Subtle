@@ -98,6 +98,8 @@ class GuiMain(QMainWindow):
         SHARED.media.newMediaLoaded.connect(self.mediaView.processNewMediaLoaded)
         SHARED.media.newMediaLoaded.connect(self.subsView.processNewMediaLoaded)
         SHARED.media.newMediaLoaded.connect(self.toolsPanel.processNewMediaLoaded)
+        SHARED.media.newMediaLoaded.connect(self.imageViewer.processNewMediaLoaded)
+        SHARED.media.newMediaLoaded.connect(self.textEditor.processNewMediaLoaded)
         SHARED.media.newTrackSelected.connect(self.subsView.processNewTrackLoaded)
         SHARED.media.newTrackSelected.connect(self.toolsPanel.processNewTrackLoaded)
 

@@ -55,6 +55,12 @@ class GuiImageViewer(QWidget):
     #  Public Slots
     ##
 
+    @pyqtSlot()
+    def processNewMediaLoaded(self) -> None:
+        """Clear previous content."""
+        self._imageSize = QRect(0, 0, 0, 0)
+        self.imageView.setScene(None)
+
     @pyqtSlot(FrameBase)
     def processFrameUpdate(self, frame: FrameBase) -> None:
         """Process frame update."""
