@@ -28,6 +28,9 @@ import uuid
 
 from typing import TYPE_CHECKING
 
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QImage
+
 from subtle_gui import CONFIG
 from subtle_gui.common import regexCleanup, simplified
 from subtle_gui.ocr.base import OCRBase
@@ -35,7 +38,7 @@ from subtle_gui.ocr.base import OCRBase
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from PyQt6.QtGui import QImage
+BINARY_THRESHOLD = 128
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +93,7 @@ class TesseractOCR(OCRBase):
     def processImage(self, index: int, image: QImage, lang: list[str]) -> list[str]:
         """Perform OCR on a QImage."""
         tmpFile = CONFIG.dumpPath / f"{uuid.uuid4()!s}.png"
-        image.save(str(tmpFile), quality=100)
+        self._toMonochrome(image).save(str(tmpFile), quality=100)
         result = self._processText(self._callTesseract(tmpFile, lang), lang)
         result = self.postProcessText(result)
         tmpFile.unlink(missing_ok=True)
@@ -99,6 +102,16 @@ class TesseractOCR(OCRBase):
     ##
     #  Internal Functions
     ##
+
+    def _toMonochrome(self, image: QImage, threshold: int = BINARY_THRESHOLD) -> QImage:
+        """Convert image to black text on white background for OCR."""
+        gray = image.convertToFormat(QImage.Format.Format_Grayscale8)
+        result = QImage(gray.size(), QImage.Format.Format_Grayscale8)
+        for y in range(gray.height()):
+            for x in range(gray.width()):
+                lum = gray.pixelColor(x, y).red()
+                result.setPixelColor(x, y, Qt.GlobalColor.black if lum > threshold else Qt.GlobalColor.white)
+        return result
 
     def _callTesseract(self, file: Path, lang: list[str]) -> str:
         """Call tesseract on an image file."""
