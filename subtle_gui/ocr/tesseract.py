@@ -28,7 +28,6 @@ import uuid
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage
 
 from subtle_gui import CONFIG
@@ -107,12 +106,12 @@ class TesseractOCR(OCRBase):
     def _toMonochrome(self, image: QImage, threshold: int = BINARY_THRESHOLD) -> QImage:
         """Convert image to black text on white background for OCR."""
         gray = image.convertToFormat(QImage.Format.Format_Grayscale8)
-        result = QImage(gray.size(), QImage.Format.Format_Grayscale8)
-        for y in range(gray.height()):
-            for x in range(gray.width()):
-                lum = gray.pixelColor(x, y).red()
-                result.setPixelColor(x, y, Qt.GlobalColor.black if lum > threshold else Qt.GlobalColor.white)
-        return result
+        buf = gray.constBits()
+        buf.setsize(gray.sizeInBytes())
+        table = bytes(0 if lum > threshold else 255 for lum in range(256))
+        data = bytes(buf).translate(table)  # type: ignore
+        result = QImage(data, gray.width(), gray.height(), gray.bytesPerLine(), QImage.Format.Format_Grayscale8)
+        return result.copy()
 
     def _callTesseract(self, file: Path, lang: list[str]) -> str:
         """Call tesseract on an image file."""
