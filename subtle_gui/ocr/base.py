@@ -26,6 +26,9 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+from subtle_gui import CONFIG
+from subtle_gui.constants import Constants
+
 if TYPE_CHECKING:
     from PyQt6.QtGui import QImage
 
@@ -42,3 +45,22 @@ class OCRBase(ABC):
     def processImage(self, index: int, image: QImage, lang: list[str]) -> list[str]:
         """Process an image and return the recognized text."""
         raise NotImplementedError
+
+    def postProcessText(self, text: list[str]) -> list[str]:
+        """Run standard text post-processing tasks."""
+        dialogLine = CONFIG.getSetting("dialogLine")
+        dialogSpace = CONFIG.getFlag("dialogSpace")
+        result = []
+        for line in text:
+            if line.startswith(Constants.DIALOG_LINES):
+                post = dialogLine + (" " if dialogSpace else "") + line[1:].lstrip()
+            else:
+                post = line
+
+            if post != line:
+                logger.debug("Post Before: '%s'", line)
+                logger.debug("Post Result: '%s'", post)
+
+            result.append(post)
+
+        return result

@@ -28,6 +28,8 @@ import uuid
 
 from typing import TYPE_CHECKING
 
+from PyQt6.QtGui import QImage
+
 from subtle_gui import CONFIG
 from subtle_gui.common import regexCleanup, simplified
 from subtle_gui.ocr.base import OCRBase
@@ -35,7 +37,7 @@ from subtle_gui.ocr.base import OCRBase
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from PyQt6.QtGui import QImage
+BINARY_THRESHOLD = 128
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +68,8 @@ RX_REPLACE = {
         # Misinterpreted words
         (re.compile(r"\b(tt)\b", re.UNICODE), "it"),
         (re.compile(r"\b(fo)\b", re.UNICODE), "to"),
+        (re.compile(r"\b(lf)\b", re.UNICODE), "If"),
+        (re.compile(r"\b(l)\b", re.UNICODE), "I"),
         # Wrong capitalisation at the start of words
         (re.compile(r"(?<![.!?\)\]-])\s(K)now", re.UNICODE), "k"),
         (re.compile(r"(?<![.!?\)\]-])\s(I)t+", re.UNICODE), "i"),
@@ -74,6 +78,7 @@ RX_REPLACE = {
         (re.compile(r"\b[D|d]id(nt)\b", re.UNICODE), "n't"),
         (re.compile(r"\b[T|t]hey(re)\b", re.UNICODE), "'re"),
         (re.compile(r"\b[Y|y]ou(ll)\b", re.UNICODE), "'ll"),
+        (re.compile(r"\b[W|w]ei(ll)\b", re.UNICODE), "'ll"),
         (re.compile(r"\b(l'll)\b", re.UNICODE), "I'll"),
     ],
 }
@@ -88,8 +93,9 @@ class TesseractOCR(OCRBase):
     def processImage(self, index: int, image: QImage, lang: list[str]) -> list[str]:
         """Perform OCR on a QImage."""
         tmpFile = CONFIG.dumpPath / f"{uuid.uuid4()!s}.png"
-        image.save(str(tmpFile), quality=100)
+        self._toMonochrome(image).save(str(tmpFile), quality=100)
         result = self._processText(self._callTesseract(tmpFile, lang), lang)
+        result = self.postProcessText(result)
         tmpFile.unlink(missing_ok=True)
         return result
 
@@ -97,16 +103,38 @@ class TesseractOCR(OCRBase):
     #  Internal Functions
     ##
 
+    def _toMonochrome(self, image: QImage, threshold: int = BINARY_THRESHOLD) -> QImage:
+        """Convert image to black text on white background for OCR."""
+        gray = image.convertToFormat(QImage.Format.Format_Grayscale8)
+        buf = gray.constBits()
+        buf.setsize(gray.sizeInBytes())
+        table = bytes(0 if lum > threshold else 255 for lum in range(256))
+        data = bytes(buf).translate(table)  # type: ignore
+        result = QImage(data, gray.width(), gray.height(), gray.bytesPerLine(), QImage.Format.Format_Grayscale8)
+        return result.copy()
+
     def _callTesseract(self, file: Path, lang: list[str]) -> str:
         """Call tesseract on an image file."""
+        out = self._runTesseract(file, lang, "6")
+        if not out.strip():
+            # PSM 6 assumes a block of text, which can cause tiny/sparse
+            # crops to be discarded as noise before they're even read.
+            # PSM 7 (single line, no layout analysis) can recover those,
+            # but mangles multi-line text, so it's only used as a fallback.
+            logger.debug("Tesseract returned no text with PSM 6, trying PSM 7")
+            out = self._runTesseract(file, lang, "7")
+        return out
+
+    def _runTesseract(self, file: Path, lang: list[str], psm: str) -> str:
+        """Run tesseract on an image file with a given page segmentation mode."""
         try:
-            cmd = ["tesseract", str(file), "-", "-l", "+".join(lang)]
+            cmd = [
+                "tesseract", str(file), "-", "-l", "+".join(lang),
+                "--oem", "1", "--psm", psm,
+            ]  # fmt: off
             if tessData := CONFIG.getSetting("tessData"):
                 cmd += ["--tessdata-dir", tessData]
-            p = subprocess.Popen(
-                ["tesseract", str(file), "-", "-l", "+".join(lang)],
-                stdout=subprocess.PIPE,
-            )
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
             out, _ = p.communicate()
             return out.decode("utf-8")
         except Exception as e:
@@ -114,7 +142,7 @@ class TesseractOCR(OCRBase):
         return ""
 
     def _processText(self, text: str, lang: list[str]) -> list[str]:
-        """Post-process text returned from tesseract."""
+        """Process text returned from tesseract."""
         temp = text.strip()
         for a, b in TXT_REPLACE.items():
             temp = temp.replace(a, b)

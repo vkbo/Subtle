@@ -50,3 +50,9 @@ class GuiLabels:
         MediaType.SUBS: QT_TRANSLATE_NOOP("Constant", "Subtitles"),
         MediaType.OTHER: QT_TRANSLATE_NOOP("Constant", "Other"),
     }
+
+
+class Constants:
+    """Various constants."""
+
+    DIALOG_LINES: Final[tuple[str, str, str]] = ("-", "\u2013", "\u2014")

@@ -51,6 +51,8 @@ DEFAULTS: dict = {
     },
     "Settings": {
         "tessData": "",
+        "dialogLine": "-",
+        "dialogSpace": True,
     },
     "Fonts": {
         "guiFont": "",
@@ -158,6 +160,10 @@ class Config:
         """Get a generic string setting."""
         return str(self._data["Settings"].get(key, ""))
 
+    def getFlag(self, key: str) -> bool:
+        """Get a boolean setting."""
+        return bool(self._data["Settings"].get(key, False))
+
     def assetPath(self, resource: str, kind: str | None = None) -> Path:
         """Return the path to an asset."""
         path = self._appPath / "assets"
@@ -181,6 +187,14 @@ class Config:
                 self._data["Sizes"][key] = [int(x) for x in value]
             except Exception as e:
                 logger.error("Problem when saving sizes list", exc_info=e)
+
+    def setSetting(self, key: str, value: str) -> None:
+        """Set a generic string setting."""
+        self._data["Settings"][key] = str(value)
+
+    def setFlag(self, key: str, value: bool) -> None:
+        """Set a boolean setting."""
+        self._data["Settings"][key] = bool(value)
 
     def setFontSpec(self, target: T_Fonts, font: QFont | str) -> None:
         """Set a font in config."""
