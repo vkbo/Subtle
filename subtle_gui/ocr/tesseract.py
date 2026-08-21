@@ -70,6 +70,7 @@ RX_REPLACE = {
         (re.compile(r"\b(tt)\b", re.UNICODE), "it"),
         (re.compile(r"\b(fo)\b", re.UNICODE), "to"),
         (re.compile(r"\b(lf)\b", re.UNICODE), "If"),
+        (re.compile(r"\b(l)\b", re.UNICODE), "I"),
         # Wrong capitalisation at the start of words
         (re.compile(r"(?<![.!?\)\]-])\s(K)now", re.UNICODE), "k"),
         (re.compile(r"(?<![.!?\)\]-])\s(I)t+", re.UNICODE), "i"),
@@ -115,10 +116,22 @@ class TesseractOCR(OCRBase):
 
     def _callTesseract(self, file: Path, lang: list[str]) -> str:
         """Call tesseract on an image file."""
+        out = self._runTesseract(file, lang, "6")
+        if not out.strip():
+            # PSM 6 assumes a block of text, which can cause tiny/sparse
+            # crops to be discarded as noise before they're even read.
+            # PSM 7 (single line, no layout analysis) can recover those,
+            # but mangles multi-line text, so it's only used as a fallback.
+            logger.debug("Tesseract returned no text with PSM 6, trying PSM 7")
+            out = self._runTesseract(file, lang, "7")
+        return out
+
+    def _runTesseract(self, file: Path, lang: list[str], psm: str) -> str:
+        """Run tesseract on an image file with a given page segmentation mode."""
         try:
             cmd = [
                 "tesseract", str(file), "-", "-l", "+".join(lang),
-                "--oem", "1", "--psm", "6",
+                "--oem", "1", "--psm", psm,
             ]  # fmt: off
             if tessData := CONFIG.getSetting("tessData"):
                 cmd += ["--tessdata-dir", tessData]
