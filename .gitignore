@@ -3,6 +3,9 @@
 .ruff_cache/
 *.pyc
 
+# Other
+.config
+
 # Build
 __pycache__/
 dist/

@@ -28,6 +28,7 @@ from pathlib import Path
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDoubleSpinBox,
     QFormLayout,
     QGroupBox,
@@ -40,8 +41,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from subtle_gui import SHARED
-from subtle_gui.constants import MediaType
+from subtle_gui import CONFIG, SHARED
+from subtle_gui.constants import Constants, MediaType
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +141,28 @@ class GuiToolsPanel(QWidget):
         self.srtFrame = QGroupBox(self.tr("SubRip / SRT"), self)
         self.srtFrame.setLayout(self.srtForm)
 
+        # OCR Panel
+        # =========
+        self.ocrForm = QFormLayout()
+
+        self.ocrDialogLine = QComboBox(self)
+        self.ocrDialogLine.addItems(Constants.DIALOG_LINES)
+        self.ocrDialogLine.setCurrentText(CONFIG.getSetting("dialogLine"))
+        self.ocrDialogLine.currentTextChanged.connect(self._updateOcrDialogLine)
+
+        self.ocrSpace = QCheckBox(self.tr("Add space"), self)
+        self.ocrSpace.setChecked(CONFIG.getFlag("dialogSpace"))
+        self.ocrSpace.clicked.connect(self._updateOcrSpace)
+
+        self.ocrDialogOpt = QHBoxLayout()
+        self.ocrDialogOpt.addWidget(self.ocrDialogLine)
+        self.ocrDialogOpt.addWidget(self.ocrSpace)
+
+        self.ocrForm.addRow(self.tr("Dialogue Line"), self.ocrDialogOpt)
+
+        self.ocrFrame = QGroupBox(self.tr("OCR Options"), self)
+        self.ocrFrame.setLayout(self.ocrForm)
+
         # Layout
         # ======
 
@@ -150,6 +173,7 @@ class GuiToolsPanel(QWidget):
 
         self.rightBox = QVBoxLayout()
         self.rightBox.addWidget(self.subsFrame)
+        self.rightBox.addWidget(self.ocrFrame)
         self.rightBox.addStretch(1)
 
         self.outerBox = QHBoxLayout()
@@ -222,6 +246,16 @@ class GuiToolsPanel(QWidget):
 
             self.srtSaveDir.setText(str(folder))
             self.srtFileName.setText(".".join(bits))
+
+    @pyqtSlot()
+    def _updateOcrDialogLine(self) -> None:
+        """Update the dialog line setting."""
+        CONFIG.setSetting("dialogLine", self.ocrDialogLine.currentText())
+
+    @pyqtSlot()
+    def _updateOcrSpace(self) -> None:
+        """Update the dialog space setting."""
+        CONFIG.setFlag("dialogSpace", self.ocrSpace.isChecked())
 
     ##
     #  Internal Functions

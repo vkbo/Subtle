@@ -66,6 +66,7 @@ RX_REPLACE = {
         # Misinterpreted words
         (re.compile(r"\b(tt)\b", re.UNICODE), "it"),
         (re.compile(r"\b(fo)\b", re.UNICODE), "to"),
+        (re.compile(r"\b(lf)\b", re.UNICODE), "If"),
         # Wrong capitalisation at the start of words
         (re.compile(r"(?<![.!?\)\]-])\s(K)now", re.UNICODE), "k"),
         (re.compile(r"(?<![.!?\)\]-])\s(I)t+", re.UNICODE), "i"),
@@ -74,6 +75,7 @@ RX_REPLACE = {
         (re.compile(r"\b[D|d]id(nt)\b", re.UNICODE), "n't"),
         (re.compile(r"\b[T|t]hey(re)\b", re.UNICODE), "'re"),
         (re.compile(r"\b[Y|y]ou(ll)\b", re.UNICODE), "'ll"),
+        (re.compile(r"\b[W|w]ei(ll)\b", re.UNICODE), "'ll"),
         (re.compile(r"\b(l'll)\b", re.UNICODE), "I'll"),
     ],
 }
@@ -90,6 +92,7 @@ class TesseractOCR(OCRBase):
         tmpFile = CONFIG.dumpPath / f"{uuid.uuid4()!s}.png"
         image.save(str(tmpFile), quality=100)
         result = self._processText(self._callTesseract(tmpFile, lang), lang)
+        result = self.postProcessText(result)
         tmpFile.unlink(missing_ok=True)
         return result
 
@@ -114,7 +117,7 @@ class TesseractOCR(OCRBase):
         return ""
 
     def _processText(self, text: str, lang: list[str]) -> list[str]:
-        """Post-process text returned from tesseract."""
+        """Process text returned from tesseract."""
         temp = text.strip()
         for a, b in TXT_REPLACE.items():
             temp = temp.replace(a, b)
