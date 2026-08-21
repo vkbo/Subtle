@@ -116,13 +116,13 @@ class TesseractOCR(OCRBase):
     def _callTesseract(self, file: Path, lang: list[str]) -> str:
         """Call tesseract on an image file."""
         try:
-            cmd = ["tesseract", str(file), "-", "-l", "+".join(lang)]
+            cmd = [
+                "tesseract", str(file), "-", "-l", "+".join(lang),
+                "--oem", "1", "--psm", "6",
+            ]  # fmt: off
             if tessData := CONFIG.getSetting("tessData"):
                 cmd += ["--tessdata-dir", tessData]
-            p = subprocess.Popen(
-                ["tesseract", str(file), "-", "-l", "+".join(lang)],
-                stdout=subprocess.PIPE,
-            )
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
             out, _ = p.communicate()
             return out.decode("utf-8")
         except Exception as e:
